@@ -2,7 +2,7 @@
 
 ## Overview
 
-Based on our project plan and page plan review, all frontend pages and components are now complete. The next phase is backend integration to enable user authentication, data persistence, and real-time functionality. This document outlines our approach to implementing the backend using Supabase.
+Based on our project plan and page plan review, all frontend pages and components are now complete. The next phase is backend integration to enable user authentication, data persistence, real-time functionality, and the Lopi AI assistant. This document outlines our approach to implementing the backend using Supabase and integrating an LLM for the AI assistant.
 
 ## Frontend Status Confirmation
 
@@ -108,6 +108,24 @@ Based on user needs and frontend dependencies, we'll implement backend features 
 - Implement background processing
 - Create dashboard data endpoints
 
+### 6. Lopi AI Assistant LLM Backend
+
+**Priority: High**
+
+- Islamic knowledge base integration
+- Personalized spiritual guidance
+- Prayer and Quran assistance
+- Emotional and spiritual support
+- Context-aware responses based on user's prayer history
+
+**Implementation Plan:**
+- Set up OpenAI API integration or alternative LLM provider
+- Create specialized prompt engineering for Islamic guidance
+- Implement conversation history storage in Supabase
+- Build context injection system to personalize responses
+- Develop content moderation and safety filters
+- Add caching for common questions and responses
+
 ## Supabase Implementation
 
 ### Database Schema
@@ -160,6 +178,26 @@ CREATE TABLE settings (
   privacy JSONB DEFAULT '{"shareActivity": false, "dataCollection": true}',
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
+
+-- Lopi AI conversations table
+CREATE TABLE lopi_conversations (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  title TEXT,
+  context JSONB
+);
+
+-- Lopi AI messages table
+CREATE TABLE lopi_messages (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  conversation_id UUID REFERENCES lopi_conversations(id) ON DELETE CASCADE,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  role TEXT NOT NULL CHECK (role IN ('user', 'assistant', 'system')),
+  content TEXT NOT NULL,
+  metadata JSONB
+);
 ```
 
 ### Row-Level Security Policies
@@ -170,6 +208,8 @@ ALTER TABLE users ENABLE ROW LEVEL SECURITY;
 ALTER TABLE prayer_records ENABLE ROW LEVEL SECURITY;
 ALTER TABLE user_stats ENABLE ROW LEVEL SECURITY;
 ALTER TABLE settings ENABLE ROW LEVEL SECURITY;
+ALTER TABLE lopi_conversations ENABLE ROW LEVEL SECURITY;
+ALTER TABLE lopi_messages ENABLE ROW LEVEL SECURITY;
 
 -- Create policies
 CREATE POLICY "Users can view and update their own data" 
@@ -187,6 +227,19 @@ USING (auth.uid() = user_id);
 CREATE POLICY "Users can manage their own settings" 
 ON settings FOR ALL 
 USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can manage their own Lopi conversations" 
+ON lopi_conversations FOR ALL 
+USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can access messages in their conversations" 
+ON lopi_messages FOR ALL 
+USING (
+  auth.uid() IN (
+    SELECT user_id FROM lopi_conversations 
+    WHERE id = lopi_messages.conversation_id
+  )
+);
 ```
 
 ## Implementation Phases
@@ -212,7 +265,15 @@ USING (auth.uid() = user_id);
 - Create notification system
 - Build theme management
 
-### Phase 4: Analytics & Insights (Week 4)
+### Phase 4: Lopi AI Assistant Integration (Week 4)
+
+- Set up OpenAI API or alternative LLM provider
+- Create conversation and message tables
+- Implement specialized Islamic knowledge prompts
+- Build context injection from user prayer data
+- Add conversation history management
+
+### Phase 5: Analytics & Insights (Week 5)
 
 - Implement analytics tracking
 - Create aggregation functions
