@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, User, Award, BarChart3, TrendingUp, Calendar, MessageSquare } from 'lucide-react';
+import { ArrowLeft, User, Award, BarChart3, TrendingUp, Calendar, MessageSquare, Settings } from 'lucide-react';
 import BottomNav from '@/components/shared/BottomNav';
 
 // Mock data for user profile
@@ -78,6 +78,11 @@ export default function ProfilePage() {
             </Link>
             <h1 className="text-xl font-semibold">Profile</h1>
           </div>
+          <Link href="/settings">
+            <Button variant="ghost" size="icon" className="rounded-full">
+              <Settings className="h-5 w-5" />
+            </Button>
+          </Link>
         </div>
         
         {/* User Info Card */}
@@ -106,9 +111,24 @@ export default function ProfilePage() {
         {/* Tabs */}
         <Tabs defaultValue="overview" className="mb-6" onValueChange={setActiveTab}>
           <TabsList className="grid grid-cols-3 mb-4 w-full">
-            <TabsTrigger value="overview">Overview</TabsTrigger>
-            <TabsTrigger value="stats">Stats</TabsTrigger>
-            <TabsTrigger value="badges">Badges</TabsTrigger>
+            <TabsTrigger value="overview">
+              <div className="flex items-center gap-1">
+                <User className="h-4 w-4" />
+                <span>Overview</span>
+              </div>
+            </TabsTrigger>
+            <TabsTrigger value="stats">
+              <div className="flex items-center gap-1">
+                <BarChart3 className="h-4 w-4" />
+                <span>Stats</span>
+              </div>
+            </TabsTrigger>
+            <TabsTrigger value="badges">
+              <div className="flex items-center gap-1">
+                <Award className="h-4 w-4" />
+                <span>Badges</span>
+              </div>
+            </TabsTrigger>
           </TabsList>
           
           <TabsContent value="overview" className="space-y-4">
