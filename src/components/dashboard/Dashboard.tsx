@@ -65,30 +65,6 @@ export function Dashboard() {
           />
         </div>
       </div>
-      
-      {/* Bottom Navigation */}
-      <nav className="fixed bottom-0 left-0 right-0 bg-card border-t border-border h-16 flex items-center justify-around px-4">
-        <button className="flex flex-col items-center justify-center text-primary">
-          <span className="text-xl">🏠</span>
-          <span className="text-xs mt-1">Home</span>
-        </button>
-        <button className="flex flex-col items-center justify-center text-muted-foreground">
-          <span className="text-xl">📅</span>
-          <span className="text-xs mt-1">Calendar</span>
-        </button>
-        <button className="flex flex-col items-center justify-center text-muted-foreground">
-          <span className="text-xl">📝</span>
-          <span className="text-xs mt-1">Log</span>
-        </button>
-        <button className="flex flex-col items-center justify-center text-muted-foreground">
-          <span className="text-xl">📊</span>
-          <span className="text-xs mt-1">Insights</span>
-        </button>
-        <button className="flex flex-col items-center justify-center text-muted-foreground">
-          <span className="text-xl">👤</span>
-          <span className="text-xs mt-1">Profile</span>
-        </button>
-      </nav>
     </div>
   );
 }

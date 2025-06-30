@@ -345,9 +345,9 @@ export function NextPrayerCard({ nextPrayer, onPrayerComplete }: NextPrayerCardP
             <div className="text-5xl font-bold text-primary my-6 tracking-wider">
               {timeRemaining}
             </div>
-            <div className="flex gap-3 mt-4">
+            <div className="grid grid-cols-2 gap-3 mt-4">
               <Button 
-                className="flex-1 py-6 text-base font-semibold bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary shadow-md transition-all hover:scale-105 active:scale-95" 
+                className="py-6 text-base font-semibold bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary shadow-md transition-all hover:scale-105 active:scale-95 h-[60px]" 
                 onClick={() => handlePrayerComplete(nextPrayer.id)}
                 disabled={showCelebration}
               >
@@ -355,7 +355,7 @@ export function NextPrayerCard({ nextPrayer, onPrayerComplete }: NextPrayerCardP
               </Button>
               <Button 
                 variant="outline" 
-                className="flex-1 py-6 text-base font-medium border-2 hover:bg-secondary/30 transition-all hover:scale-105 active:scale-95"
+                className="py-6 text-base font-semibold border-2 hover:bg-secondary/30 transition-all hover:scale-105 active:scale-95 h-[60px]"
                 onClick={() => alert(`We'll remind you before ${nextPrayer.name}`)}
                 disabled={showCelebration}
               >
