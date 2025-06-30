@@ -124,11 +124,13 @@ Define clear thresholds for when to transition from "new user" to "returning use
 - Implement the `EmptyState` component across all pages
 - Design skeleton loaders for data-dependent components
 
-### Backend
+### Backend with Supabase
 
-- Store user onboarding status and progress
-- Track feature discovery and usage
-- Implement data thresholds for experience transitions
+- Store user onboarding status and progress in the `users` table (`onboarding_completed` field)
+- Track feature discovery and usage through the `app_analytics` table
+- Implement data thresholds for experience transitions using Supabase Row Level Security (RLS) policies
+- Use Supabase Auth for user authentication and session management
+- Leverage Supabase Realtime for live updates to prayer tracking
 
 ### Testing
 
@@ -136,7 +138,96 @@ Define clear thresholds for when to transition from "new user" to "returning use
 - Verify graceful handling of edge cases (partial data, interrupted onboarding)
 - Ensure performance is maintained during data loading
 
-## 5. Success Metrics
+## 5. Supabase Integration
+
+### Frontend Connection
+
+```typescript
+// src/lib/supabase.ts
+import { createClient } from '@supabase/supabase-js'
+import { Database } from './database.types'
+
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL as string
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY as string
+
+export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey)
+```
+
+### Authentication Flow
+
+```typescript
+// Sign up a new user
+const signUp = async (email: string, password: string) => {
+  const { data, error } = await supabase.auth.signUp({
+    email,
+    password,
+  })
+  
+  if (error) {
+    throw error
+  }
+  
+  // Initialize user profile after signup
+  if (data?.user) {
+    await supabase.from('users').insert({
+      id: data.user.id,
+      email: data.user.email,
+      onboarding_completed: false
+    })
+  }
+  
+  return data
+}
+
+// Sign in an existing user
+const signIn = async (email: string, password: string) => {
+  const { data, error } = await supabase.auth.signInWithPassword({
+    email,
+    password,
+  })
+  
+  if (error) {
+    throw error
+  }
+  
+  return data
+}
+```
+
+### Data Fetching with React Query
+
+```typescript
+// Example of fetching user prayer records
+const fetchPrayerRecords = async (userId: string, date: string) => {
+  const { data, error } = await supabase
+    .from('prayer_records')
+    .select('*')
+    .eq('user_id', userId)
+    .gte('scheduled_time', `${date}T00:00:00`)
+    .lte('scheduled_time', `${date}T23:59:59`)
+    .order('scheduled_time', { ascending: true })
+  
+  if (error) {
+    throw error
+  }
+  
+  return data
+}
+
+// Using React Query to manage cache and state
+const usePrayerRecords = (userId: string, date: string) => {
+  return useQuery(
+    ['prayer_records', userId, date],
+    () => fetchPrayerRecords(userId, date),
+    {
+      enabled: !!userId,
+      staleTime: 5 * 60 * 1000, // 5 minutes
+    }
+  )
+}
+```
+
+## 6. Success Metrics
 
 - Onboarding completion rate
 - Time to first prayer tracking
