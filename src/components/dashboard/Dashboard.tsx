@@ -5,6 +5,7 @@ import { NextPrayerCard } from './NextPrayerCard';
 import { TodaysPrayers } from './TodaysPrayers';
 import { SmartTip } from './SmartTip';
 import { StreakOverview } from './StreakOverview';
+import { CommunityPresence } from './CommunityPresence';
 import { prayers, getNextPrayer, type Prayer } from './data';
 
 export function Dashboard() {
@@ -57,7 +58,10 @@ export function Dashboard() {
           {/* 3. Smart Tip - Helpful advice */}
           <SmartTip />
           
-          {/* 4. Streak Overview - Calendar heatmap */}
+          {/* 4. Community Presence - Subtle social proof */}
+          <CommunityPresence currentPrayer={nextPrayer as Prayer | undefined} />
+          
+          {/* 5. Streak Overview - Calendar heatmap */}
           <StreakOverview 
             currentStreak={currentStreak} 
             bestStreak={bestStreak} 
