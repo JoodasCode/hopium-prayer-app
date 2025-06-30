@@ -52,7 +52,7 @@ export default function OnboardingContainer() {
     lopiEnabled: true
   });
   
-  const supabase = useSupabaseClient<Database>();
+  const supabase = useSupabaseClient();
   const router = useRouter();
   const { updateProfile } = useAuth();
   const { refreshUserState } = useUserState();
@@ -66,29 +66,10 @@ export default function OnboardingContainer() {
         // Get current user
         const { data: { user }, error: userError } = await supabase.auth.getUser();
         
-        // For demo purposes, allow access even without authentication
-        // In production, you would redirect to login
+        // Enforce authentication - redirect to login if no user
         if (userError || !user) {
-          console.log('No authenticated user, using demo mode');
-          setUserId('demo-user');
-          
-          // Initialize demo state
-          setOnboardingState({
-            motivations: [],
-            prayerStory: '',
-            theme: 'serene',
-            prayerBaseline: {
-              fajr: false,
-              dhuhr: false,
-              asr: false,
-              maghrib: false,
-              isha: false
-            },
-            intentions: [],
-            lopiEnabled: true
-          });
-          
-          setLoading(false);
+          console.log('No authenticated user, redirecting to login');
+          router.push('/login');
           return;
         }
         
@@ -221,21 +202,6 @@ export default function OnboardingContainer() {
     
     try {
       setSaving(true);
-      
-      // For demo user, skip database operations
-      if (userId === 'demo-user') {
-        console.log('Demo mode: completing onboarding without database update');
-        // Show success message
-        toast({
-          title: 'Welcome to Hopium!',
-          description: 'Your journey begins now',
-          variant: 'default'
-        });
-        
-        // Redirect to dashboard
-        router.push('/');
-        return;
-      }
       
       // Mark onboarding as completed
       const success = await updateProfile({
