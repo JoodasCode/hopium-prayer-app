@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Hopium Prayer App - Dashboard Mockup</title>
+  <style>
+    /* Following Airbnb Style Guide for formatting */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    }
+    
+    body {
+      background-color: hsl(var(--background));
+      color: hsl(var(--foreground));
+      padding: 0;
+      margin: 0;
+      max-width: 430px;
+      margin: 0 auto;
+      min-height: 100vh;
+    }
+    
+    :root {
+      --background: 0 0% 100%;
+      --foreground: 222.2 84% 4.9%;
+      --card: 0 0% 100%;
+      --card-foreground: 222.2 84% 4.9%;
+      --popover: 0 0% 100%;
+      --popover-foreground: 222.2 84% 4.9%;
+      --primary: 221.2 83.2% 53.3%;
+      --primary-foreground: 210 40% 98%;
+      --secondary: 210 40% 96.1%;
+      --secondary-foreground: 222.2 47.4% 11.2%;
+      --muted: 210 40% 96.1%;
+      --muted-foreground: 215.4 16.3% 46.9%;
+      --accent: 210 40% 96.1%;
+      --accent-foreground: 222.2 47.4% 11.2%;
+      --destructive: 0 84.2% 60.2%;
+      --destructive-foreground: 210 40% 98%;
+      --border: 214.3 31.8% 91.4%;
+      --input: 214.3 31.8% 91.4%;
+      --ring: 221.2 83.2% 53.3%;
+      --radius: 0.5rem;
+    }
+    
+    .dark {
+      --background: 222.2 84% 4.9%;
+      --foreground: 210 40% 98%;
+      --card: 222.2 84% 4.9%;
+      --card-foreground: 210 40% 98%;
+      --popover: 222.2 84% 4.9%;
+      --popover-foreground: 210 40% 98%;
+      --primary: 217.2 91.2% 59.8%;
+      --primary-foreground: 222.2 47.4% 11.2%;
+      --secondary: 217.2 32.6% 17.5%;
+      --secondary-foreground: 210 40% 98%;
+      --muted: 217.2 32.6% 17.5%;
+      --muted-foreground: 215 20.2% 65.1%;
+      --accent: 217.2 32.6% 17.5%;
+      --accent-foreground: 210 40% 98%;
+      --destructive: 0 62.8% 30.6%;
+      --destructive-foreground: 210 40% 98%;
+      --border: 217.2 32.6% 17.5%;
+      --input: 217.2 32.6% 17.5%;
+      --ring: 224.3 76.3% 48%;
+    }
+    
+    .container {
+      padding: 1rem;
+    }
+    
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1rem;
+      border-bottom: 1px solid hsl(var(--border));
+    }
+    
+    .logo {
+      font-weight: bold;
+      font-size: 1.5rem;
+      color: hsl(var(--primary));
+    }
+    
+    .menu-icon {
+      font-size: 1.5rem;
+    }
+    
+    .card {
+      background-color: hsl(var(--card));
+      color: hsl(var(--card-foreground));
+      border-radius: var(--radius);
+      border: 1px solid hsl(var(--border));
+      padding: 1rem;
+      margin-bottom: 1rem;
+    }
+    
+    .next-prayer {
+      text-align: center;
+      padding: 1.5rem 1rem;
+    }
+    
+    .prayer-name {
+      font-size: 1.2rem;
+      font-weight: 500;
+      margin-bottom: 0.5rem;
+    }
+    
+    .countdown {
+      font-size: 2.5rem;
+      font-weight: bold;
+      margin: 1rem 0;
+      color: hsl(var(--primary));
+    }
+    
+    .button-row {
+      display: flex;
+      gap: 0.5rem;
+      margin-top: 1rem;
+    }
+    
+    .btn {
+      padding: 0.75rem 1rem;
+      border-radius: var(--radius);
+      font-weight: 500;
+      cursor: pointer;
+      flex: 1;
+      border: none;
+      text-align: center;
+    }
+    
+    .btn-primary {
+      background-color: hsl(var(--primary));
+      color: hsl(var(--primary-foreground));
+    }
+    
+    .btn-secondary {
+      background-color: hsl(var(--secondary));
+      color: hsl(var(--secondary-foreground));
+    }
+    
+    .section-title {
+      font-size: 0.875rem;
+      font-weight: 500;
+      color: hsl(var(--muted-foreground));
+      margin-bottom: 0.5rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    
+    .prayer-pills {
+      display: flex;
+      gap: 0.5rem;
+      overflow-x: auto;
+      padding: 0.5rem 0;
+    }
+    
+    .prayer-pill {
+      min-width: 4rem;
+      padding: 0.5rem;
+      border-radius: var(--radius);
+      background-color: hsl(var(--secondary));
+      text-align: center;
+      font-size: 0.875rem;
+    }
+    
+    .prayer-pill.completed {
+      background-color: hsl(142.1 76.2% 36.3%);
+      color: white;
+    }
+    
+    .prayer-pill.next {
+      background-color: hsl(var(--primary));
+      color: white;
+    }
+    
+    .smart-tip {
+      background-color: hsl(var(--accent));
+      padding: 1rem;
+    }
+    
+    .tip-header {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin-bottom: 0.5rem;
+      font-weight: 500;
+      color: hsl(var(--accent-foreground));
+    }
+    
+    .tip-content {
+      margin-bottom: 1rem;
+      line-height: 1.5;
+    }
+    
+    .tip-actions {
+      display: flex;
+      gap: 0.5rem;
+    }
+    
+    .streak-dots {
+      display: flex;
+      gap: 0.25rem;
+      margin: 0.5rem 0;
+    }
+    
+    .streak-dot {
+      width: 0.75rem;
+      height: 0.75rem;
+      border-radius: 50%;
+      background-color: hsl(var(--muted));
+    }
+    
+    .streak-dot.filled {
+      background-color: hsl(var(--primary));
+    }
+    
+    .streak-stats {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.875rem;
+      color: hsl(var(--muted-foreground));
+    }
+    
+    .prayer-mode {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 1rem;
+    }
+    
+    .prayer-mode-btn {
+      background-color: hsl(var(--secondary));
+      color: hsl(var(--secondary-foreground));
+      padding: 0.75rem 1.5rem;
+      border-radius: var(--radius);
+      font-weight: 500;
+      border: none;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      cursor: pointer;
+    }
+    
+    .prayer-mode-desc {
+      font-size: 0.875rem;
+      color: hsl(var(--muted-foreground));
+    }
+    
+    .bottom-nav {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background-color: hsl(var(--background));
+      border-top: 1px solid hsl(var(--border));
+      display: flex;
+      justify-content: space-around;
+      padding: 0.75rem 0;
+      max-width: 430px;
+      margin: 0 auto;
+    }
+    
+    .nav-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.25rem;
+      font-size: 0.75rem;
+      color: hsl(var(--muted-foreground));
+    }
+    
+    .nav-item.active {
+      color: hsl(var(--primary));
+    }
+    
+    .spacer {
+      height: 5rem;
+    }
+  </style>
+</head>
+<body class="dark">
+  <header>
+    <div class="logo">HOPIUM</div>
+    <div class="menu-icon">≡</div>
+  </header>
+  
+  <div class="container">
+    <!-- Next Prayer Card -->
+    <div class="card next-prayer">
+      <div class="prayer-name">NEXT PRAYER: ASR</div>
+      <div class="countdown">01:23:45</div>
+      <div class="button-row">
+        <button class="btn btn-primary">I PRAYED</button>
+        <button class="btn btn-secondary">REMIND ME ⏰</button>
+      </div>
+    </div>
+    
+    <!-- Today's Prayers -->
+    <div class="section-title">TODAY'S PRAYERS</div>
+    <div class="prayer-pills">
+      <div class="prayer-pill completed">FAJR<br>✅</div>
+      <div class="prayer-pill completed">DHUHR<br>✅</div>
+      <div class="prayer-pill next">ASR<br>⏱️</div>
+      <div class="prayer-pill">MAGHRIB<br>&nbsp;</div>
+      <div class="prayer-pill">ISHA<br>&nbsp;</div>
+    </div>
+    
+    <!-- Smart Tip -->
+    <div class="card smart-tip">
+      <div class="tip-header">
+        <span>🧠</span>
+        <span>SMART TIP</span>
+      </div>
+      <div class="tip-content">
+        You've prayed Dhuhr on time 3 days in a row! Keep the streak going.
+      </div>
+      <div class="tip-actions">
+        <button class="btn btn-secondary">Got it</button>
+        <button class="btn btn-secondary">Tell me more</button>
+      </div>
+    </div>
+    
+    <!-- Streak Overview -->
+    <div class="section-title">STREAK OVERVIEW</div>
+    <div class="card">
+      <div class="streak-dots">
+        <div class="streak-dot filled"></div>
+        <div class="streak-dot filled"></div>
+        <div class="streak-dot filled"></div>
+        <div class="streak-dot filled"></div>
+        <div class="streak-dot"></div>
+        <div class="streak-dot filled"></div>
+        <div class="streak-dot filled"></div>
+      </div>
+      <div class="streak-dots">
+        <div class="streak-dot filled"></div>
+        <div class="streak-dot filled"></div>
+        <div class="streak-dot"></div>
+        <div class="streak-dot filled"></div>
+        <div class="streak-dot filled"></div>
+        <div class="streak-dot filled"></div>
+        <div class="streak-dot filled"></div>
+      </div>
+      <div class="streak-stats">
+        <div>Current: 2 days</div>
+        <div>Best: 7 days</div>
+      </div>
+    </div>
+    
+    <!-- Prayer Mode -->
+    <div class="card prayer-mode">
+      <button class="prayer-mode-btn">
+        <span>🧘</span>
+        <span>PRAYER MODE</span>
+      </button>
+      <div class="prayer-mode-desc">Distraction-free focus for prayer</div>
+    </div>
+    
+    <div class="spacer"></div>
+  </div>
+  
+  <!-- Bottom Navigation -->
+  <div class="bottom-nav">
+    <div class="nav-item active">
+      <div>🏠</div>
+      <div>Home</div>
+    </div>
+    <div class="nav-item">
+      <div>📅</div>
+      <div>Calendar</div>
+    </div>
+    <div class="nav-item">
+      <div>💬</div>
+      <div>Lopi</div>
+    </div>
+    <div class="nav-item">
+      <div>👤</div>
+      <div>Profile</div>
+    </div>
+  </div>
+</body>
+</html>

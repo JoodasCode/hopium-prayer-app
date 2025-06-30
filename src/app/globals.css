@@ -4,47 +4,48 @@
 
 @layer base {
   :root {
-    --background: 260 23.0769% 97.4510%;
-    --foreground: 243.1579 13.6691% 27.2549%;
-    --card: 0 0% 100%;
-    --card-foreground: 243.1579 13.6691% 27.2549%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 243.1579 13.6691% 27.2549%;
-    --primary: 260.4000 22.9358% 57.2549%;
-    --primary-foreground: 260 23.0769% 97.4510%;
-    --secondary: 258.9474 33.3333% 88.8235%;
-    --secondary-foreground: 243.1579 13.6691% 27.2549%;
-    --muted: 258.0000 15.1515% 87.0588%;
-    --muted-foreground: 247.5000 10.3448% 45.4902%;
-    --accent: 342.4615 56.5217% 77.4510%;
-    --accent-foreground: 343.4483 23.9669% 23.7255%;
-    --destructive: 0 62.1891% 60.5882%;
-    --destructive-foreground: 260 23.0769% 97.4510%;
-    --border: 258.7500 17.3913% 81.9608%;
-    --input: 260.0000 23.0769% 92.3529%;
-    --ring: 260.4000 22.9358% 57.2549%;
+    /* Primary Theme Colors - from screenshot */
+    --background: 260 23% 97%; /* #f9f7fa */
+    --foreground: 243 14% 27%; /* #3d3c4f */
+    --card: 0 0% 100%; /* #ffffff */
+    --card-foreground: 243 14% 27%; /* #3d3c4f */
+    --popover: 0 0% 100%; /* #ffffff */
+    --popover-foreground: 243 14% 27%; /* #3d3c4f */
+    --primary: 260 23% 57%; /* #8a7fab */
+    --primary-foreground: 260 23% 97%; /* #f9f7fa */
+    --secondary: 259 33% 89%; /* #e0dbf0 */
+    --secondary-foreground: 243 14% 27%; /* #3d3c4f */
+    --muted: 258 15% 87%; /* #dcdae6 */
+    --muted-foreground: 248 10% 45%; /* #6c6a7a */
+    --accent: 342 57% 77%; /* #ed9dba */
+    --accent-foreground: 343 24% 24%; /* #4a2936 */
+    --destructive: 0 62% 61%; /* #f05a5a */
+    --destructive-foreground: 260 23% 97%; /* #f9f7fa */
+    --border: 259 17% 82%; /* #d0cce1 */
+    --input: 260 23% 92%; /* #ebe7f3 */
+    --ring: 260 23% 57%; /* #8a7fab */
     
     /* Custom chart colors */
-    --chart-1: 260.4000 22.9358% 57.2549%;
-    --chart-2: 342.4615 56.5217% 77.4510%;
-    --chart-3: 158.7692 31.4010% 59.4118%;
-    --chart-4: 35.7576 76.7442% 74.7059%;
-    --chart-5: 215.8209 54.4715% 75.8824%;
+    --chart-1: 260 23% 57%; /* #8a7fab - primary */
+    --chart-2: 342 57% 77%; /* #ed9dba - accent */
+    --chart-3: 159 31% 59%; /* #5da98a */
+    --chart-4: 36 77% 75%; /* #f5c266 */
+    --chart-5: 216 54% 76%; /* #7db0ed */
     
     /* Custom sidebar colors */
-    --sidebar: 260.0000 23.0769% 94.9020%;
-    --sidebar-foreground: 243.1579 13.6691% 27.2549%;
-    --sidebar-primary: 260.4000 22.9358% 57.2549%;
-    --sidebar-primary-foreground: 260 23.0769% 97.4510%;
-    --sidebar-accent: 342.4615 56.5217% 77.4510%;
-    --sidebar-accent-foreground: 343.4483 23.9669% 23.7255%;
-    --sidebar-border: 261.4286 18.4211% 85.0980%;
-    --sidebar-ring: 260.4000 22.9358% 57.2549%;
+    --sidebar: 260 23% 95%; /* #efeaf5 */
+    --sidebar-foreground: 243 14% 27%; /* #3d3c4f */
+    --sidebar-primary: 260 23% 57%; /* #8a7fab */
+    --sidebar-primary-foreground: 260 23% 97%; /* #f9f7fa */
+    --sidebar-accent: 342 57% 77%; /* #ed9dba */
+    --sidebar-accent-foreground: 343 24% 24%; /* #4a2936 */
+    --sidebar-border: 261 18% 85%; /* #d7d3e7 */
+    --sidebar-ring: 260 23% 57%; /* #8a7fab */
     
     /* Fonts */
-    --font-sans: 'Geist', sans-serif;
-    --font-serif: 'Lora', Georgia, serif;
-    --font-mono: 'Fira Code', 'Courier New', monospace;
+    --font-sans: 'Geist', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    --font-serif: system-ui, serif;
+    --font-mono: system-ui, monospace;
     
     /* Border radius */
     --radius: 0.5rem;
@@ -61,42 +62,43 @@
   }
 
   .dark {
-    --background: 250.9091 18.6441% 11.5686%;
-    --foreground: 250.0000 36.0000% 90.1961%;
-    --card: 251.2500 20% 15.6863%;
-    --card-foreground: 250.0000 36.0000% 90.1961%;
-    --popover: 251.2500 20% 15.6863%;
-    --popover-foreground: 250.0000 36.0000% 90.1961%;
-    --primary: 263.0769 32.5000% 68.6275%;
-    --primary-foreground: 250.9091 18.6441% 11.5686%;
-    --secondary: 254.4828 14.8718% 38.2353%;
-    --secondary-foreground: 250.0000 36.0000% 90.1961%;
-    --muted: 254.1176 20.9877% 15.8824%;
-    --muted-foreground: 258.9474 10.3825% 64.1176%;
-    --accent: 271.7647 15.5963% 21.3725%;
-    --accent-foreground: 345.5172 69.0476% 83.5294%;
-    --destructive: 0 68.6747% 67.4510%;
-    --destructive-foreground: 250.9091 18.6441% 11.5686%;
-    --border: 252 18.5185% 21.1765%;
-    --input: 249.4737 19.5876% 19.0196%;
-    --ring: 263.0769 32.5000% 68.6275%;
+    /* Primary Theme Colors - dark mode */
+    --background: 251 19% 12%; /* #1d1c2e */
+    --foreground: 250 36% 90%; /* #e1e0f1 */
+    --card: 251 20% 16%; /* #28273e */
+    --card-foreground: 250 36% 90%; /* #e1e0f1 */
+    --popover: 251 20% 16%; /* #28273e */
+    --popover-foreground: 250 36% 90%; /* #e1e0f1 */
+    --primary: 263 33% 69%; /* #a99edf */
+    --primary-foreground: 251 19% 12%; /* #1d1c2e */
+    --secondary: 254 15% 38%; /* #5a5779 */
+    --secondary-foreground: 250 36% 90%; /* #e1e0f1 */
+    --muted: 254 21% 16%; /* #28273f */
+    --muted-foreground: 259 10% 64%; /* #a09fb2 */
+    --accent: 272 16% 21%; /* #362e45 */
+    --accent-foreground: 346 69% 84%; /* #f6b3c8 */
+    --destructive: 0 69% 67%; /* #ff5a5a */
+    --destructive-foreground: 251 19% 12%; /* #1d1c2e */
+    --border: 252 19% 21%; /* #35334d */
+    --input: 249 20% 19%; /* #302e48 */
+    --ring: 263 33% 69%; /* #a99edf */
     
-    /* Custom chart colors */
-    --chart-1: 263.0769 32.5000% 68.6275%;
-    --chart-2: 345.5172 69.0476% 83.5294%;
-    --chart-3: 158.7692 31.4010% 59.4118%;
-    --chart-4: 35.7576 76.7442% 74.7059%;
-    --chart-5: 215.8209 54.4715% 75.8824%;
+    /* Custom chart colors - dark mode */
+    --chart-1: 263 33% 69%; /* #a99edf */
+    --chart-2: 346 69% 84%; /* #f6b3c8 */
+    --chart-3: 159 31% 59%; /* #5da98a */
+    --chart-4: 36 77% 75%; /* #f5c266 */
+    --chart-5: 216 54% 76%; /* #7db0ed */
     
-    /* Custom sidebar colors */
-    --sidebar: 252 20.0000% 9.8039%;
-    --sidebar-foreground: 250.0000 36.0000% 90.1961%;
-    --sidebar-primary: 263.0769 32.5000% 68.6275%;
-    --sidebar-primary-foreground: 250.9091 18.6441% 11.5686%;
-    --sidebar-accent: 271.7647 15.5963% 21.3725%;
-    --sidebar-accent-foreground: 345.5172 69.0476% 83.5294%;
-    --sidebar-border: 249.4737 19.5876% 19.0196%;
-    --sidebar-ring: 263.0769 32.5000% 68.6275%;
+    /* Custom sidebar colors - dark mode */
+    --sidebar: 252 20% 10%; /* #19182a */
+    --sidebar-foreground: 250 36% 90%; /* #e1e0f1 */
+    --sidebar-primary: 263 33% 69%; /* #a99edf */
+    --sidebar-primary-foreground: 251 19% 12%; /* #1d1c2e */
+    --sidebar-accent: 272 16% 21%; /* #362e45 */
+    --sidebar-accent-foreground: 346 69% 84%; /* #f6b3c8 */
+    --sidebar-border: 249 20% 19%; /* #302e48 */
+    --sidebar-ring: 263 33% 69%; /* #a99edf */
   }
 }
 
