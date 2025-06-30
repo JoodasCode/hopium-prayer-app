@@ -32,7 +32,26 @@ yarn-error.log*
 
 # TypeScript
 *.tsbuildinfo
+next-env.d.ts
 
 # IDE files
 .idea/
 .vscode/
+
+# Cache files
+.next/cache/
+**/*.pack.gz
+**/*.pack
+
+# Build manifests
+*-manifest.json
+app-build-manifest.json
+build-manifest.json
+fallback-build-manifest.json
+react-loadable-manifest.json
+
+# Trace files
+trace
+
+# Package files that shouldn't be tracked
+package-lock.json
