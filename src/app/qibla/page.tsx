@@ -12,7 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Switch } from '@/components/ui/switch';
 import { Slider } from '@/components/ui/slider';
 import { Badge } from '@/components/ui/badge';
-import { BottomNav } from '@/components/layout/BottomNav';
+import BottomNav from '@/components/shared/BottomNav';
 
 export default function QiblaFinderPage() {
   // State for qibla direction (in degrees from north)

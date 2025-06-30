@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Home, Calendar, User, MessageSquare, BarChart3 } from 'lucide-react';
+import { Home, Calendar, User, MessageSquare, BarChart3, Compass } from 'lucide-react';
 
 export default function BottomNav() {
   const pathname = usePathname();
@@ -10,6 +10,7 @@ export default function BottomNav() {
   const navItems = [
     { name: 'Home', href: '/', icon: Home },
     { name: 'Calendar', href: '/calendar', icon: Calendar },
+    { name: 'Qibla', href: '/qibla', icon: Compass },
     { name: 'Lopi', href: '/lopi', icon: MessageSquare },
     { name: 'Insights', href: '/insights', icon: BarChart3 },
     { name: 'Profile', href: '/profile', icon: User },
@@ -25,7 +26,7 @@ export default function BottomNav() {
               <Link 
                 key={item.name} 
                 href={item.href}
-                className={`flex flex-col items-center justify-center w-1/5 py-1 ${isActive ? 'text-primary' : 'text-muted-foreground'}`}
+                className={`flex flex-col items-center justify-center w-1/6 py-1 ${isActive ? 'text-primary' : 'text-muted-foreground'}`}
               >
                 <item.icon className="h-5 w-5 mb-1" />
                 <span className="text-xs">{item.name}</span>
