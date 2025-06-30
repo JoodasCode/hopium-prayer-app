@@ -5,8 +5,6 @@ import type { Database } from '../types/supabase';
 /**
  * Hook to access Supabase client
  */
-export function useSupabaseClient() {
-  return {
-    supabase: supabase as SupabaseClient<Database>
-  };
+export function useSupabaseClient(): SupabaseClient<Database> {
+  return supabase as SupabaseClient<Database>;
 }

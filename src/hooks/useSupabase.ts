@@ -82,17 +82,15 @@ export const usePrayerRecords = (userId: string | undefined, date: string) => {
     return data || [];
   };
   
-  const { data, isLoading, error } = useQuery(
-    ['prayer_records', userId, date],
-    fetchPrayerRecords,
-    {
-      enabled: !!userId,
-      staleTime: 5 * 60 * 1000, // 5 minutes
-    }
-  );
+  const { data, isLoading, error } = useQuery({
+    queryKey: ['prayer_records', userId, date],
+    queryFn: fetchPrayerRecords,
+    enabled: !!userId,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
   
-  const markPrayerCompleted = useMutation(
-    async ({ prayerId, completedTime, emotionalState, notes }: {
+  const markPrayerCompleted = useMutation({
+    mutationFn: async ({ prayerId, completedTime, emotionalState, notes }: {
       prayerId: string;
       completedTime: string;
       emotionalState?: string;
@@ -112,22 +110,20 @@ export const usePrayerRecords = (userId: string | undefined, date: string) => {
       if (error) throw error;
       return data;
     },
-    {
-      onSuccess: () => {
-        // Invalidate and refetch prayer records
-        queryClient.invalidateQueries(['prayer_records', userId, date]);
-        // Also invalidate user stats as they will be updated by the trigger
-        queryClient.invalidateQueries(['user_stats', userId]);
-      },
+    onSuccess: () => {
+      // Invalidate and refetch prayer records
+      queryClient.invalidateQueries({ queryKey: ['prayer_records', userId, date] });
+      // Also invalidate user stats as they will be updated by the trigger
+      queryClient.invalidateQueries({ queryKey: ['user_stats', userId] });
     }
-  );
+  });
   
   return {
     prayerRecords: data || [],
     isLoading,
     error,
     markPrayerCompleted: markPrayerCompleted.mutate,
-    isMarkingCompleted: markPrayerCompleted.isLoading,
+    isMarkingCompleted: markPrayerCompleted.isPending,
   };
 };
 
@@ -146,14 +142,12 @@ export const useUserStats = (userId: string | undefined) => {
     return data;
   };
   
-  const { data, isLoading, error } = useQuery(
-    ['user_stats', userId],
-    fetchUserStats,
-    {
-      enabled: !!userId,
-      staleTime: 5 * 60 * 1000, // 5 minutes
-    }
-  );
+  const { data, isLoading, error } = useQuery({
+    queryKey: ['user_stats', userId],
+    queryFn: fetchUserStats,
+    enabled: !!userId,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
   
   return {
     userStats: data,
@@ -179,17 +173,15 @@ export const useUserSettings = (userId: string | undefined) => {
     return data;
   };
   
-  const { data, isLoading, error } = useQuery(
-    ['user_settings', userId],
-    fetchUserSettings,
-    {
-      enabled: !!userId,
-      staleTime: 5 * 60 * 1000, // 5 minutes
-    }
-  );
+  const { data, isLoading, error } = useQuery({
+    queryKey: ['user_settings', userId],
+    queryFn: fetchUserSettings,
+    enabled: !!userId,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
   
-  const updateSettings = useMutation(
-    async (settings: any) => {
+  const updateSettings = useMutation({
+    mutationFn: async (settings: any) => {
       if (!userId) throw new Error('User ID is required');
       
       const { data, error } = await supabase
@@ -203,18 +195,16 @@ export const useUserSettings = (userId: string | undefined) => {
       if (error) throw error;
       return data;
     },
-    {
-      onSuccess: () => {
-        queryClient.invalidateQueries(['user_settings', userId]);
-      },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['user_settings', userId] });
     }
-  );
+  });
   
   return {
     settings: data,
     isLoading,
     error,
     updateSettings: updateSettings.mutate,
-    isUpdating: updateSettings.isLoading,
+    isUpdating: updateSettings.isPending,
   };
 };

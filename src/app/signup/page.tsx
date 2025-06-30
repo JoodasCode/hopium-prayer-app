@@ -9,17 +9,18 @@ import { Label } from '@/components/ui/label';
 import { toast } from '@/components/ui/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 
-export default function LoginPage() {
+export default function SignupPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [name, setName] = useState('');
   const router = useRouter();
-  const { signIn, isLoading, error } = useAuth();
+  const { signUp, isLoading, error } = useAuth();
 
-  const handleLogin = async (e: React.FormEvent) => {
+  const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
 
     try {
-      const result = await signIn(email, password);
+      const result = await signUp(email, password, name);
       
       if (!result) {
         // Error is handled by the useAuth hook and displayed below
@@ -28,32 +29,35 @@ export default function LoginPage() {
       
       // Redirect is handled by the useAuth hook
     } catch (err) {
-      console.error('Login error:', err);
+      console.error('Signup error:', err);
       toast({
-        title: 'Login failed',
+        title: 'Signup failed',
         description: 'An unexpected error occurred',
         variant: 'destructive'
       });
     }
   };
 
-  const handleDemoLogin = async () => {
-    // For demo purposes, we'll just redirect to onboarding
-    // In a real app, you would create a demo account or use a predefined one
-    setTimeout(() => {
-      router.push('/onboarding');
-    }, 1000);
-  };
-
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
-          <CardTitle className="text-2xl">Welcome to Hopium</CardTitle>
-          <CardDescription>Sign in to continue your prayer journey</CardDescription>
+          <CardTitle className="text-2xl">Create an Account</CardTitle>
+          <CardDescription>Join Hopium to start your prayer journey</CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleLogin} className="space-y-4">
+          <form onSubmit={handleSignup} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="name">Name</Label>
+              <Input
+                id="name"
+                type="text"
+                placeholder="Your name"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                required
+              />
+            </div>
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
               <Input
@@ -77,23 +81,15 @@ export default function LoginPage() {
               />
             </div>
             <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading ? 'Signing in...' : 'Sign In'}
+              {isLoading ? 'Creating account...' : 'Sign Up'}
             </Button>
           </form>
         </CardContent>
         <CardFooter className="flex flex-col space-y-4">
-          <Button 
-            variant="outline" 
-            className="w-full" 
-            onClick={handleDemoLogin}
-            disabled={isLoading}
-          >
-            Continue as Demo User
-          </Button>
           <div className="text-center text-sm text-muted-foreground">
-            Don't have an account?{' '}
-            <Button variant="link" className="p-0 h-auto" onClick={() => router.push('/signup')}>
-              Sign up
+            Already have an account?{' '}
+            <Button variant="link" className="p-0 h-auto" onClick={() => router.push('/login')}>
+              Sign in
             </Button>
           </div>
           

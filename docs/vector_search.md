@@ -2,7 +2,7 @@
 
 ## Overview
 
-This document describes the vector search functionality implemented for the Lopi AI assistant using Supabase's pgvector extension. The integration enables semantic search of the knowledge base using OpenAI embeddings.
+This document describes the vector search functionality implemented for the Lopi AI assistant using Supabase's pgvector extension. The integration enables semantic search of the knowledge base using OpenAI embeddings and personalized AI responses.
 
 ## Setup
 
@@ -120,7 +120,23 @@ $$;
 
 ## Frontend Integration
 
-The frontend uses the OpenAI API to generate embeddings and the Supabase client to store and search for knowledge.
+The frontend uses the OpenAI API to generate embeddings and the Supabase client to store and search for knowledge. A dedicated `useSupabaseClient` hook provides a properly typed Supabase client to avoid circular dependencies.
+
+### Supabase Client Hook
+
+```typescript
+// src/hooks/useSupabaseClient.ts
+import { supabase } from '../lib/supabase';
+import { SupabaseClient } from '@supabase/supabase-js';
+import type { Database } from '../types/supabase';
+
+/**
+ * Hook to access Supabase client
+ */
+export function useSupabaseClient(): SupabaseClient<Database> {
+  return supabase as SupabaseClient<Database>;
+}
+```
 
 ### Generating Embeddings
 
@@ -157,22 +173,30 @@ async function storeKnowledge(topic: string, content: string, source?: string, t
 ### Searching Knowledge with Embeddings
 
 ```typescript
-async function searchKnowledge(query: string, limit = 5): Promise<Array<{
+async function searchKnowledge(
+  query: string, 
+  customSupabase?: SupabaseClient<Database>,
+  limit = 5
+): Promise<Array<{
   id: string;
   topic: string;
   content: string;
   similarity: number;
 }>> {
+  // Get Supabase client
+  const client = customSupabase || supabaseClient;
+  
   // Generate embedding for the query
-  const embedding = await generateEmbedding(query);
+  const embedding = await generateEmbedding(query, client);
 
   // Search using vector similarity
-  const { data } = await supabase.rpc('search_knowledge_with_vectors', {
+  const { data, error } = await client.rpc('search_knowledge_with_embedding', {
     query_embedding: embedding,
     match_threshold: 0.7,
     match_count: limit,
   });
 
+  if (error) throw error;
   return data || [];
 }
 ```
@@ -192,9 +216,83 @@ node scripts/test-vector-search.js store
 node scripts/test-vector-search.js search "benefits of prayer"
 ```
 
+## AI Assistant Integration
+
+### Personalized Responses
+
+The Lopi AI assistant now uses vector search to provide context-aware responses and personalizes them using the user's display name:
+
+```typescript
+// src/app/lopi/page.tsx (excerpt)
+const handleSendMessage = async () => {
+  // ...
+  try {
+    // Get context from knowledge base using vector search
+    const searchResults = await searchKnowledge(userMessage.content, supabase);
+    
+    // If we have context from vector search, enhance the response
+    if (searchResults && searchResults.length > 0) {
+      const knowledgeSnippet = searchResults[0].content.substring(0, 150) + '...';
+      responseContent += '\n\n*Based on our knowledge base:* ' + knowledgeSnippet;
+    }
+    
+    // Personalize the response if we have the user's name
+    if (userProfile?.display_name) {
+      // Add personalized touches to the response at appropriate points
+      if (Math.random() > 0.7) { // Only add name sometimes to avoid being repetitive
+        if (responseContent.includes('\n\n')) {
+          // Add name before a paragraph break
+          responseContent = responseContent.replace('\n\n', `, ${userProfile.display_name}.\n\n`);
+        } else {
+          // Add at the beginning if no good spot found
+          responseContent = `${userProfile.display_name}, ${responseContent.charAt(0).toLowerCase()}${responseContent.slice(1)}`;
+        }
+      }
+    }
+  }
+  // ...
+}
+```
+
+### Knowledge Search Component
+
+A dedicated `KnowledgeSearch` component allows users to search the knowledge base directly:
+
+```typescript
+// src/components/KnowledgeSearch.tsx (excerpt)
+export default function KnowledgeSearch() {
+  // ...
+  const supabase = useSupabaseClient();
+
+  const handleSearch = async (e: React.FormEvent) => {
+    // ...
+    try {
+      const searchResults = await searchKnowledge(query, supabase);
+      setResults(searchResults);
+    } catch (err) {
+      console.error('Error searching knowledge:', err);
+      setError('Failed to search knowledge base. Please try again.');
+    }
+    // ...
+  };
+  // ...
+}
+```
+
+## Admin Interface
+
+A knowledge management admin interface has been implemented to:
+
+1. Add new knowledge entries with automatic embedding generation
+2. Regenerate embeddings for existing entries
+3. Test vector search functionality
+4. Tag and categorize knowledge entries
+
 ## Next Steps
 
-1. Implement a scheduled job to generate embeddings for new knowledge entries
-2. Add a UI for knowledge management with embedding generation
-3. Monitor and optimize vector search performance
+1. ✅ Implement a UI for knowledge management with embedding generation
+2. ✅ Integrate vector search with the AI assistant
+3. ✅ Add personalization using user display names
 4. Implement caching for frequently accessed knowledge
+5. Add analytics to track most useful knowledge entries
+6. Implement user onboarding to collect preferred display names

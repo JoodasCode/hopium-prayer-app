@@ -17,7 +17,7 @@ export default function KnowledgeSearch() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   
-  const { supabase } = useSupabaseClient();
+  const supabase = useSupabaseClient();
 
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();

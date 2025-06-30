@@ -15,6 +15,8 @@ import { Progress } from '@/components/ui/progress';
 import { useSupabaseClient } from '@/hooks/useSupabaseClient';
 import { toast } from '@/components/ui/use-toast';
 import { Database } from '@/types/supabase';
+import { useAuth } from '@/hooks/useAuth';
+import { useUserState } from '@/contexts/UserStateContext';
 
 // Import types
 import { OnboardingState, ThemeOption } from './types';
@@ -52,6 +54,8 @@ export default function OnboardingContainer() {
   
   const supabase = useSupabaseClient<Database>();
   const router = useRouter();
+  const { updateProfile } = useAuth();
+  const { refreshUserState } = useUserState();
   
   // Fetch user ID and onboarding state on mount
   useEffect(() => {
@@ -234,16 +238,11 @@ export default function OnboardingContainer() {
       }
       
       // Mark onboarding as completed
-      const { error } = await supabase
-        .from('user_onboarding')
-        .update({
-          completed: true,
-          completed_at: new Date().toISOString()
-        })
-        .eq('user_id', userId);
+      const success = await updateProfile({
+        onboarding_completed: true
+      });
       
-      if (error) {
-        console.error('Error completing onboarding:', error);
+      if (!success) {
         toast({
           title: 'Error completing onboarding',
           description: 'Please try again',
@@ -251,6 +250,9 @@ export default function OnboardingContainer() {
         });
         return;
       }
+      
+      // Refresh user state to reflect completed onboarding
+      await refreshUserState();
       
       // Show success message
       toast({

@@ -8,6 +8,8 @@ import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { ArrowLeft, Send, Mic, Image, Sparkles } from 'lucide-react';
 import BottomNav from '@/components/shared/BottomNav';
+import { searchKnowledge } from '../../lib/ai';
+import { useSupabaseClient } from '../../hooks/useSupabaseClient';
 
 type Message = {
   id: string;
@@ -39,24 +41,63 @@ const sampleResponses: Record<string, string> = {
 };
 
 export default function LopiPage() {
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: '1',
-      content: 'Assalamu alaikum! I\'m Lopi, your prayer companion. How can I assist you on your spiritual journey today?',
-      role: 'assistant',
-      timestamp: new Date()
-    }
-  ]);
+  const [messages, setMessages] = useState<Message[]>([]);
   const [inputValue, setInputValue] = useState('');
   const [isTyping, setIsTyping] = useState(false);
+  const [userProfile, setUserProfile] = useState<{ display_name?: string } | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  // Get the properly typed Supabase client
+  const supabase = useSupabaseClient();
+  
+  // Fetch user profile on component mount
+  useEffect(() => {
+    async function fetchUserProfile() {
+      try {
+        // Get current user
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          // Fetch user profile
+          const { data: profile } = await supabase
+            .from('users')
+            .select('display_name')
+            .eq('id', user.id)
+            .single();
+          
+          setUserProfile(profile);
+          
+          // Create personalized welcome message
+          const greeting = profile?.display_name 
+            ? `Assalamu alaikum, ${profile.display_name}! I'm Lopi, your prayer companion.` 
+            : "Assalamu alaikum! I'm Lopi, your prayer companion.";
+            
+          setMessages([{
+            id: '1',
+            content: `${greeting} How can I assist you on your spiritual journey today?`,
+            role: 'assistant',
+            timestamp: new Date()
+          }]);
+        }
+      } catch (error) {
+        console.error('Error fetching user profile:', error);
+        // Set default welcome message if profile fetch fails
+        setMessages([{
+          id: '1',
+          content: "Assalamu alaikum! I'm Lopi, your prayer companion. How can I assist you on your spiritual journey today?",
+          role: 'assistant',
+          timestamp: new Date()
+        }]);
+      }
+    }
+    
+    fetchUserProfile();
+  }, [supabase]);
   
   // Auto-scroll to bottom of messages
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
   
-  const handleSendMessage = () => {
+  const handleSendMessage = async () => {
     if (!inputValue.trim()) return;
     
     // Add user message
@@ -71,15 +112,40 @@ export default function LopiPage() {
     setInputValue('');
     setIsTyping(true);
     
-    // Simulate AI response after a delay
-    setTimeout(() => {
+    try {
+      // Default response if no context is found
       let responseContent = "I understand your question about prayer. Let me share some thoughts on this topic...";
       
-      // Check if we have a predefined response
+      // Check if we have a predefined response for demo purposes
       for (const [question, answer] of Object.entries(sampleResponses)) {
         if (userMessage.content.toLowerCase().includes(question.toLowerCase().substring(0, 10))) {
           responseContent = answer;
           break;
+        }
+      }
+      
+      // Get context from knowledge base using vector search
+      const searchResults = await searchKnowledge(userMessage.content, supabase);
+      
+      // If we have context from vector search, enhance the response
+      if (searchResults && searchResults.length > 0) {
+        // In a real implementation, you would send this context to an LLM API
+        // For now, we'll just append some of the knowledge to our response
+        const knowledgeSnippet = searchResults[0].content.substring(0, 150) + '...';
+        responseContent += '\n\n*Based on our knowledge base:* ' + knowledgeSnippet;
+      }
+      
+      // Personalize the response if we have the user's name
+      if (userProfile?.display_name) {
+        // Add personalized touches to the response at appropriate points
+        if (Math.random() > 0.7) { // Only add name sometimes to avoid being repetitive
+          if (responseContent.includes('\n\n')) {
+            // Add name before a paragraph break
+            responseContent = responseContent.replace('\n\n', `, ${userProfile.display_name}.\n\n`);
+          } else {
+            // Add at the beginning if no good spot found
+            responseContent = `${userProfile.display_name}, ${responseContent.charAt(0).toLowerCase()}${responseContent.slice(1)}`;
+          }
         }
       }
       
@@ -91,8 +157,21 @@ export default function LopiPage() {
       };
       
       setMessages(prev => [...prev, aiResponse]);
+    } catch (error) {
+      console.error('Error getting AI response:', error);
+      
+      // Fallback response in case of error
+      const errorResponse: Message = {
+        id: Date.now().toString(),
+        content: "I'm sorry, I encountered an issue while searching our knowledge base. Please try again later.",
+        role: 'assistant',
+        timestamp: new Date()
+      };
+      
+      setMessages(prev => [...prev, errorResponse]);
+    } finally {
       setIsTyping(false);
-    }, 1500);
+    }
   };
   
   const handleKeyPress = (e: React.KeyboardEvent) => {

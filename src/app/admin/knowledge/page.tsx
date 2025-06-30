@@ -25,7 +25,7 @@ export default function KnowledgeAdmin() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   
-  const { supabase } = useSupabaseClient();
+  const supabase = useSupabaseClient();
 
   useEffect(() => {
     fetchEntries();

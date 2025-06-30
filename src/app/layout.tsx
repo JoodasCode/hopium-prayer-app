@@ -3,12 +3,13 @@ import { Inter } from 'next/font/google';
 import '@/app/globals.css';
 import { ThemeProvider } from '@/components/theme-provider';
 import { Toaster } from '@/components/ui/toaster';
+import { UserStateProvider } from "@/contexts/UserStateContext";
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-sans' });
 
 export const metadata: Metadata = {
   title: 'Hopium Prayer App',
-  description: 'A PWA for Muslim prayer tracking with emotional design and AI assistance',
+  description: 'Track your prayers, build consistency, and deepen your spiritual connection.',
 };
 
 export default function RootLayout({
@@ -20,8 +21,10 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <body className={`${inter.variable} font-sans`}>
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-          {children}
-          <Toaster />
+          <UserStateProvider>
+            {children}
+            <Toaster />
+          </UserStateProvider>
         </ThemeProvider>
       </body>
     </html>
