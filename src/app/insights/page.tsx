@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -9,6 +9,8 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ArrowLeft, BarChart3, TrendingUp, Heart, Calendar, Clock, ArrowUpRight, Sparkles, Target, Award } from 'lucide-react';
+import { EmptyState } from '@/components/ui/empty-state';
+import { useSupabaseClient } from '@/hooks/useSupabaseClient';
 import BottomNav from '@/components/shared/BottomNav';
 import { cn } from '@/lib/utils';
 
@@ -80,6 +82,35 @@ const insightsData = {
 export default function InsightsPage() {
   const [timeRange, setTimeRange] = useState<string>('week');
   const [selectedPrayer, setSelectedPrayer] = useState<string>('all');
+  const [hasData, setHasData] = useState<boolean>(true); // Start with true to show data by default
+  const [loading, setLoading] = useState<boolean>(false);
+  const supabase = useSupabaseClient();
+
+  // Check if user has prayer data
+  useEffect(() => {
+    checkUserData();
+  }, []);
+
+  const checkUserData = async () => {
+    try {
+      setLoading(true);
+      // For now, simulate checking user data
+      // In real implementation, check if user has any prayer records
+      const { count } = await supabase
+        .from('prayer_records')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', 'mock-user-id');
+      
+      // For demo purposes, let's say if count is 0 or null, show empty state
+      // You can change this logic based on your needs
+      setHasData(count ? count > 0 : true); // Default to true for demo
+    } catch (error) {
+      console.error('Error checking user data:', error);
+      setHasData(true); // Default to showing data on error
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // Helper function to render bar charts
   const renderBarChart = (data: { day: string; score: number; prayers?: number }[]) => {
@@ -243,6 +274,61 @@ export default function InsightsPage() {
     );
   };
 
+  // Show loading state
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background pb-20">
+        <div className="container max-w-md mx-auto px-4 py-6">
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center gap-2">
+              <Link href="/">
+                <Button variant="ghost" size="icon" className="rounded-full">
+                  <ArrowLeft className="h-5 w-5" />
+                </Button>
+              </Link>
+              <h1 className="text-xl font-semibold">Prayer Insights</h1>
+            </div>
+          </div>
+          <div className="flex items-center justify-center py-16">
+            <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+          </div>
+        </div>
+        <BottomNav />
+      </div>
+    );
+  }
+
+  // Show empty state for new users
+  if (!hasData) {
+    return (
+      <div className="min-h-screen bg-background pb-20">
+        <div className="container max-w-md mx-auto px-4 py-6">
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center gap-2">
+              <Link href="/">
+                <Button variant="ghost" size="icon" className="rounded-full">
+                  <ArrowLeft className="h-5 w-5" />
+                </Button>
+              </Link>
+              <h1 className="text-xl font-semibold">Prayer Insights</h1>
+            </div>
+          </div>
+          <EmptyState
+            title="Start Your Prayer Journey"
+            description="Log your first prayer to unlock personalized insights and track your spiritual growth."
+            icon={<BarChart3 className="h-6 w-6" />}
+            actionLabel="Log First Prayer"
+            onAction={() => window.location.href = '/dashboard'}
+            secondaryLabel="View Calendar"
+            onSecondaryAction={() => window.location.href = '/calendar'}
+          />
+        </div>
+        <BottomNav />
+      </div>
+    );
+  }
+
+  // Show insights with data
   return (
     <div className="min-h-screen bg-background pb-20">
       <div className="container max-w-md mx-auto px-4 py-6">

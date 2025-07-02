@@ -86,7 +86,12 @@ export function SmartTip() {
               <Button variant="outline" size="sm" onClick={handleNextTip} className="h-7 text-xs">
                 Next insight
               </Button>
-              <Button variant="link" size="sm" className="text-xs p-0 h-auto">
+              <Button 
+                variant="link" 
+                size="sm" 
+                className="text-xs p-0 h-auto"
+                onClick={() => window.location.href = '/insights'}
+              >
                 View prayer insights
               </Button>
             </div>

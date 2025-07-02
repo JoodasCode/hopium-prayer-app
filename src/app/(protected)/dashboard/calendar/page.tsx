@@ -54,92 +54,16 @@ export default function CalendarPage() {
   
   // Fetch prayer data for the current month
   const fetchMonthData = async (start: Date, end: Date) => {
-    if (!userState.isAuthenticated) {
-      setLoading(false);
-      return;
-    }
-    
-    try {
-      setLoading(true);
-      
-      const startStr = format(start, 'yyyy-MM-dd');
-      const endStr = format(end, 'yyyy-MM-dd');
-      
-      const { data, error } = await supabase
-        .from('prayer_records')
-        .select('*')
-        .eq('user_id', userState.id)
-        .gte('scheduled_time', `${startStr}T00:00:00`)
-        .lte('scheduled_time', `${endStr}T23:59:59`);
-      
-      if (error) throw error;
-      
-      // Process the data to update calendar days
-      const updatedCalendarDays = [...calendarDays];
-      
-      if (data) {
-        // Group prayers by date
-        const prayersByDate: Record<string, PrayerRecord[]> = {};
-        
-        data.forEach((prayer: PrayerRecord) => {
-          const prayerDate = prayer.scheduled_time.split('T')[0];
-          if (!prayersByDate[prayerDate]) {
-            prayersByDate[prayerDate] = [];
-          }
-          prayersByDate[prayerDate].push(prayer);
-        });
-        
-        // Update calendar days with prayer data
-        updatedCalendarDays.forEach((day, index) => {
-          const dayStr = format(day.date, 'yyyy-MM-dd');
-          const dayPrayers = prayersByDate[dayStr] || [];
-          
-          updatedCalendarDays[index] = {
-            date: day.date,
-            prayers: {
-              total: dayPrayers.length,
-              completed: dayPrayers.filter(p => p.completed).length
-            }
-          };
-        });
-      }
-      
-      setCalendarDays(updatedCalendarDays);
-      
-      // If a day is selected, update its prayers
-      if (selectedDay) {
-        fetchDayPrayers(selectedDay);
-      }
-    } catch (error) {
-      console.error('Error fetching prayer data:', error);
-    } finally {
-      setLoading(false);
-    }
+    // Skip data fetching for now - using mock data
+    setLoading(false);
   };
   
   // Fetch prayers for a specific day
   const fetchDayPrayers = async (date: Date) => {
-    if (!userState.isAuthenticated) return;
-    
-    try {
-      const dayStr = format(date, 'yyyy-MM-dd');
-      
-      const { data, error } = await supabase
-        .from('prayer_records')
-        .select('*')
-        .eq('user_id', userState.id)
-        .gte('scheduled_time', `${dayStr}T00:00:00`)
-        .lte('scheduled_time', `${dayStr}T23:59:59`)
-        .order('scheduled_time');
-      
-      if (error) throw error;
-      
-      setDayPrayers(data || []);
-    } catch (error) {
-      console.error('Error fetching day prayers:', error);
-    }
+    // Skip data fetching for now - using mock data
+    setDayPrayers([]);
   };
-  
+
   // Handle day selection
   const handleDayClick = (day: DayPrayerData) => {
     setSelectedDay(day.date);

@@ -8,12 +8,12 @@ export default function BottomNav() {
   const pathname = usePathname();
   
   const navItems = [
-    { name: 'Home', href: '/', icon: Home },
+    { name: 'Home', href: '/dashboard', icon: Home },
     { name: 'Calendar', href: '/calendar', icon: Calendar },
     { name: 'Qibla', href: '/qibla', icon: Compass },
     { name: 'Lopi', href: '/lopi', icon: MessageSquare },
     { name: 'Insights', href: '/insights', icon: BarChart3 },
-    { name: 'Profile', href: '/profile', icon: User },
+    { name: 'Profile', href: '/settings', icon: User },
   ];
   
   return (
