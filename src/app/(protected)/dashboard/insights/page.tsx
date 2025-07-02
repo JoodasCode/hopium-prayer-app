@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useSupabaseClient } from '@/hooks/useSupabaseClient';
-import { useUserState } from '@/contexts/UserStateContext';
+// Removed UserStateContext dependency
 import { EmptyState } from '@/components/ui/empty-state';
 import { SampleInsights } from '@/components/ui/sample-data';
 import { BarChart, Calendar, TrendingUp } from 'lucide-react';
@@ -24,7 +24,7 @@ export default function InsightsPage() {
   const [stats, setStats] = useState<PrayerStats | null>(null);
   
   const supabase = useSupabaseClient();
-  const { userState } = useUserState();
+  // Simplified insights page
   
   useEffect(() => {
     if (userState.isAuthenticated) {

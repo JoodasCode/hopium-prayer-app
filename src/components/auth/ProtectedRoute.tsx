@@ -1,68 +1,67 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
+import { useSupabaseClient } from '@/hooks/useSupabaseClient';
+import { Loader2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { useUserState } from '@/contexts/UserStateContext';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
-  requireAuth?: boolean;
-  requireOnboarding?: boolean;
 }
 
 /**
- * ProtectedRoute component to handle authentication and onboarding redirects
- * 
- * @param children - The content to render if conditions are met
- * @param requireAuth - If true, redirects to login if user is not authenticated
- * @param requireOnboarding - If true, redirects to onboarding if user hasn't completed it
+ * Simple ProtectedRoute with direct Supabase auth check
+ * No UserStateContext dependency
  */
-export function ProtectedRoute({ 
-  children, 
-  requireAuth = true, 
-  requireOnboarding = false 
-}: ProtectedRouteProps) {
-  const { userState } = useUserState();
+export default function ProtectedRoute({ children }: ProtectedRouteProps) {
+  const [isLoading, setIsLoading] = useState(true);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const supabase = useSupabaseClient();
   const router = useRouter();
-  
+
   useEffect(() => {
-    // Wait until auth state is loaded
-    if (userState.isLoading) return;
-    
-    // Handle authentication requirement
-    if (requireAuth && !userState.isAuthenticated) {
-      router.push('/login');
-      return;
-    }
-    
-    // Handle onboarding requirement
-    if (requireOnboarding && !userState.isOnboardingCompleted && userState.isAuthenticated) {
-      router.push('/onboarding');
-      return;
-    }
-    
-    // Redirect completed onboarding users away from onboarding page
-    const isOnboardingPage = window.location.pathname.includes('/onboarding');
-    if (isOnboardingPage && userState.isOnboardingCompleted && userState.isAuthenticated) {
-      router.push('/');
-      return;
-    }
-  }, [userState.isLoading, userState.isAuthenticated, userState.isOnboardingCompleted, requireAuth, requireOnboarding, router]);
-  
-  // Show nothing while loading or redirecting
-  if (userState.isLoading) {
-    return null;
+    const checkAuth = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        
+        if (!session) {
+          router.push('/login');
+          return;
+        }
+        
+        setIsAuthenticated(true);
+      } catch (error) {
+        console.error('Auth check failed:', error);
+        router.push('/login');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    checkAuth();
+  }, [supabase, router]);
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4" />
+          <p className="text-muted-foreground">Loading...</p>
+        </div>
+      </div>
+    );
   }
-  
-  // Show nothing if authentication is required but user is not authenticated
-  if (requireAuth && !userState.isAuthenticated) {
-    return null;
+
+  if (!isAuthenticated) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4" />
+          <p className="text-muted-foreground">Redirecting...</p>
+        </div>
+      </div>
+    );
   }
-  
-  // Show nothing if onboarding is required but user hasn't completed it
-  if (requireOnboarding && !userState.isOnboardingCompleted && userState.isAuthenticated) {
-    return null;
-  }
-  
+
   return <>{children}</>;
 }

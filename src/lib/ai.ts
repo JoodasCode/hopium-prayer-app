@@ -2,10 +2,20 @@ import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import { OpenAI } from 'openai';
 import type { Database } from '../types/supabase';
 
-// Initialize OpenAI client
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
+// Lazy-load OpenAI client to avoid initialization errors
+let openai: OpenAI | null = null;
+
+const getOpenAIClient = () => {
+  if (!openai) {
+    const apiKey = process.env.OPENAI_API_KEY;
+    if (!apiKey) {
+      console.warn('OPENAI_API_KEY not found - AI features will be disabled');
+      return null;
+    }
+    openai = new OpenAI({ apiKey });
+  }
+  return openai;
+};
 
 // Initialize Supabase client
 const supabaseClient = createClient<Database>(
@@ -18,7 +28,12 @@ const supabaseClient = createClient<Database>(
  */
 export async function generateEmbedding(text: string, customSupabase?: SupabaseClient<Database>): Promise<number[]> {
   try {
-    const response = await openai.embeddings.create({
+    const client = getOpenAIClient();
+    if (!client) {
+      throw new Error('OpenAI client not available - check API key configuration');
+    }
+    
+    const response = await client.embeddings.create({
       model: 'text-embedding-ada-002',
       input: text,
     });

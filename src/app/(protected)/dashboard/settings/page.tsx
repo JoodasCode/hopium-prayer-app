@@ -8,19 +8,19 @@ import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from '@/components/ui/use-toast';
-import { useUserState } from '@/contexts/UserStateContext';
+// Removed UserStateContext dependency
 import { useAuth } from '@/hooks/useAuth';
 
 export default function SettingsPage() {
-  const { userState } = useUserState();
+  // Simplified settings page
   const { updateProfile } = useAuth();
   const [loading, setLoading] = useState(false);
   
   // Form state
-  const [name, setName] = useState(userState.name || '');
-  const [calculationMethod, setCalculationMethod] = useState(userState.calculationMethod || 'mwl');
-  const [hijriOffset, setHijriOffset] = useState(userState.hijriOffset?.toString() || '0');
-  const [notificationsEnabled, setNotificationsEnabled] = useState(userState.notificationsEnabled);
+  const [name, setName] = useState('');
+  const [calculationMethod, setCalculationMethod] = useState('mwl');
+  const [hijriOffset, setHijriOffset] = useState('0');
+  const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -86,7 +86,7 @@ export default function SettingsPage() {
                 <Label htmlFor="email">Email</Label>
                 <Input 
                   id="email" 
-                  value={userState.email} 
+                  value="user@example.com" 
                   disabled 
                   placeholder="Your email"
                 />

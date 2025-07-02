@@ -37,13 +37,7 @@ export default function LoginPage() {
     }
   };
 
-  const handleDemoLogin = async () => {
-    // For demo purposes, we'll just redirect to onboarding
-    // In a real app, you would create a demo account or use a predefined one
-    setTimeout(() => {
-      router.push('/onboarding');
-    }, 1000);
-  };
+
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
@@ -82,14 +76,6 @@ export default function LoginPage() {
           </form>
         </CardContent>
         <CardFooter className="flex flex-col space-y-4">
-          <Button 
-            variant="outline" 
-            className="w-full" 
-            onClick={handleDemoLogin}
-            disabled={isLoading}
-          >
-            Continue as Demo User
-          </Button>
           <div className="text-center text-sm text-muted-foreground">
             Don't have an account?{' '}
             <Button variant="link" className="p-0 h-auto" onClick={() => router.push('/signup')}>
