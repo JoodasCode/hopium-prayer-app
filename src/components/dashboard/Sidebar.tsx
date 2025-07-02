@@ -8,13 +8,13 @@ import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { Home, Calendar, BarChart, Settings, Menu, BookOpen, MessageSquare } from 'lucide-react';
-import { useUserState } from '@/contexts/UserStateContext';
+// Removed UserStateContext dependency
 
 interface SidebarProps extends React.HTMLAttributes<HTMLDivElement> {}
 
 export function Sidebar({ className }: SidebarProps) {
   const pathname = usePathname();
-  const { userState } = useUserState();
+  // Simplified sidebar
   const [open, setOpen] = useState(false);
   
   const routes = [

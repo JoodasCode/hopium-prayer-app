@@ -2,17 +2,15 @@
 
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { useSupabaseClient } from '@/hooks/useSupabaseClient';
+import { useRouter } from 'next/navigation';
 import { User } from '@supabase/supabase-js';
 
-// Define the user state interface
+// Simplified user state interface - removed data threshold logic
 export interface UserState {
   user: User | null;
   isLoading: boolean;
   isAuthenticated: boolean;
   isOnboardingCompleted: boolean;
-  hasPrayerData: boolean;
-  dataThreshold: 'none' | 'minimal' | 'sufficient';
-  lastVisited: string | null;
   preferences: {
     theme: string;
     calculationMethod: string;
@@ -36,9 +34,6 @@ const UserStateContext = createContext<UserStateContextType>({
     isLoading: true,
     isAuthenticated: false,
     isOnboardingCompleted: false,
-    hasPrayerData: false,
-    dataThreshold: 'none',
-    lastVisited: null,
     preferences: {
       theme: 'light',
       calculationMethod: 'mwl',
@@ -54,14 +49,12 @@ const UserStateContext = createContext<UserStateContextType>({
 // Provider component
 export function UserStateProvider({ children }: { children: ReactNode }) {
   const supabase = useSupabaseClient();
+  const router = useRouter();
   const [userState, setUserState] = useState<UserState>({
     user: null,
     isLoading: true,
     isAuthenticated: false,
     isOnboardingCompleted: false,
-    hasPrayerData: false,
-    dataThreshold: 'none',
-    lastVisited: null,
     preferences: {
       theme: 'light',
       calculationMethod: 'mwl',
@@ -75,18 +68,15 @@ export function UserStateProvider({ children }: { children: ReactNode }) {
     setUserState((prev) => ({ ...prev, ...updates }));
   };
 
-  // Determine data threshold based on prayer records count
-  const determineDataThreshold = (count: number): 'none' | 'minimal' | 'sufficient' => {
-    if (count === 0) return 'none';
-    if (count < 21) return 'minimal'; // Less than 3 days (7 prayers per day)
-    return 'sufficient'; // 7+ days of data
-  };
 
-  // Refresh user state from Supabase
+
+  // Simplified refresh user state from Supabase
   const refreshUserState = async () => {
+    console.log('🔄 RefreshUserState called');
     try {
       // Get current session
       const { data: { session } } = await supabase.auth.getSession();
+      console.log('🔑 Session:', session ? 'Found' : 'None');
       
       if (!session) {
         updateUserState({
@@ -100,51 +90,30 @@ export function UserStateProvider({ children }: { children: ReactNode }) {
       const user = session.user;
       
       // Get user profile data
-      const { data: profile } = await supabase
+      console.log('🔍 RefreshUserState - Fetching profile for user:', user.id);
+      const { data: profile, error: profileError } = await supabase
         .from('users')
-        .select('*')
+        .select('onboarding_completed')
         .eq('id', user.id)
         .single();
 
-      // Count prayer records
-      const { count } = await supabase
-        .from('prayer_records')
-        .select('*', { count: 'exact', head: true })
-        .eq('user_id', user.id);
+      console.log('📋 RefreshUserState - Profile data:', profile);
+      console.log('❌ RefreshUserState - Profile error:', profileError);
 
-      // Get last visited timestamp
-      const { data: analytics } = await supabase
-        .from('app_analytics')
-        .select('timestamp')
-        .eq('user_id', user.id)
-        .eq('event', 'app_visit')
-        .order('timestamp', { ascending: false })
-        .limit(1)
-        .single();
-
-      // Update last visited in analytics
-      await supabase
-        .from('app_analytics')
-        .insert({
-          user_id: user.id,
-          event: 'app_visit',
-          timestamp: new Date().toISOString(),
-        });
-
-      // Update user state
+      const isOnboardingCompleted = profile?.onboarding_completed || false;
+      console.log('✅ RefreshUserState - isOnboardingCompleted:', isOnboardingCompleted);
+      
+      // Update user state (simplified - no prayer data counting)
       updateUserState({
         user,
         isLoading: false,
         isAuthenticated: true,
-        isOnboardingCompleted: profile?.onboarding_completed || false,
-        hasPrayerData: count ? count > 0 : false,
-        dataThreshold: determineDataThreshold(count || 0),
-        lastVisited: analytics?.timestamp || null,
+        isOnboardingCompleted,
         preferences: {
-          theme: profile?.theme || 'light',
-          calculationMethod: profile?.calculation_method || 'mwl',
-          notifications: profile?.notifications_enabled || true,
-          hijriOffset: profile?.hijri_offset || 0,
+          theme: 'light',
+          calculationMethod: 'mwl',
+          notifications: true,
+          hijriOffset: 0,
         },
       });
     } catch (error) {
@@ -163,9 +132,6 @@ export function UserStateProvider({ children }: { children: ReactNode }) {
       user: null,
       isAuthenticated: false,
       isOnboardingCompleted: false,
-      hasPrayerData: false,
-      dataThreshold: 'none',
-      lastVisited: null,
     });
   };
 
@@ -184,8 +150,6 @@ export function UserStateProvider({ children }: { children: ReactNode }) {
             isLoading: false,
             isAuthenticated: false,
             isOnboardingCompleted: false,
-            hasPrayerData: false,
-            dataThreshold: 'none',
           });
         }
       }

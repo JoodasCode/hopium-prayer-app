@@ -8,8 +8,7 @@ import { StreakOverview } from './StreakOverview';
 import { CommunityPresence } from './CommunityPresence';
 import { KnowledgeSearchCard } from './KnowledgeSearchCard';
 import { prayers, getNextPrayer, type Prayer } from './data';
-import { useUserState } from '@/contexts/UserStateContext';
-import { useUserExperience } from '@/hooks/useUserExperience';
+// Removed UserStateContext dependency for cleaner auth flow
 import { EmptyState } from '@/components/ui/empty-state';
 import { SamplePrayerSchedule, SampleInsights } from '@/components/ui/sample-data';
 import { BookOpen, Calendar, BarChart3 } from 'lucide-react';
@@ -17,8 +16,9 @@ import { BookOpen, Calendar, BarChart3 } from 'lucide-react';
 export function Dashboard() {
   // Core state for prayer tracking
   const [completedPrayers, setCompletedPrayers] = useState<string[]>([]);
-  const { userState } = useUserState();
-  const { experienceType, showEmptyState, welcomeMessage, isFirstVisitToday, isReturningAfterAbsence } = useUserExperience();
+  // Simplified dashboard without complex user state management
+  const welcomeMessage = 'Welcome back, Yaler';
+  const showEmptyState = false; // Always show full dashboard
   
   // Use mock data for now, will be replaced with actual user data from Supabase
   const [currentStreak, setCurrentStreak] = useState<number>(3);
@@ -51,16 +51,9 @@ export function Dashboard() {
     return (
       <div className="mb-6">
         <h1 className="text-2xl font-bold">{welcomeMessage}</h1>
-        {isReturningAfterAbsence && (
-          <p className="text-muted-foreground mt-2">
-            It's been a while! Let's get back to your spiritual journey.
-          </p>
-        )}
-        {isFirstVisitToday && !isReturningAfterAbsence && userState.isAuthenticated && (
-          <p className="text-muted-foreground mt-2">
-            Today is a new opportunity for connection and growth.
-          </p>
-        )}
+        <p className="text-muted-foreground mt-2">
+          Today is a new opportunity for connection and growth.
+        </p>
       </div>
     );
   };
@@ -105,7 +98,7 @@ export function Dashboard() {
   }
   
   // Show minimal experience for users with limited data
-  if (userState.dataThreshold === 'minimal') {
+  if (false) { // Disabled for now
     return (
       <div className="min-h-screen flex flex-col bg-background">
         <div className="flex-1 container max-w-md mx-auto px-4 pb-20">

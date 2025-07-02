@@ -9,12 +9,12 @@ import { Bell, LogOut } from 'lucide-react';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { useAuth } from '@/hooks/useAuth';
-import { useUserState } from '@/contexts/UserStateContext';
+// Removed UserStateContext dependency
 
 export function Header() {
   const router = useRouter();
   const { signOut } = useAuth();
-  const { userState } = useUserState();
+  // Simplified header without UserState
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   
   const handleSignOut = async () => {
@@ -29,7 +29,7 @@ export function Header() {
         </div>
         <div className="hidden md:block">
           <h1 className="text-lg font-semibold">
-            {userState.isLoading ? 'Loading...' : `Welcome, ${userState.name || 'Friend'}`}
+            Welcome, Friend
           </h1>
         </div>
         <div className="flex items-center gap-2">
@@ -37,11 +37,7 @@ export function Header() {
             <SheetTrigger asChild>
               <Button variant="ghost" size="icon" className="rounded-full relative">
                 <Bell className="h-5 w-5" />
-                {userState.unreadNotifications > 0 && (
-                  <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[10px] text-white">
-                    {userState.unreadNotifications}
-                  </span>
-                )}
+                {/* Notifications disabled for now */}
               </Button>
             </SheetTrigger>
             <SheetContent>
@@ -65,14 +61,14 @@ export function Header() {
               <Button variant="ghost" size="icon" className="rounded-full">
                 <Avatar>
                   <AvatarImage src="/avatar.png" alt="User" />
-                  <AvatarFallback>{userState.name?.[0] || 'U'}</AvatarFallback>
+                  <AvatarFallback>U</AvatarFallback>
                 </Avatar>
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               <DropdownMenuLabel>
-                {userState.name || 'User'}
-                <p className="text-xs text-muted-foreground">{userState.email}</p>
+                User
+                <p className="text-xs text-muted-foreground">user@example.com</p>
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={() => router.push('/dashboard/settings')}>

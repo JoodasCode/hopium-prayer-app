@@ -2,12 +2,12 @@
 
 import { useState } from 'react';
 import { useSupabaseClient } from './useSupabaseClient';
-import { useUserState } from '@/contexts/UserStateContext';
+// Removed UserStateContext dependency
 import { useRouter } from 'next/navigation';
 
 export function useAuth() {
   const supabase = useSupabaseClient();
-  const { refreshUserState } = useUserState();
+  // Direct auth without UserStateContext
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -44,15 +44,7 @@ export function useAuth() {
           hijri_offset: 0,
         });
         
-        // Log analytics event
-        await supabase.from('app_analytics').insert({
-          user_id: data.user.id,
-          event: 'user_signup',
-          timestamp: new Date().toISOString(),
-        });
-        
-        // Refresh user state
-        await refreshUserState();
+
         
         // Redirect to onboarding
         router.push('/onboarding');
@@ -69,6 +61,7 @@ export function useAuth() {
 
   // Sign in an existing user
   const signIn = async (email: string, password: string) => {
+    console.log('🔐 SignIn attempt for:', email);
     setIsLoading(true);
     setError(null);
     
@@ -78,35 +71,32 @@ export function useAuth() {
         password,
       });
       
+      console.log('🔐 SignIn response:', { data: !!data, error: error?.message });
+      
       if (error) throw error;
       
-      // Log analytics event
       if (data?.user) {
-        await supabase.from('app_analytics').insert({
-          user_id: data.user.id,
-          event: 'user_signin',
-          timestamp: new Date().toISOString(),
-        });
+        console.log('✅ User signed in successfully:', data.user.email);
         
-        // Refresh user state
-        await refreshUserState();
-        
-        // Redirect based on onboarding status
-        const { data: userData } = await supabase
+        // Check onboarding status and redirect directly
+        const { data: userRecord } = await supabase
           .from('users')
           .select('onboarding_completed')
           .eq('id', data.user.id)
           .single();
         
-        if (userData?.onboarding_completed) {
-          router.push('/');
+        if (userRecord?.onboarding_completed) {
+          console.log('🎯 Redirecting to dashboard - onboarding completed');
+          window.location.href = '/dashboard';
         } else {
-          router.push('/onboarding');
+          console.log('🎯 Redirecting to onboarding - not completed');
+          window.location.href = '/onboarding';
         }
       }
       
       return data;
     } catch (err: any) {
+      console.error('❌ SignIn error:', err);
       setError(err.message || 'An error occurred during sign in');
       return null;
     } finally {
@@ -122,9 +112,6 @@ export function useAuth() {
     try {
       const { error } = await supabase.auth.signOut();
       if (error) throw error;
-      
-      // Refresh user state
-      await refreshUserState();
       
       // Redirect to login
       router.push('/login');
@@ -180,21 +167,21 @@ export function useAuth() {
       if (updates.calculation_method) userUpdates.calculation_method = updates.calculation_method;
       if (updates.notifications_enabled !== undefined) userUpdates.notifications_enabled = updates.notifications_enabled;
       if (updates.hijri_offset !== undefined) userUpdates.hijri_offset = updates.hijri_offset;
-      if (updates.onboarding_completed !== undefined) userUpdates.onboarding_completed = updates.onboarding_completed;
+      if (updates.onboarding_completed !== undefined) {
+        userUpdates.onboarding_completed = updates.onboarding_completed;
+      }
       
       if (Object.keys(userUpdates).length > 0) {
         userUpdates.updated_at = new Date().toISOString();
+        userUpdates.id = user.id; // Ensure ID is set for upsert
         
-        const { error: updateError } = await supabase
+        // Use upsert to insert or update the user record
+        const { error: upsertError } = await supabase
           .from('users')
-          .update(userUpdates)
-          .eq('id', user.id);
+          .upsert(userUpdates, { onConflict: 'id' });
         
-        if (updateError) throw updateError;
+        if (upsertError) throw upsertError;
       }
-      
-      // Refresh user state
-      await refreshUserState();
       
       return true;
     } catch (err: any) {

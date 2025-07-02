@@ -7,7 +7,7 @@ import { Loader2 } from 'lucide-react';
 // Dynamically import the OnboardingContainer to avoid hydration issues
 // since it uses browser APIs like localStorage and navigator.vibrate
 const OnboardingContainer = dynamic(
-  () => import('@/components/onboarding/OnboardingContainer'),
+  () => import('@/components/onboarding/OnboardingContainer').then(mod => ({ default: mod.default })),
   { ssr: false }
 );
 

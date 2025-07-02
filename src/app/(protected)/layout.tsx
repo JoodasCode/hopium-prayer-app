@@ -1,6 +1,6 @@
 'use client';
 
-import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
+import ProtectedRoute from '@/components/auth/ProtectedRoute';
 
 export default function ProtectedLayout({
   children,
@@ -8,7 +8,7 @@ export default function ProtectedLayout({
   children: React.ReactNode;
 }) {
   return (
-    <ProtectedRoute requireAuth={true}>
+    <ProtectedRoute>
       {children}
     </ProtectedRoute>
   );

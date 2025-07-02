@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useSupabaseClient } from '@/hooks/useSupabaseClient';
-import { useUserState } from '@/contexts/UserStateContext';
+// Removed UserStateContext dependency
 import { cn } from '@/lib/utils';
 
 type PrayerRecord = {
@@ -34,7 +34,7 @@ export default function CalendarPage() {
   const [dayPrayers, setDayPrayers] = useState<PrayerRecord[]>([]);
   
   const supabase = useSupabaseClient();
-  const { userState } = useUserState();
+  // Simplified calendar page
   
   // Generate calendar days for the current month
   useEffect(() => {
