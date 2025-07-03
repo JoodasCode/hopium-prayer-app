@@ -41,6 +41,10 @@ export default function SettingsPage() {
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [vibrationEnabled, setVibrationEnabled] = useState(true);
   
+  // State for settings saving
+  const [isSaving, setIsSaving] = useState(false);
+  const [savedSettings, setSavedSettings] = useState<Record<string, any>>({});
+  
   // Location Settings
   const [locationEnabled, setLocationEnabled] = useState(true);
   const [calculationMethod, setCalculationMethod] = useState('hanafi');
@@ -85,6 +89,20 @@ export default function SettingsPage() {
 
   const handleSaveProfile = async () => {
     try {
+      setIsSaving(true);
+      
+      // This would update the profile in Supabase in a real implementation
+      const { error } = await supabase
+        .from('profiles')
+        .update({ 
+          display_name: displayName,
+          // We wouldn't update email this way in production
+          // but we're showing the placeholder implementation
+        })
+        .eq('id', 'current-user-id');
+      
+      if (error) throw error;
+      
       toast({
         title: "Profile updated successfully",
         variant: "default"
@@ -97,6 +115,46 @@ export default function SettingsPage() {
         description: "Please try again",
         variant: "destructive"
       });
+    } finally {
+      setIsSaving(false);
+    }
+  };
+  
+  // Save settings to Supabase
+  const saveSettings = async (settingType: string, value: any) => {
+    // Store settings locally first for immediate UI feedback
+    setSavedSettings(prev => ({ ...prev, [settingType]: value }));
+    
+    try {
+      // This would update settings in Supabase in a real implementation
+      const { error } = await supabase
+        .from('user_settings')
+        .upsert({ 
+          user_id: 'current-user-id',
+          setting_type: settingType,
+          setting_value: value
+        }, { onConflict: 'user_id, setting_type' });
+        
+      if (error) throw error;
+      
+      // Success feedback could be shown for important settings
+      if (['location', 'calculation_method'].includes(settingType)) {
+        toast({
+          title: "Setting updated",
+          description: `Your ${settingType.replace('_', ' ')} preference has been saved`,
+          variant: "default"
+        });
+      }
+    } catch (error) {
+      console.error(`Error saving ${settingType} setting:`, error);
+      // Only show errors for critical settings to avoid notification fatigue
+      if (['location', 'calculation_method'].includes(settingType)) {
+        toast({
+          title: "Setting not saved",
+          description: "Please check your connection and try again",
+          variant: "destructive"
+        });
+      }
     }
   };
   
@@ -124,9 +182,11 @@ export default function SettingsPage() {
                       onChange={(e) => setDisplayName(e.target.value)}
                       className="mb-1"
                     />
-                    <div className="flex gap-2">
-                      <Button size="sm" onClick={handleSaveProfile}>Save</Button>
-                      <Button size="sm" variant="ghost" onClick={() => setIsEditing(false)}>Cancel</Button>
+                    <div className="mt-6 flex items-center justify-end gap-2">
+                      <Button variant="outline" onClick={() => setIsEditing(false)} disabled={isSaving}>Cancel</Button>
+                      <Button onClick={handleSaveProfile} disabled={isSaving}>
+                        {isSaving ? 'Saving...' : 'Save Changes'}
+                      </Button>
                     </div>
                   </div>
                 ) : (
@@ -169,21 +229,23 @@ export default function SettingsPage() {
               </CardHeader>
               <CardContent className="space-y-4">
                 {/* Calculation Method */}
-                <div className="space-y-2">
-                  <Label className="text-sm font-medium">Calculation Method</Label>
-                  <Select
-                    value={calculationMethod}
-                    onValueChange={setCalculationMethod}
+                <div className="flex justify-between">
+                  <Label className="text-sm font-medium">Method</Label>
+                  <Select 
+                    value={calculationMethod} 
+                    onValueChange={(value) => {
+                      setCalculationMethod(value);
+                      saveSettings('calculation_method', value);
+                    }}
                   >
-                    <SelectTrigger className="w-full">
+                    <SelectTrigger className="w-[180px]">
                       <SelectValue placeholder="Select method" />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="hanafi">Hanafi</SelectItem>
                       <SelectItem value="shafi">Shafi'i</SelectItem>
-                      <SelectItem value="north_america">North America (ISNA)</SelectItem>
-                      <SelectItem value="mecca">Umm al-Qura (Mecca)</SelectItem>
-                      <SelectItem value="karachi">University of Islamic Sciences (Karachi)</SelectItem>
+                      <SelectItem value="maliki">Maliki</SelectItem>
+                      <SelectItem value="hanbali">Hanbali</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -195,7 +257,10 @@ export default function SettingsPage() {
                     <Switch 
                       id="period-exemption" 
                       checked={periodExemptionEnabled}
-                      onCheckedChange={setPeriodExemptionEnabled}
+                      onCheckedChange={(checked) => {
+                        setPeriodExemptionEnabled(checked);
+                        saveSettings('period_exemption', checked);
+                      }}
                     />
                   </div>
                   <p className="text-xs text-muted-foreground">Track menstruation periods for prayer exemption</p>
@@ -207,7 +272,10 @@ export default function SettingsPage() {
                         <Switch 
                           id="menstruation-tracking" 
                           checked={menstruationTracking}
-                          onCheckedChange={setMenstruationTracking}
+                          onCheckedChange={(checked) => {
+                            setMenstruationTracking(checked);
+                            saveSettings('menstruation_tracking', checked);
+                          }}
                         />
                       </div>
                     </div>
@@ -221,7 +289,10 @@ export default function SettingsPage() {
                     <Switch 
                       id="travel-exemption" 
                       checked={travelExemption}
-                      onCheckedChange={setTravelExemption}
+                      onCheckedChange={(checked) => {
+                        setTravelExemption(checked);
+                        saveSettings('travel_exemption', checked);
+                      }}
                     />
                   </div>
                   <p className="text-xs text-muted-foreground">Track travel status for prayer modifications</p>
@@ -234,7 +305,10 @@ export default function SettingsPage() {
                     <Switch 
                       id="illness-exemption" 
                       checked={illnessExemption}
-                      onCheckedChange={setIllnessExemption}
+                      onCheckedChange={(checked) => {
+                        setIllnessExemption(checked);
+                        saveSettings('illness_exemption', checked);
+                      }}
                     />
                   </div>
                   <p className="text-xs text-muted-foreground">Track illness for prayer modifications</p>
@@ -253,22 +327,33 @@ export default function SettingsPage() {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="flex items-center justify-between">
-                  <Label htmlFor="notifications" className="text-sm font-medium">Enable Notifications</Label>
+                  <Label htmlFor="notifications" className="text-sm font-medium">
+                    All Notifications
+                  </Label>
                   <Switch 
                     id="notifications" 
                     checked={notifications}
-                    onCheckedChange={setNotifications}
+                    onCheckedChange={(checked) => {
+                      setNotifications(checked);
+                      saveSettings('notifications', checked);
+                    }}
                   />
                 </div>
                 
                 {notifications && (
                   <div className="space-y-4 pt-2 pl-2 border-l-2 border-primary/20">
                     <div className="flex items-center justify-between">
-                      <Label htmlFor="prayer-reminders" className="text-sm">Prayer Reminders</Label>
+                      <Label htmlFor="prayer-reminders" className="text-sm font-medium">
+                        Prayer Reminders
+                      </Label>
                       <Switch 
                         id="prayer-reminders" 
                         checked={prayerReminders}
-                        onCheckedChange={setPrayerReminders}
+                        onCheckedChange={(checked) => {
+                          setPrayerReminders(checked);
+                          saveSettings('prayer_reminders', checked);
+                        }}
+                        disabled={!notifications}
                       />
                     </div>
                     
@@ -282,7 +367,11 @@ export default function SettingsPage() {
                             max={30} 
                             step={5} 
                             className="flex-1"
-                            onValueChange={(vals) => setReminderTime(vals[0])} 
+                            onValueChange={(vals) => {
+                              const time = vals[0];
+                              setReminderTime(time);
+                              saveSettings('reminder_time', time);
+                            }} 
                           />
                           <span className="text-sm font-medium w-8 text-center">{reminderTime}</span>
                         </div>
@@ -290,20 +379,32 @@ export default function SettingsPage() {
                     )}
                     
                     <div className="flex items-center justify-between">
-                      <Label htmlFor="sound-enabled" className="text-sm">Sound</Label>
+                      <Label htmlFor="sound-enabled" className="text-sm font-medium">
+                        Sound
+                      </Label>
                       <Switch 
                         id="sound-enabled" 
                         checked={soundEnabled}
-                        onCheckedChange={setSoundEnabled}
+                        onCheckedChange={(checked) => {
+                          setSoundEnabled(checked);
+                          saveSettings('sound_enabled', checked);
+                        }}
+                        disabled={!notifications}
                       />
                     </div>
                     
                     <div className="flex items-center justify-between">
-                      <Label htmlFor="vibration-enabled" className="text-sm">Vibration</Label>
+                      <Label htmlFor="vibration-enabled" className="text-sm font-medium">
+                        Vibration
+                      </Label>
                       <Switch 
                         id="vibration-enabled" 
                         checked={vibrationEnabled}
-                        onCheckedChange={setVibrationEnabled}
+                        onCheckedChange={(checked) => {
+                          setVibrationEnabled(checked);
+                          saveSettings('vibration_enabled', checked);
+                        }}
+                        disabled={!notifications}
                       />
                     </div>
                   </div>
@@ -330,7 +431,10 @@ export default function SettingsPage() {
                   <Switch 
                     id="streak-protection" 
                     checked={streakProtection}
-                    onCheckedChange={setStreakProtection}
+                    onCheckedChange={(checked) => {
+                      setStreakProtection(checked);
+                      saveSettings('streak_protection', checked);
+                    }}
                   />
                 </div>
                 <p className="text-xs text-muted-foreground">Get reminders to protect your streak</p>
@@ -342,7 +446,10 @@ export default function SettingsPage() {
                   <Switch 
                     id="qada-tracking" 
                     checked={qadaTracking}
-                    onCheckedChange={setQadaTracking}
+                    onCheckedChange={(checked) => {
+                      setQadaTracking(checked);
+                      saveSettings('qada_tracking', checked);
+                    }}
                   />
                 </div>
                 <p className="text-xs text-muted-foreground">Track and complete missed prayers</p>
@@ -354,7 +461,10 @@ export default function SettingsPage() {
                   <Switch 
                     id="daily-goals" 
                     checked={dailyGoals}
-                    onCheckedChange={setDailyGoals}
+                    onCheckedChange={(checked) => {
+                      setDailyGoals(checked);
+                      saveSettings('daily_goals', checked);
+                    }}
                   />
                 </div>
                 <p className="text-xs text-muted-foreground">Set and track personal prayer goals</p>
@@ -366,7 +476,10 @@ export default function SettingsPage() {
                   <Switch 
                     id="community-presence" 
                     checked={communityPresence}
-                    onCheckedChange={setCommunityPresence}
+                    onCheckedChange={(checked) => {
+                      setCommunityPresence(checked);
+                      saveSettings('community_presence', checked);
+                    }}
                   />
                 </div>
                 <p className="text-xs text-muted-foreground">See when others in your community are praying</p>
@@ -389,7 +502,10 @@ export default function SettingsPage() {
                   <Switch 
                     id="data-collection" 
                     checked={dataCollection}
-                    onCheckedChange={setDataCollection}
+                    onCheckedChange={(checked) => {
+                      setDataCollection(checked);
+                      saveSettings('data_collection', checked);
+                    }}
                   />
                 </div>
                 <p className="text-xs text-muted-foreground">Allow anonymous data collection to improve the app</p>
@@ -401,7 +517,10 @@ export default function SettingsPage() {
                   <Switch 
                     id="share-insights" 
                     checked={shareInsights}
-                    onCheckedChange={setShareInsights}
+                    onCheckedChange={(checked) => {
+                      setShareInsights(checked);
+                      saveSettings('share_insights', checked);
+                    }}
                   />
                 </div>
                 <p className="text-xs text-muted-foreground">Share anonymized prayer patterns with researchers</p>
@@ -437,7 +556,14 @@ export default function SettingsPage() {
                       max={1.2} 
                       step={0.1} 
                       className="flex-1"
-                      onValueChange={(vals) => setTextSize(vals[0])} 
+                      onValueChange={(vals) => {
+                        const size = vals[0];
+                        setTextSize(size);
+                        // Apply text size to document root for live preview
+                        document.documentElement.style.fontSize = `${size}rem`;
+                        // Save setting after a short delay to prevent excessive API calls
+                        setTimeout(() => saveSettings('text_size', size), 500);
+                      }} 
                     />
                     <span className="text-sm font-medium w-8 text-center">{textSize.toFixed(1)}x</span>
                   </div>
@@ -450,7 +576,16 @@ export default function SettingsPage() {
                   <Switch 
                     id="reduce-animations" 
                     checked={reduceAnimations}
-                    onCheckedChange={setReduceAnimations}
+                    onCheckedChange={(checked) => {
+                      setReduceAnimations(checked);
+                      saveSettings('reduce_animations', checked);
+                      // Apply animation setting to body for live preview
+                      if (checked) {
+                        document.body.classList.add('reduce-motion');
+                      } else {
+                        document.body.classList.remove('reduce-motion');
+                      }
+                    }}
                   />
                 </div>
                 <p className="text-xs text-muted-foreground">Minimize motion for accessibility</p>
@@ -482,10 +617,24 @@ export default function SettingsPage() {
                 <div className="space-y-2 pt-2">
                   <h3 className="text-sm font-medium">Support</h3>
                   <div className="grid gap-2">
-                    <Button variant="outline" className="w-full justify-start" size="sm">
+                    <Button 
+                      variant="outline" 
+                      className="w-full justify-start" 
+                      size="sm"
+                      onClick={() => {
+                        window.open('mailto:support@mulvi.app', '_blank');
+                      }}
+                    >
                       <User className="mr-2 h-4 w-4" /> Contact Support
                     </Button>
-                    <Button variant="outline" className="w-full justify-start" size="sm">
+                    <Button 
+                      variant="outline" 
+                      className="w-full justify-start" 
+                      size="sm"
+                      onClick={() => {
+                        window.location.href = '/help';
+                      }}
+                    >
                       <Info className="mr-2 h-4 w-4" /> FAQ & Help Center
                     </Button>
                   </div>
@@ -493,7 +642,12 @@ export default function SettingsPage() {
                 
                 <Separator className="my-2" />
                 
-                <Button onClick={handleSignOut} variant="destructive" className="w-full">
+                <Button 
+                  onClick={handleSignOut} 
+                  variant="destructive" 
+                  className="w-full"
+                  disabled={isSaving}
+                >
                   <LogOut className="mr-2 h-4 w-4" /> Sign Out
                 </Button>
               </CardContent>

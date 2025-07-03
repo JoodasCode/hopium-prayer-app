@@ -25,7 +25,8 @@ import {
   Calendar,
   AlertTriangle,
   Mic,
-  Image
+  Image,
+  Check
 } from 'lucide-react';
 
 // Types for the Mulvi page
@@ -56,6 +57,10 @@ const conversationStarters = [
 export default function MulviPage() {
   // States
   const [isChatOpen, setIsChatOpen] = useState(false);
+  const [showReminderDialog, setShowReminderDialog] = useState(false);
+  const [showInsightDialog, setShowInsightDialog] = useState(false);
+  const [showMakeupDialog, setShowMakeupDialog] = useState(false);
+  const [activeInsight, setActiveInsight] = useState<PrayerInsight | null>(null);
   const [inputValue, setInputValue] = useState('');
   const [messages, setMessages] = useState<Message[]>([
     {
@@ -254,7 +259,25 @@ export default function MulviPage() {
                       </div>
                     </CardContent>
                     <CardFooter className="px-4 py-4 bg-transparent flex justify-center border-t mt-auto">
-                      <Button size="default" variant={insight.priority === 'high' ? 'default' : 'outline'} className={`w-full ${insight.priority === 'high' ? 'bg-chart-5/90 hover:bg-chart-5' : 'border-chart-3/50 hover:bg-chart-3/20'}`}>
+                      <Button 
+                        size="default" 
+                        variant={insight.priority === 'high' ? 'default' : 'outline'} 
+                        className={`w-full ${insight.priority === 'high' ? 'bg-chart-5/90 hover:bg-chart-5' : 'border-chart-3/50 hover:bg-chart-3/20'}`}
+                        onClick={() => {
+                          setActiveInsight(insight);
+                          if (insight.actionText === 'Set Reminder') {
+                            setShowReminderDialog(true);
+                          } else if (insight.actionText === 'Dismiss') {
+                            // Remove the insight from the list
+                            const updatedInsights = insights.filter(item => item.id !== insight.id);
+                            // This would normally update in database
+                            console.log('Dismissed insight:', insight.id);
+                          } else {
+                            // For View Details, View Progress, etc.
+                            setShowInsightDialog(true);
+                          }
+                        }}
+                      >
                         {insight.actionText}
                       </Button>
                     </CardFooter>
@@ -273,7 +296,10 @@ export default function MulviPage() {
         <div className="mb-6">
           <h3 className="font-medium mb-3">Quick Actions</h3>
           <div className="grid grid-cols-2 gap-3">
-            <Card className="hover:bg-accent/30 cursor-pointer transition-colors border border-transparent hover:border-accent/40 shadow-sm">
+            <Card 
+              className="hover:bg-accent/30 cursor-pointer transition-colors border border-transparent hover:border-accent/40 shadow-sm"
+              onClick={() => setShowReminderDialog(true)}
+            >
               <CardContent className="p-4 flex flex-col items-center justify-center text-center">
                 <div className="bg-chart-1/20 p-3 rounded-full mb-2">
                   <Bell className="h-5 w-5 text-chart-1" />
@@ -282,7 +308,10 @@ export default function MulviPage() {
               </CardContent>
             </Card>
             
-            <Card className="hover:bg-accent/30 cursor-pointer transition-colors border border-transparent hover:border-accent/40 shadow-sm">
+            <Card 
+              className="hover:bg-accent/30 cursor-pointer transition-colors border border-transparent hover:border-accent/40 shadow-sm"
+              onClick={() => setShowMakeupDialog(true)}
+            >
               <CardContent className="p-4 flex flex-col items-center justify-center text-center">
                 <div className="bg-chart-1/20 p-3 rounded-full mb-2">
                   <Calendar className="h-5 w-5 text-chart-1" />
@@ -307,6 +336,204 @@ export default function MulviPage() {
         </div>
       </div>
       
+      {/* Chat Dialog */}
+      {/* Prayer Insight Dialog */}
+      <Dialog open={showInsightDialog} onOpenChange={setShowInsightDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>{activeInsight?.title || 'Prayer Insight'}</DialogTitle>
+            <DialogDescription>
+              Detailed analysis and recommendations for your prayer pattern.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="py-4">
+            <div className="flex items-start gap-3 mb-4">
+              <div className={`p-2 rounded-full ${activeInsight?.priority === 'high' ? 'bg-chart-5/20 text-chart-5' : 'bg-chart-3/20 text-chart-3'}`}>
+                {activeInsight && renderIcon(activeInsight.icon)}
+              </div>
+              <div>
+                <h4 className="font-medium">{activeInsight?.title}</h4>
+                <p className="text-sm text-muted-foreground">{activeInsight?.description}</p>
+              </div>
+            </div>
+            
+            {activeInsight?.title === 'Fajr Consistency' && (
+              <div className="space-y-4">
+                <div className="bg-muted rounded-lg p-3">
+                  <h5 className="text-sm font-medium mb-1">5-Day Streak Analysis</h5>
+                  <p className="text-xs text-muted-foreground">You've been praying Fajr consistently at approximately 5:40 AM, which is excellent! This is building a strong habit pattern.</p>
+                </div>
+                
+                <Card>
+                  <CardHeader className="py-3">
+                    <CardTitle className="text-sm">Recommendations</CardTitle>
+                  </CardHeader>
+                  <CardContent className="py-2">
+                    <ul className="text-xs space-y-2">
+                      <li className="flex items-start gap-2">
+                        <div className="mt-0.5 bg-green-500/20 text-green-500 rounded-full p-0.5">
+                          <Check className="h-3 w-3" />
+                        </div>
+                        <span>Continue your current wake-up routine at 5:20 AM</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <div className="mt-0.5 bg-green-500/20 text-green-500 rounded-full p-0.5">
+                          <Check className="h-3 w-3" />
+                        </div>
+                        <span>Maintain your pre-sleep routine of going to bed by 10:30 PM</span>
+                      </li>
+                    </ul>
+                  </CardContent>
+                </Card>
+              </div>
+            )}
+            
+            {activeInsight?.title === 'Weekly Progress' && (
+              <div className="space-y-4">
+                <div className="h-40 bg-muted rounded-lg p-3 flex items-center justify-center">
+                  <p className="text-xs text-muted-foreground">Prayer completion chart visualization would appear here</p>
+                </div>
+                
+                <div className="grid grid-cols-5 gap-1 text-center">
+                  <div>
+                    <p className="text-xs font-medium">Fajr</p>
+                    <p className="text-sm font-semibold text-green-500">95%</p>
+                  </div>
+                  <div>
+                    <p className="text-xs font-medium">Dhuhr</p>
+                    <p className="text-sm font-semibold text-green-500">90%</p>
+                  </div>
+                  <div>
+                    <p className="text-xs font-medium">Asr</p>
+                    <p className="text-sm font-semibold text-green-500">98%</p>
+                  </div>
+                  <div>
+                    <p className="text-xs font-medium">Maghrib</p>
+                    <p className="text-sm font-semibold text-green-500">100%</p>
+                  </div>
+                  <div>
+                    <p className="text-xs font-medium">Isha</p>
+                    <p className="text-sm font-semibold text-amber-500">85%</p>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+          
+          <DialogFooter className="sm:justify-between">
+            <Button variant="outline" onClick={() => setShowInsightDialog(false)}>Close</Button>
+            <Button onClick={() => {
+              setShowInsightDialog(false);
+              // Navigate to Stats page for more detailed analysis
+              window.location.href = '/stats';
+            }}>See Full Analysis</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      
+      {/* Prayer Reminder Dialog */}
+      <Dialog open={showReminderDialog} onOpenChange={setShowReminderDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Set Prayer Reminder</DialogTitle>
+            <DialogDescription>
+              Schedule reminders for your upcoming prayers.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="py-4 space-y-4">
+            <div className="space-y-2">
+              <h4 className="text-sm font-medium">Select Prayer</h4>
+              <div className="grid grid-cols-5 gap-2">
+                {['Fajr', 'Dhuhr', 'Asr', 'Maghrib', 'Isha'].map((prayer) => (
+                  <Button key={prayer} variant="outline" size="sm" className="text-xs">{prayer}</Button>
+                ))}
+              </div>
+            </div>
+            
+            <div className="space-y-2">
+              <h4 className="text-sm font-medium">Reminder Time</h4>
+              <div className="grid grid-cols-3 gap-2">
+                <Button variant="outline" size="sm" className="text-xs">5 mins before</Button>
+                <Button variant="outline" size="sm" className="text-xs">15 mins before</Button>
+                <Button variant="outline" size="sm" className="text-xs">30 mins before</Button>
+              </div>
+            </div>
+            
+            <div className="space-y-2">
+              <h4 className="text-sm font-medium">Reminder Type</h4>
+              <div className="grid grid-cols-2 gap-2">
+                <Button variant="outline" size="sm" className="text-xs">Push Notification</Button>
+                <Button variant="outline" size="sm" className="text-xs">Sound Alarm</Button>
+              </div>
+            </div>
+          </div>
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowReminderDialog(false)}>Cancel</Button>
+            <Button onClick={() => {
+              setShowReminderDialog(false);
+              // Show success toast or feedback
+              console.log('Reminder set successfully');
+            }}>Set Reminder</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      
+      {/* Make Up Prayers Dialog */}
+      <Dialog open={showMakeupDialog} onOpenChange={setShowMakeupDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Make Up Missed Prayers</DialogTitle>
+            <DialogDescription>
+              Record your Qada (make up) prayers to maintain your spiritual progress.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="py-4 space-y-4">
+            <div className="space-y-2">
+              <h4 className="text-sm font-medium">Select Prayer to Make Up</h4>
+              <div className="grid grid-cols-5 gap-2">
+                {['Fajr', 'Dhuhr', 'Asr', 'Maghrib', 'Isha'].map((prayer) => (
+                  <Button key={prayer} variant="outline" size="sm" className="text-xs">{prayer}</Button>
+                ))}
+              </div>
+            </div>
+            
+            <div className="space-y-2">
+              <h4 className="text-sm font-medium">Date Missed</h4>
+              <div className="grid grid-cols-3 gap-2">
+                <Button variant="outline" size="sm" className="text-xs">Today</Button>
+                <Button variant="outline" size="sm" className="text-xs">Yesterday</Button>
+                <Button variant="outline" size="sm" className="text-xs">Custom</Button>
+              </div>
+            </div>
+            
+            <div className="p-3 bg-amber-50 dark:bg-amber-900/20 rounded-lg">
+              <div className="flex items-start gap-2">
+                <div className="mt-0.5">
+                  <Info className="h-4 w-4 text-amber-500" />
+                </div>
+                <div>
+                  <p className="text-sm font-medium">About Qada Prayers</p>
+                  <p className="text-xs text-muted-foreground">Making up missed prayers (Qada) is an important practice. It's recommended to make them up as soon as possible.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowMakeupDialog(false)}>Cancel</Button>
+            <Button onClick={() => {
+              setShowMakeupDialog(false);
+              // Show success toast or feedback
+              console.log('Qada prayer recorded successfully');
+            }}>Record Qada Prayer</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {/* Chat Dialog */}
       <Dialog open={isChatOpen} onOpenChange={setIsChatOpen}>
         <DialogContent className="max-w-[95%] w-full md:max-w-md max-h-[90vh] h-[600px] p-0 flex flex-col overflow-hidden">

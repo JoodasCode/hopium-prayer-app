@@ -1,20 +1,25 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import PhantomBottomNav from '@/components/shared/PhantomBottomNav';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Flame, Calendar, TrendingUp, Award, ChevronRight, Clock, CheckCircle, AlertCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 export default function StatsPage() {
+  const router = useRouter();
   // State for streak data (would come from API/Supabase in production)
   const [streak, setStreak] = useState({ current: 14, best: 21, weekChange: 15 });
   const [todayProgress, setTodayProgress] = useState(3); // Out of 5 prayers
   const [animateStreak, setAnimateStreak] = useState(false);
+  const [showAchievementsDialog, setShowAchievementsDialog] = useState(false);
+  const [activeTab, setActiveTab] = useState<"all" | "fajr" | "dhuhr" | "asr" | "maghrib" | "isha">("all");
   const [prayerStats, setPrayerStats] = useState([
     { name: 'Fajr', completion: 65, status: 'challenge' },
     { name: 'Dhuhr', completion: 90, status: 'consistent' },
@@ -167,33 +172,91 @@ export default function StatsPage() {
             <CardTitle className="text-base">Prayer Consistency</CardTitle>
           </CardHeader>
           
-          <CardContent className="pt-0">
-            <div className="flex flex-col gap-3">
-              {prayerStats.map((prayer) => (
-                <div key={prayer.name} className="flex items-center gap-3">
-                  <div className="w-16 text-sm font-medium">{prayer.name}</div>
-                  
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-1">
-                      <Progress value={prayer.completion} className="h-2" />
-                      <span className="text-xs font-medium">{prayer.completion}%</span>
+          <CardContent className="pt-0 pb-0">
+            <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as any)}>
+              <TabsList className="grid grid-cols-6 h-8 mb-4">
+                <TabsTrigger value="all" className="text-xs">All</TabsTrigger>
+                <TabsTrigger value="fajr" className="text-xs">Fajr</TabsTrigger>
+                <TabsTrigger value="dhuhr" className="text-xs">Dhuhr</TabsTrigger>
+                <TabsTrigger value="asr" className="text-xs">Asr</TabsTrigger>
+                <TabsTrigger value="maghrib" className="text-xs">Maghrib</TabsTrigger>
+                <TabsTrigger value="isha" className="text-xs">Isha</TabsTrigger>
+              </TabsList>
+              
+              <TabsContent value="all" className="mt-0">
+                <div className="flex flex-col gap-3">
+                  {prayerStats.map((prayer) => (
+                    <div key={prayer.name} className="flex items-center gap-3">
+                      <div className="w-16 text-sm font-medium">{prayer.name}</div>
+                      
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-1">
+                          <Progress value={prayer.completion} className="h-2" />
+                          <span className="text-xs font-medium">{prayer.completion}%</span>
+                        </div>
+                        
+                        {prayer.status === 'challenge' && (
+                          <p className="text-xs text-amber-500 font-medium flex items-center gap-1">
+                            <AlertCircle className="h-3 w-3" /> Your challenge area
+                          </p>
+                        )}
+                        
+                        {prayer.status === 'improving' && (
+                          <p className="text-xs text-green-500 font-medium flex items-center gap-1">
+                            <TrendingUp className="h-3 w-3" /> Improving this week
+                          </p>
+                        )}
+                      </div>
                     </div>
-                    
-                    {prayer.status === 'challenge' && (
-                      <p className="text-xs text-amber-500 font-medium flex items-center gap-1">
-                        <AlertCircle className="h-3 w-3" /> Your challenge area
-                      </p>
-                    )}
-                    
-                    {prayer.status === 'improving' && (
-                      <p className="text-xs text-green-500 font-medium flex items-center gap-1">
-                        <TrendingUp className="h-3 w-3" /> Improving this week
-                      </p>
-                    )}
-                  </div>
+                  ))}
                 </div>
-              ))}
-            </div>
+              </TabsContent>
+              
+              {/* Individual prayer tabs */}
+              {prayerStats.map((prayer) => {
+                const prayerName = prayer.name.toLowerCase();
+                return (
+                  <TabsContent key={prayerName} value={prayerName} className="mt-0">
+                    <div className="flex flex-col gap-3">
+                      <div className="flex items-center gap-3">
+                        <div className="w-16 text-sm font-medium">{prayer.name}</div>
+                        
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-1">
+                            <Progress value={prayer.completion} className="h-2" />
+                            <span className="text-xs font-medium">{prayer.completion}%</span>
+                          </div>
+                          
+                          {prayer.status === 'challenge' && (
+                            <p className="text-xs text-amber-500 font-medium flex items-center gap-1">
+                              <AlertCircle className="h-3 w-3" /> Your challenge area
+                            </p>
+                          )}
+                          
+                          {prayer.status === 'improving' && (
+                            <p className="text-xs text-green-500 font-medium flex items-center gap-1">
+                              <TrendingUp className="h-3 w-3" /> Improving this week
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                      
+                      {/* Prayer-specific insights */}
+                      <div className="p-3 bg-primary/5 rounded-lg mt-2">
+                        <h4 className="text-sm font-medium mb-1">Tips for {prayer.name}</h4>
+                        <p className="text-xs text-muted-foreground">
+                          {prayer.status === 'challenge' 
+                            ? `${prayer.name} seems to be challenging for you. Try setting a dedicated alarm and preparing the night before.` 
+                            : prayer.status === 'improving' 
+                              ? `Great job improving your ${prayer.name} prayer consistency! Keep up the momentum.` 
+                              : `You're maintaining good consistency with ${prayer.name}. Consider helping others establish this habit.`}
+                        </p>
+                      </div>
+                    </div>
+                  </TabsContent>
+                );
+              })}
+            </Tabs>
             
             <div className="mt-4 p-3 bg-amber-50 dark:bg-amber-900/20 rounded-lg">
               <div className="flex items-start gap-2">
@@ -245,7 +308,10 @@ export default function StatsPage() {
               </div>
             </div>
             
-            <Button className="w-full mt-4 rounded-lg bg-primary hover:bg-primary/90">
+            <Button 
+              className="w-full mt-4 rounded-lg bg-primary hover:bg-primary/90"
+              onClick={() => setShowAchievementsDialog(true)}
+            >
               View All Achievements
               <ChevronRight className="h-4 w-4 ml-1" />
             </Button>
@@ -257,7 +323,12 @@ export default function StatsPage() {
           <CardHeader className="pb-2">
             <div className="flex items-center justify-between">
               <CardTitle className="text-base">Monthly Overview</CardTitle>
-              <Button variant="ghost" size="sm" className="h-8 gap-1">
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="h-8 gap-1"
+                onClick={() => router.push('/calendar')}
+              >
                 <Calendar className="h-4 w-4" />
                 <span>July 2025</span>
               </Button>
@@ -345,6 +416,76 @@ export default function StatsPage() {
       
       {/* Bottom Navigation */}
       <PhantomBottomNav />
+      
+      {/* Achievements Dialog */}
+      <Dialog open={showAchievementsDialog} onOpenChange={setShowAchievementsDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Your Achievements</DialogTitle>
+            <DialogDescription>
+              Track your prayer journey milestones and unlock special rewards.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4 py-4">
+            {/* Unlocked achievements */}
+            <div>
+              <h4 className="text-sm font-medium mb-2">Unlocked (3)</h4>
+              <div className="space-y-3">
+                <div className="flex items-center gap-3 p-3 rounded-lg bg-primary/5">
+                  <div className="bg-primary/10 p-2 rounded-full">
+                    <Flame className="h-5 w-5 text-primary" />
+                  </div>
+                  <div>
+                    <p className="font-medium">First Week Streak</p>
+                    <p className="text-xs text-muted-foreground">Completed all prayers for 7 consecutive days</p>
+                  </div>
+                </div>
+                
+                <div className="flex items-center gap-3 p-3 rounded-lg bg-primary/5">
+                  <div className="bg-primary/10 p-2 rounded-full">
+                    <CheckCircle className="h-5 w-5 text-primary" />
+                  </div>
+                  <div>
+                    <p className="font-medium">Fajr Warrior</p>
+                    <p className="text-xs text-muted-foreground">Completed Fajr prayer on time for 10 days</p>
+                  </div>
+                </div>
+                
+                <div className="flex items-center gap-3 p-3 rounded-lg bg-primary/5">
+                  <div className="bg-primary/10 p-2 rounded-full">
+                    <Award className="h-5 w-5 text-primary" />
+                  </div>
+                  <div>
+                    <p className="font-medium">Perfect Day</p>
+                    <p className="text-xs text-muted-foreground">Completed all five prayers on time in a single day</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            {/* Locked achievements */}
+            <div>
+              <h4 className="text-sm font-medium mb-2">Coming Soon</h4>
+              <div className="space-y-3">
+                <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
+                  <div className="bg-muted p-2 rounded-full">
+                    <Award className="h-5 w-5 text-muted-foreground" />
+                  </div>
+                  <div>
+                    <p className="font-medium text-muted-foreground">{nextMilestone.name}</p>
+                    <p className="text-xs text-muted-foreground">Maintain your streak for 30 consecutive days</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <DialogFooter>
+            <Button onClick={() => setShowAchievementsDialog(false)}>Close</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

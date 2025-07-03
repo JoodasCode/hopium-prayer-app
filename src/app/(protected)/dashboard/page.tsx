@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -15,6 +16,7 @@ import {
 } from 'lucide-react';
 import PhantomBottomNav from '@/components/shared/PhantomBottomNav';
 import { PrayerReflectionModal } from '@/components/modals/PrayerReflectionModal';
+import { StreakOverview } from '@/components/dashboard/StreakOverview';
 
 // Define prayer status type for type safety
 type PrayerStatus = 'completed' | 'upcoming' | 'missed';
@@ -30,6 +32,7 @@ type Prayer = {
 };
 
 export default function DashboardPage() {
+  const router = useRouter();
   const [currentTab, setCurrentTab] = useState<'today' | 'qibla' | 'insights'>('today');
   const [showReminderCard, setShowReminderCard] = useState(true);
   const [animateStreak, setAnimateStreak] = useState(false);
@@ -38,6 +41,11 @@ export default function DashboardPage() {
   const [showDialog, setShowDialog] = useState(false);
   const [showReflectionModal, setShowReflectionModal] = useState(false);
   const [selectedPrayer, setSelectedPrayer] = useState<Prayer | null>(null);
+  const [dialogContent, setDialogContent] = useState({
+    title: "Coming Soon",
+    description: "This feature will be available in the next update.",
+    actionLabel: "Close"
+  });
   
   // Example prayer state - would come from a hook in production
   const [prayers, setPrayers] = useState<Prayer[]>([
@@ -159,36 +167,16 @@ export default function DashboardPage() {
           </Card>
         </div>
         
-        {/* Streak Card - Shows streak with animation */}
-        <Card className={cn(
-          "border-primary/20 overflow-hidden transition-all",
-          animateStreak && "shadow-[0_0_20px_rgba(124,58,237,0.5)] scale-[1.02]"
-        )}>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="bg-primary/10 rounded-full p-2">
-                  <RefreshCw className="h-5 w-5 text-primary" />
-                </div>
-                <div>
-                  <h3 className="font-medium">Prayer Streak</h3>
-                  <p className="text-xs text-muted-foreground">Keep it going!</p>
-                </div>
-              </div>
-              
-              <div className="flex flex-col items-end">
-                <div className="flex items-center gap-1">
-                  <Star className="h-4 w-4 text-yellow-500 fill-yellow-500" />
-                  <span className={cn(
-                    "text-xl font-bold",
-                    animateStreak && "text-primary transition-colors"
-                  )}>{streak.current}</span>
-                </div>
-                <p className="text-xs text-muted-foreground">Best: {streak.best} days</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+        {/* Enhanced Gamified Streak Card */}
+        <StreakOverview
+          currentStreak={streak.current}
+          bestStreak={streak.best}
+          recentDays={Array(14).fill(0).map((_, i) => i < 7 || Math.random() > 0.3)}
+          streakShields={2}
+          streakAtRisk={true}
+          nextMilestone={10}
+          percentToMilestone={70}
+        />
         
         {/* Prayer Status Cards */}
         <div className="mt-2">
@@ -313,11 +301,19 @@ export default function DashboardPage() {
           <h2 className="text-lg font-semibold mb-3">Quick Actions</h2>
           
           <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
-            <Button variant="outline" className="rounded-lg border-primary/20 px-4 py-2 h-auto whitespace-nowrap flex-shrink-0">
+            <Button 
+              variant="outline" 
+              className="rounded-lg border-primary/20 px-4 py-2 h-auto whitespace-nowrap flex-shrink-0"
+              onClick={() => router.push('/qibla')}
+            >
               <MapPin className="mr-2 h-4 w-4" /> Find Qibla
             </Button>
             
-            <Button variant="outline" className="rounded-lg border-primary/20 px-4 py-2 h-auto whitespace-nowrap flex-shrink-0">
+            <Button 
+              variant="outline" 
+              className="rounded-lg border-primary/20 px-4 py-2 h-auto whitespace-nowrap flex-shrink-0"
+              onClick={() => router.push('/stats')}
+            >
               <Calendar className="mr-2 h-4 w-4" /> Prayer Times
             </Button>
             
@@ -331,7 +327,13 @@ export default function DashboardPage() {
                   setSelectedPrayer(missedPrayer);
                   setShowReflectionModal(true);
                 } else {
-                  setShowDialog(true); // Show generic dialog if no missed prayers
+                  // Show dialog explaining there are no prayers to recover
+                  setShowDialog(true);
+                  setDialogContent({
+                    title: "No Missed Prayers",
+                    description: "Great job! You don't have any missed prayers to recover. All your prayers are either completed or still upcoming.",
+                    actionLabel: "Alhamdulillah"
+                  });
                 }
               }}
             >
@@ -341,17 +343,34 @@ export default function DashboardPage() {
             <Button 
               variant="outline" 
               className="rounded-lg border-primary/20 px-4 py-2 h-auto whitespace-nowrap flex-shrink-0"
-              onClick={() => setShowDialog(true)}
+              onClick={() => {
+                setShowDialog(true);
+                setDialogContent({
+                  title: "Set Prayer Goals",
+                  description: "Set daily and weekly prayer goals to build consistency in your spiritual practice. Track your progress and celebrate achievements.",
+                  actionLabel: "Coming Soon"
+                });
+              }}
             >
               <Calendar className="mr-2 h-4 w-4" /> Set Goal
             </Button>
             
             <Button 
               variant="outline" 
-              className="rounded-lg border-primary/20 px-4 py-2 h-auto whitespace-nowrap flex-shrink-0"
-              onClick={() => setShowDialog(true)}
+              className="rounded-lg border-primary/20 px-4 py-2 h-auto whitespace-nowrap flex-shrink-0 hover:bg-primary/5"
+              onClick={() => {
+                // Instead of showing a basic dialog, we now rely on the StreakOverview component's
+                // built-in Shield dialog functionality that's triggered when clicking on the Shield button
+                // within the component itself
+                setShowDialog(true);
+                setDialogContent({
+                  title: "Streak Shield Protection",
+                  description: "Tap the Shield icon in your streak card to activate protection. Shields guard your streak during travel, illness, or other exceptional circumstances.",
+                  actionLabel: "Got it"
+                });
+              }}
             >
-              <Calendar className="mr-2 h-4 w-4" /> Streak Shield
+              <Calendar className="mr-2 h-4 w-4" /> Streak Info
             </Button>
           </div>
         </div>
@@ -360,17 +379,17 @@ export default function DashboardPage() {
       {/* Bottom Navigation */}
       <PhantomBottomNav />
       
-      {/* Dialog for future modal integration */}
+      {/* Dialog for feature previews */}
       <Dialog open={showDialog} onOpenChange={setShowDialog}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Coming Soon</DialogTitle>
+            <DialogTitle>{dialogContent.title}</DialogTitle>
             <DialogDescription>
-              This feature will be available in the next update.
+              {dialogContent.description}
             </DialogDescription>
           </DialogHeader>
           <div className="flex justify-end">
-            <Button onClick={() => setShowDialog(false)}>Close</Button>
+            <Button onClick={() => setShowDialog(false)}>{dialogContent.actionLabel}</Button>
           </div>
         </DialogContent>
       </Dialog>
