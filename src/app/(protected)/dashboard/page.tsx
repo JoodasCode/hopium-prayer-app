@@ -17,6 +17,7 @@ import {
 import PhantomBottomNav from '@/components/shared/PhantomBottomNav';
 import { PrayerReflectionModal } from '@/components/modals/PrayerReflectionModal';
 import { StreakOverview } from '@/components/dashboard/StreakOverview';
+import { useAuth, useUserStats } from '@/hooks/useSupabase';
 
 // Define prayer status type for type safety
 type PrayerStatus = 'completed' | 'upcoming' | 'missed';
@@ -56,7 +57,18 @@ export default function DashboardPage() {
     { id: '5', name: 'Isha', time: new Date(2025, 6, 3, 21, 30), status: 'upcoming', timeRemaining: '10h 12m' },
   ]);
   
-  const [streak, setStreak] = useState({ current: 7, best: 14 });
+  // Get current user session
+  const { session } = useAuth();
+  const userId = session?.user?.id;
+  
+  // Fetch user stats including streak data
+  const { userStats, isLoading: statsLoading } = useUserStats(userId);
+  
+  // Create an object for streak data from userStats or use defaults if loading
+  const streak = {
+    current: userStats?.current_streak ?? 7, // Fallback to 7 if data not loaded yet
+    best: userStats?.best_streak ?? 14 // Fallback to 14 if data not loaded yet
+  };
   const [location, setLocation] = useState('London, UK');
   const [nextAction, setNextAction] = useState({ name: 'Dhuhr', timeRemaining: '1h 12m' });
   
@@ -171,11 +183,24 @@ export default function DashboardPage() {
         <StreakOverview
           currentStreak={streak.current}
           bestStreak={streak.best}
-          recentDays={Array(14).fill(0).map((_, i) => i < 7 || Math.random() > 0.3)}
-          streakShields={2}
-          streakAtRisk={true}
-          nextMilestone={10}
-          percentToMilestone={70}
+          recentDays={Array(14).fill(0).map((_, i) => i < streak.current || Math.random() > 0.3)}
+          streakShields={userStats?.streak_shields ?? 2}
+          streakAtRisk={streak.current > 3} // Only show streak at risk for meaningful streaks
+          nextMilestone={
+            streak.current < 7 ? 7 : 
+            streak.current < 14 ? 14 : 
+            streak.current < 30 ? 30 : 
+            streak.current < 100 ? 100 : 365
+          }
+          percentToMilestone={
+            // Calculate percentage to next milestone
+            (() => {
+              const milestones = [7, 14, 30, 100, 365];
+              const nextMile = milestones.find(m => m > streak.current) || (streak.current + 10);
+              const prevMile = milestones.filter(m => m <= streak.current).pop() || 0;
+              return Math.round(((streak.current - prevMile) / (nextMile - prevMile)) * 100);
+            })()
+          }
         />
         
         {/* Prayer Status Cards */}
