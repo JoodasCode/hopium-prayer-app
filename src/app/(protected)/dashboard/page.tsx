@@ -17,7 +17,8 @@ import {
 import PhantomBottomNav from '@/components/shared/PhantomBottomNav';
 import { PrayerReflectionModal } from '@/components/modals/PrayerReflectionModal';
 import { StreakOverview } from '@/components/dashboard/StreakOverview';
-import { useAuth, useUserStats } from '@/hooks/useSupabase';
+import { useAuth } from '@/hooks/useAuth';
+import { useUserStats } from '@/hooks/useUserStats';
 
 // Define prayer status type for type safety
 type PrayerStatus = 'completed' | 'upcoming' | 'missed';

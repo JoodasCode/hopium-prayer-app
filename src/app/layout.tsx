@@ -4,6 +4,7 @@ import '@/app/globals.css';
 import { ThemeProvider } from '@/components/theme-provider';
 import { Toaster } from '@/components/ui/toaster';
 import { UserStateProvider } from "@/contexts/UserStateContext";
+import { ReactQueryProvider } from '@/lib/react-query';
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-sans' });
 
@@ -20,12 +21,14 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={`${inter.variable} font-sans`}>
-        <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-          <UserStateProvider>
-            {children}
-            <Toaster />
-          </UserStateProvider>
-        </ThemeProvider>
+        <ReactQueryProvider>
+          <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+            <UserStateProvider>
+              {children}
+              <Toaster />
+            </UserStateProvider>
+          </ThemeProvider>
+        </ReactQueryProvider>
       </body>
     </html>
   );

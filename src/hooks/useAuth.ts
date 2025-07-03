@@ -1,16 +1,38 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useSupabaseClient } from './useSupabaseClient';
-// Removed UserStateContext dependency
+import { Session } from '@supabase/supabase-js';
 import { useRouter } from 'next/navigation';
 
 export function useAuth() {
   const supabase = useSupabaseClient();
-  // Direct auth without UserStateContext
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  
+  // Add session management
+  const [session, setSession] = useState<Session | null>(null);
+  const [authLoading, setAuthLoading] = useState(true);
+  
+  // Initialize and listen for auth state changes
+  useEffect(() => {
+    // Get initial session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      setAuthLoading(false);
+    });
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (_event, session) => {
+        setSession(session);
+        setAuthLoading(false);
+      }
+    );
+
+    return () => subscription.unsubscribe();
+  }, [supabase.auth]);
 
   // Sign up a new user
   const signUp = async (email: string, password: string, name: string) => {
@@ -200,5 +222,9 @@ export function useAuth() {
     updateProfile,
     isLoading,
     error,
+    // Add session-related properties
+    session,
+    user: session?.user ?? null,
+    authLoading,
   };
 }
