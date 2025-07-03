@@ -1,10 +1,9 @@
 import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
 import '@/app/globals.css';
-import { ThemeProvider } from '@/components/theme-provider';
 import { Toaster } from '@/components/ui/toaster';
 import { UserStateProvider } from "@/contexts/UserStateContext";
-import { ReactQueryProvider } from '@/lib/react-query';
+import { Providers } from '@/components/providers';
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-sans' });
 
@@ -21,14 +20,12 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={`${inter.variable} font-sans`}>
-        <ReactQueryProvider>
-          <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-            <UserStateProvider>
-              {children}
-              <Toaster />
-            </UserStateProvider>
-          </ThemeProvider>
-        </ReactQueryProvider>
+        <Providers>
+          <UserStateProvider>
+            {children}
+            <Toaster />
+          </UserStateProvider>
+        </Providers>
       </body>
     </html>
   );
