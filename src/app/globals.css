@@ -4,101 +4,144 @@
 
 @layer base {
   :root {
-    /* Primary Theme Colors - from screenshot */
-    --background: 260 23% 97%; /* #f9f7fa */
-    --foreground: 243 14% 27%; /* #3d3c4f */
-    --card: 0 0% 100%; /* #ffffff */
-    --card-foreground: 243 14% 27%; /* #3d3c4f */
+    /* Mocha Mousse Theme - Light Mode */
+    --background: 47 32% 92%; /* #f1f0e5 */
+    --foreground: 15 16% 29%; /* #56453f */
+    --card: 47 32% 92%; /* #f1f0e5 */
+    --card-foreground: 15 16% 29%; /* #56453f */
     --popover: 0 0% 100%; /* #ffffff */
-    --popover-foreground: 243 14% 27%; /* #3d3c4f */
-    --primary: 260 23% 57%; /* #8a7fab */
-    --primary-foreground: 260 23% 97%; /* #f9f7fa */
-    --secondary: 259 33% 89%; /* #e0dbf0 */
-    --secondary-foreground: 243 14% 27%; /* #3d3c4f */
-    --muted: 258 15% 87%; /* #dcdae6 */
-    --muted-foreground: 248 10% 45%; /* #6c6a7a */
-    --accent: 342 57% 77%; /* #ed9dba */
-    --accent-foreground: 343 24% 24%; /* #4a2936 */
-    --destructive: 0 62% 61%; /* #f05a5a */
-    --destructive-foreground: 260 23% 97%; /* #f9f7fa */
-    --border: 259 17% 82%; /* #d0cce1 */
-    --input: 260 23% 92%; /* #ebe7f3 */
-    --ring: 260 23% 57%; /* #8a7fab */
-    
+    --popover-foreground: 15 16% 29%; /* #56453f */
+    --primary: 15 24% 52%; /* #a37764 */
+    --primary-foreground: 0 0% 100%; /* #ffffff */
+    --secondary: 36 20% 65%; /* #baab92 */
+    --secondary-foreground: 0 0% 100%; /* #ffffff */
+    --muted: 14 51% 81%; /* #e4c7b8 */
+    --muted-foreground: 15 20% 45%; /* #8a655a */
+    --accent: 14 51% 81%; /* #e4c7b8 */
+    --accent-foreground: 15 16% 29%; /* #56453f */
+    --destructive: 18 15% 11%; /* #1f1a17 */
+    --destructive-foreground: 0 0% 100%; /* #ffffff */
+    --border: 36 20% 65%; /* #baab92 */
+    --input: 36 20% 65%; /* #baab92 */
+    --ring: 15 24% 52%; /* #a37764 */
+
     /* Custom chart colors */
-    --chart-1: 260 23% 57%; /* #8a7fab - primary */
-    --chart-2: 342 57% 77%; /* #ed9dba - accent */
-    --chart-3: 159 31% 59%; /* #5da98a */
-    --chart-4: 36 77% 75%; /* #f5c266 */
-    --chart-5: 216 54% 76%; /* #7db0ed */
-    
+    --chart-1: 15 24% 52%; /* #a37764 */
+    --chart-2: 15 20% 45%; /* #8a655a */
+    --chart-3: 18 46% 65%; /* #c39e88 */
+    --chart-4: 36 20% 65%; /* #baab92 */
+    --chart-5: 20 23% 56%; /* #a28777 */
+
     /* Custom sidebar colors */
-    --sidebar: 260 23% 95%; /* #efeaf5 */
-    --sidebar-foreground: 243 14% 27%; /* #3d3c4f */
-    --sidebar-primary: 260 23% 57%; /* #8a7fab */
-    --sidebar-primary-foreground: 260 23% 97%; /* #f9f7fa */
-    --sidebar-accent: 342 57% 77%; /* #ed9dba */
-    --sidebar-accent-foreground: 343 24% 24%; /* #4a2936 */
-    --sidebar-border: 261 18% 85%; /* #d7d3e7 */
-    --sidebar-ring: 260 23% 57%; /* #8a7fab */
-    
+    --sidebar: 18 48% 86%; /* #ebd6cb */
+    --sidebar-foreground: 15 16% 29%; /* #56453f */
+    --sidebar-primary: 15 24% 52%; /* #a37764 */
+    --sidebar-primary-foreground: 0 0% 100%; /* #ffffff */
+    --sidebar-accent: 18 46% 65%; /* #c39e88 */
+    --sidebar-accent-foreground: 0 0% 100%; /* #ffffff */
+    --sidebar-border: 20 23% 56%; /* #a28777 */
+    --sidebar-ring: 15 24% 52%; /* #a37764 */
+
     /* Fonts */
-    --font-sans: 'Geist', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    --font-serif: system-ui, serif;
-    --font-mono: system-ui, monospace;
-    
+    --font-sans: DM Sans, sans-serif;
+    --font-serif: Georgia, serif;
+    --font-mono: Menlo, monospace;
+
     /* Border radius */
     --radius: 0.5rem;
-    
+
     /* Shadows */
-    --shadow-2xs: 1px 2px 5px 1px hsl(0 0% 0% / 0.03);
-    --shadow-xs: 1px 2px 5px 1px hsl(0 0% 0% / 0.03);
-    --shadow-sm: 1px 2px 5px 1px hsl(0 0% 0% / 0.06), 1px 1px 2px 0px hsl(0 0% 0% / 0.06);
-    --shadow: 1px 2px 5px 1px hsl(0 0% 0% / 0.06), 1px 1px 2px 0px hsl(0 0% 0% / 0.06);
-    --shadow-md: 1px 2px 5px 1px hsl(0 0% 0% / 0.06), 1px 2px 4px 0px hsl(0 0% 0% / 0.06);
-    --shadow-lg: 1px 2px 5px 1px hsl(0 0% 0% / 0.06), 1px 4px 6px 0px hsl(0 0% 0% / 0.06);
-    --shadow-xl: 1px 2px 5px 1px hsl(0 0% 0% / 0.06), 1px 8px 10px 0px hsl(0 0% 0% / 0.06);
-    --shadow-2xl: 1px 2px 5px 1px hsl(0 0% 0% / 0.15);
+    --shadow-2xs: 2px 2px 0px 0px hsl(20 18% 51% / 0.06);
+    --shadow-xs: 2px 2px 0px 0px hsl(20 18% 51% / 0.06);
+    --shadow-sm: 2px 2px 0px 0px hsl(20 18% 51% / 0.11), 2px 1px 2px -1px hsl(20 18% 51% / 0.11);
+    --shadow: 2px 2px 0px 0px hsl(20 18% 51% / 0.11), 2px 1px 2px -1px hsl(20 18% 51% / 0.11);
+    --shadow-md: 2px 2px 0px 0px hsl(20 18% 51% / 0.11), 2px 2px 4px -1px hsl(20 18% 51% / 0.11);
+    --shadow-lg: 2px 2px 0px 0px hsl(20 18% 51% / 0.11), 2px 4px 6px -1px hsl(20 18% 51% / 0.11);
+    --shadow-xl: 2px 2px 0px 0px hsl(20 18% 51% / 0.11), 2px 8px 10px -1px hsl(20 18% 51% / 0.11);
+    --shadow-2xl: 2px 2px 0px 0px hsl(20 18% 51% / 0.28);
+    --shadow-color: hsl(20 18% 51% / 0.4);
+    --shadow-opacity: 0.11;
+    --shadow-blur: 0px;
+    --shadow-spread: 0px;
+    --shadow-offset-x: 2px;
+    --shadow-offset-y: 2px;
+    --letter-spacing: 0em;
+    --spacing: 0.25rem;
+    --tracking-normal: 0em;
   }
 
   .dark {
-    /* Primary Theme Colors - dark mode */
-    --background: 251 19% 12%; /* #1d1c2e */
-    --foreground: 250 36% 90%; /* #e1e0f1 */
-    --card: 251 20% 16%; /* #28273e */
-    --card-foreground: 250 36% 90%; /* #e1e0f1 */
-    --popover: 251 20% 16%; /* #28273e */
-    --popover-foreground: 250 36% 90%; /* #e1e0f1 */
-    --primary: 263 33% 69%; /* #a99edf */
-    --primary-foreground: 251 19% 12%; /* #1d1c2e */
-    --secondary: 254 15% 38%; /* #5a5779 */
-    --secondary-foreground: 250 36% 90%; /* #e1e0f1 */
-    --muted: 254 21% 16%; /* #28273f */
-    --muted-foreground: 259 10% 64%; /* #a09fb2 */
-    --accent: 272 16% 21%; /* #362e45 */
-    --accent-foreground: 346 69% 84%; /* #f6b3c8 */
-    --destructive: 0 69% 67%; /* #ff5a5a */
-    --destructive-foreground: 251 19% 12%; /* #1d1c2e */
-    --border: 252 19% 21%; /* #35334d */
-    --input: 249 20% 19%; /* #302e48 */
-    --ring: 263 33% 69%; /* #a99edf */
-    
+    /* Mocha Mousse Theme - Dark Mode */
+    --background: 21 14% 13%; /* #271f1c */
+    --foreground: 18 42% 90%; /* #ede4df */
+    --card: 21 14% 13%; /* #271f1c */
+    --card-foreground: 18 42% 90%; /* #ede4df */
+    --popover: 17 10% 16%; /* #2c2522 */
+    --popover-foreground: 18 42% 90%; /* #ede4df */
+    --primary: 18 48% 70%; /* #d4a690 */
+    --primary-foreground: 21 14% 13%; /* #271f1c */
+    --secondary: 18 16% 22%; /* #42362f */
+    --secondary-foreground: 18 42% 90%; /* #ede4df */
+    --muted: 17 10% 16%; /* #2c2522 */
+    --muted-foreground: 17 24% 70%; /* #c3ada0 */
+    --accent: 17 14% 28%; /* #53433a */
+    --accent-foreground: 14 51% 81%; /* #e4c7b8 */
+    --destructive: 0 57% 60%; /* #e05252 */
+    --destructive-foreground: 21 14% 13%; /* #271f1c */
+    --border: 18 16% 22%; /* #42362f */
+    --input: 19 15% 20%; /* #3a2f29 */
+    --ring: 18 48% 70%; /* #d4a690 */
+
     /* Custom chart colors - dark mode */
-    --chart-1: 263 33% 69%; /* #a99edf */
-    --chart-2: 346 69% 84%; /* #f6b3c8 */
-    --chart-3: 159 31% 59%; /* #5da98a */
-    --chart-4: 36 77% 75%; /* #f5c266 */
-    --chart-5: 216 54% 76%; /* #7db0ed */
-    
+    --chart-1: 18 48% 70%; /* #d4a690 */
+    --chart-2: 14 51% 81%; /* #e4c7b8 */
+    --chart-3: 15 24% 52%; /* #a37764 */
+    --chart-4: 15 20% 45%; /* #8a655a */
+    --chart-5: 15 32% 61%; /* #bc8d7c */
+
     /* Custom sidebar colors - dark mode */
-    --sidebar: 252 20% 10%; /* #19182a */
-    --sidebar-foreground: 250 36% 90%; /* #e1e0f1 */
-    --sidebar-primary: 263 33% 69%; /* #a99edf */
-    --sidebar-primary-foreground: 251 19% 12%; /* #1d1c2e */
-    --sidebar-accent: 272 16% 21%; /* #362e45 */
-    --sidebar-accent-foreground: 346 69% 84%; /* #f6b3c8 */
-    --sidebar-border: 249 20% 19%; /* #302e48 */
-    --sidebar-ring: 263 33% 69%; /* #a99edf */
+    --sidebar: 20 14% 11%; /* #211a17 */
+    --sidebar-foreground: 18 42% 90%; /* #ede4df */
+    --sidebar-primary: 18 48% 70%; /* #d4a690 */
+    --sidebar-primary-foreground: 21 14% 13%; /* #271f1c */
+    --sidebar-accent: 17 14% 28%; /* #53433a */
+    --sidebar-accent-foreground: 14 51% 81%; /* #e4c7b8 */
+    --sidebar-border: 19 15% 20%; /* #3a2f29 */
+    --sidebar-ring: 18 48% 70%; /* #d4a690 */ 
+    --radius: 0.5rem; 
+    --font-sans: DM Sans, sans-serif; 
+    --font-serif: Georgia, serif; 
+    --font-mono: Menlo, monospace; 
+    --shadow-color: hsl(20 18% 30% / 0.5); 
+    --shadow-opacity: 0.11; 
+    --shadow-blur: 0px; 
+    --shadow-spread: 0px; 
+    --shadow-offset-x: 2px; 
+    --shadow-offset-y: 2px; 
+    --letter-spacing: 0em; 
+    --spacing: 0.25rem; 
+    --shadow-2xs: 2px 2px 0px 0px hsl(20 18% 30% / 0.06); 
+    --shadow-xs: 2px 2px 0px 0px hsl(20 18% 30% / 0.06); 
+    --shadow-sm: 2px 2px 0px 0px hsl(20 18% 30% / 0.11), 2px 1px 2px -1px hsl(20 18% 30% / 0.11); 
+    --shadow: 2px 2px 0px 0px hsl(20 18% 30% / 0.11), 2px 1px 2px -1px hsl(20 18% 30% / 0.11); 
+    --shadow-md: 2px 2px 0px 0px hsl(20 18% 30% / 0.11), 2px 2px 4px -1px hsl(20 18% 30% / 0.11); 
+    --shadow-lg: 2px 2px 0px 0px hsl(20 18% 30% / 0.11), 2px 4px 6px -1px hsl(20 18% 30% / 0.11); 
+    --shadow-xl: 2px 2px 0px 0px hsl(20 18% 30% / 0.11), 2px 8px 10px -1px hsl(20 18% 30% / 0.11); 
+    --shadow-2xl: 2px 2px 0px 0px hsl(20 18% 30% / 0.28);
+  }
+  .theme {
+    --font-sans: DM Sans, sans-serif;
+    --font-mono: Menlo, monospace;
+    --font-serif: Georgia, serif;
+    --radius: 0.5rem;
+    --tracking-tighter: calc(var(--tracking-normal) - 0.05em);
+    --tracking-tight: calc(var(--tracking-normal) - 0.025em);
+    --tracking-wide: calc(var(--tracking-normal) + 0.025em);
+    --tracking-wider: calc(var(--tracking-normal) + 0.05em);
+    --tracking-widest: calc(var(--tracking-normal) + 0.1em);
+  }
+  body {
+    letter-spacing: var(--tracking-normal);
   }
 }
 

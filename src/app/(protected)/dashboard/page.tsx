@@ -8,19 +8,39 @@ import { Progress } from '@/components/ui/progress';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
-import {
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { 
   Sun, Moon, Star, Clock, CheckCircle, RefreshCw, MapPin, 
-  Heart, Calendar, Award, ArrowRight, ChevronRight, Bell, X
+  Heart, Calendar, Award, ArrowRight, ChevronRight, Bell, X, CalendarCheck
 } from 'lucide-react';
 import PhantomBottomNav from '@/components/shared/PhantomBottomNav';
+import { PrayerReflectionModal } from '@/components/modals/PrayerReflectionModal';
+
+// Define prayer status type for type safety
+type PrayerStatus = 'completed' | 'upcoming' | 'missed';
+
+// Define prayer type for better type checking
+type Prayer = {
+  id: string;
+  name: string;
+  time: Date;
+  status: PrayerStatus;
+  timeAgo?: string;
+  timeRemaining?: string;
+};
 
 export default function DashboardPage() {
   const [currentTab, setCurrentTab] = useState<'today' | 'qibla' | 'insights'>('today');
   const [showReminderCard, setShowReminderCard] = useState(true);
   const [animateStreak, setAnimateStreak] = useState(false);
   
+  // Modal states
+  const [showDialog, setShowDialog] = useState(false);
+  const [showReflectionModal, setShowReflectionModal] = useState(false);
+  const [selectedPrayer, setSelectedPrayer] = useState<Prayer | null>(null);
+  
   // Example prayer state - would come from a hook in production
-  const [prayers, setPrayers] = useState([
+  const [prayers, setPrayers] = useState<Prayer[]>([
     { id: '1', name: 'Fajr', time: new Date(2025, 6, 3, 4, 30), status: 'completed', timeAgo: '4h ago' },
     { id: '2', name: 'Dhuhr', time: new Date(2025, 6, 3, 12, 30), status: 'upcoming', timeRemaining: '1h 12m' },
     { id: '3', name: 'Asr', time: new Date(2025, 6, 3, 16, 0), status: 'upcoming', timeRemaining: '4h 42m' },
@@ -106,7 +126,14 @@ export default function DashboardPage() {
               <div className="grid grid-cols-2 gap-3 mt-6">
                 <Button 
                   className="rounded-lg h-12 bg-primary hover:bg-primary/90 text-primary-foreground shadow-sm"
-                  onClick={() => alert('Prayer marked as completed')}
+                  onClick={() => {
+                    // Find the next upcoming prayer to complete
+                    const nextPrayer = prayers.find(p => p.status === 'upcoming');
+                    if (nextPrayer) {
+                      setSelectedPrayer(nextPrayer);
+                      setShowReflectionModal(true);
+                    }
+                  }}
                 >
                   <CheckCircle className="mr-2 h-4 w-4" /> Mark Complete
                 </Button>
@@ -173,16 +200,26 @@ export default function DashboardPage() {
           </div>
           
           <div className="grid gap-3">
-            {prayers.map(prayer => (
-              <div 
-                key={prayer.id}
-                className={cn(
-                  "p-3 rounded-lg flex items-center justify-between border transition-all",
-                  prayer.status === 'completed' ? "bg-green-50 border-green-200 dark:bg-green-950/20 dark:border-green-800/30" :
-                  prayer.status === 'missed' ? "bg-red-50 border-red-200 dark:bg-red-950/20 dark:border-red-800/30" :
-                  "bg-secondary/20 border-secondary/30"
-                )}
-              >
+            {prayers.map((prayer, index) => {
+              // Determine if this is the next prayer (first non-completed prayer)
+              const isNextPrayer = prayer.status === 'upcoming' && 
+                prayers.findIndex(p => p.status === 'upcoming') === index;
+                
+              return (
+                <div 
+                  key={prayer.id}
+                  onClick={() => {
+                    setSelectedPrayer(prayer);
+                    setShowReflectionModal(true);
+                  }}
+                  className={cn(
+                    "p-3 rounded-lg flex items-center justify-between border transition-all cursor-pointer hover:scale-[1.01] active:scale-100",
+                    prayer.status === 'completed' ? "bg-gradient-to-r from-green-50 to-green-100 border-green-200 dark:bg-gradient-to-r dark:from-green-950/20 dark:to-green-900/30 dark:border-green-800/30" :
+                    prayer.status === 'missed' ? "bg-gradient-to-r from-red-50 to-red-100 border-red-200 dark:bg-gradient-to-r dark:from-red-950/20 dark:to-red-900/30 dark:border-red-800/30 animate-pulse" :
+                    isNextPrayer ? "bg-gradient-to-r from-orange-50 to-orange-100 border-orange-200 dark:bg-gradient-to-r dark:from-orange-950/20 dark:to-orange-900/30 dark:border-orange-800/30 animate-pulse" :
+                    "bg-secondary/20 border-secondary/30"
+                  )}
+                >
                 <div className="flex items-center gap-3">
                   <div className={cn(
                     "rounded-full p-2 h-9 w-9 flex items-center justify-center",
@@ -193,9 +230,21 @@ export default function DashboardPage() {
                     {prayer.status === 'completed' ? (
                       <CheckCircle className="h-4 w-4" />
                     ) : prayer.status === 'missed' ? (
-                      <X className="h-4 w-4" />
+                      <X 
+                        className="h-4 w-4 cursor-pointer" 
+                        onClick={() => {
+                          setSelectedPrayer(prayer);
+                          setShowReflectionModal(true);
+                        }} 
+                      />
                     ) : (
-                      <Clock className="h-4 w-4" />
+                      <Clock 
+                        className="h-4 w-4 cursor-pointer" 
+                        onClick={() => {
+                          setSelectedPrayer(prayer);
+                          setShowReflectionModal(true);
+                        }} 
+                      />
                     )}
                   </div>
                   
@@ -215,7 +264,8 @@ export default function DashboardPage() {
                   )}
                 </div>
               </div>
-            ))}
+            );
+            })}
           </div>
         </div>
         
@@ -228,7 +278,10 @@ export default function DashboardPage() {
             
             <CardContent className="px-4 pb-4 pt-0">
               <div className="flex flex-col gap-3">
-                <div className="bg-secondary/20 rounded-lg p-3 flex items-center justify-between">
+                <div 
+                  className="bg-secondary/20 rounded-lg p-3 flex items-center justify-between cursor-pointer hover:bg-secondary/30 transition-colors"
+                  onClick={() => setShowDialog(true)}
+                >
                   <div className="flex items-center gap-2">
                     <div className="bg-secondary/30 rounded-full p-1.5">
                       <Heart className="h-4 w-4 text-primary" />
@@ -238,7 +291,10 @@ export default function DashboardPage() {
                   <ChevronRight className="h-4 w-4 text-muted-foreground" />
                 </div>
                 
-                <div className="bg-secondary/20 rounded-lg p-3 flex items-center justify-between">
+                <div 
+                  className="bg-secondary/20 rounded-lg p-3 flex items-center justify-between cursor-pointer hover:bg-secondary/30 transition-colors"
+                  onClick={() => setShowDialog(true)}
+                >
                   <div className="flex items-center gap-2">
                     <div className="bg-secondary/30 rounded-full p-1.5">
                       <Award className="h-4 w-4 text-primary" />
@@ -265,12 +321,37 @@ export default function DashboardPage() {
               <Calendar className="mr-2 h-4 w-4" /> Prayer Times
             </Button>
             
-            <Button variant="outline" className="rounded-lg border-primary/20 px-4 py-2 h-auto whitespace-nowrap flex-shrink-0">
-              <Heart className="mr-2 h-4 w-4" /> Tracker
+            <Button 
+              variant="outline" 
+              className="rounded-lg border-primary/20 px-4 py-2 h-auto whitespace-nowrap flex-shrink-0"
+              onClick={() => {
+                // Find the most recent missed prayer
+                const missedPrayer = prayers.find(p => p.status !== 'completed' && new Date(p.time) < new Date());
+                if (missedPrayer) {
+                  setSelectedPrayer(missedPrayer);
+                  setShowReflectionModal(true);
+                } else {
+                  setShowDialog(true); // Show generic dialog if no missed prayers
+                }
+              }}
+            >
+              <RefreshCw className="mr-2 h-4 w-4" /> Recover Prayer
             </Button>
             
-            <Button variant="outline" className="rounded-lg border-primary/20 px-4 py-2 h-auto whitespace-nowrap flex-shrink-0">
-              <Award className="mr-2 h-4 w-4" /> Achievements
+            <Button 
+              variant="outline" 
+              className="rounded-lg border-primary/20 px-4 py-2 h-auto whitespace-nowrap flex-shrink-0"
+              onClick={() => setShowDialog(true)}
+            >
+              <Calendar className="mr-2 h-4 w-4" /> Set Goal
+            </Button>
+            
+            <Button 
+              variant="outline" 
+              className="rounded-lg border-primary/20 px-4 py-2 h-auto whitespace-nowrap flex-shrink-0"
+              onClick={() => setShowDialog(true)}
+            >
+              <Calendar className="mr-2 h-4 w-4" /> Streak Shield
             </Button>
           </div>
         </div>
@@ -278,6 +359,65 @@ export default function DashboardPage() {
       
       {/* Bottom Navigation */}
       <PhantomBottomNav />
+      
+      {/* Dialog for future modal integration */}
+      <Dialog open={showDialog} onOpenChange={setShowDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Coming Soon</DialogTitle>
+            <DialogDescription>
+              This feature will be available in the next update.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex justify-end">
+            <Button onClick={() => setShowDialog(false)}>Close</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+      
+      {/* Prayer Reflection Modal */}
+      {selectedPrayer && (
+        <PrayerReflectionModal
+          open={showReflectionModal}
+          onOpenChange={setShowReflectionModal}
+          prayerName={selectedPrayer.name}
+          onComplete={(data) => {
+            // Update prayer status
+            if (selectedPrayer) {
+              const updatedPrayers = prayers.map(p => 
+                p.id === selectedPrayer.id 
+                  ? { 
+                      ...p, 
+                      status: 'completed' as const, 
+                      timeAgo: 'just now',
+                      // If it had timeRemaining before, we'll keep it but make it optional
+                      ...(p.timeRemaining ? {} : { timeRemaining: undefined })
+                    } 
+                  : p
+              );
+              setPrayers(updatedPrayers);
+              
+              // Log the completion data
+              console.log('Prayer completed:', {
+                prayer: selectedPrayer.name,
+                ...data
+              });
+              
+              // Update streak if needed
+              const completedCount = updatedPrayers.filter(p => p.status === 'completed').length;
+              if (completedCount > prayers.filter(p => p.status === 'completed').length) {
+                setAnimateStreak(true);
+                setTimeout(() => setAnimateStreak(false), 2000);
+              }
+            }
+            
+            // Close modal
+            setShowReflectionModal(false);
+            setSelectedPrayer(null);
+          }}
+        />
+      )}
     </div>
   );
 }
+

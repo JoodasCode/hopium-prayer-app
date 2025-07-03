@@ -236,17 +236,17 @@ export default function MulviPage() {
             <CarouselContent>
               {insights.map((insight) => (
                 <CarouselItem key={insight.id} className="pb-2">
-                  <Card className={`flex flex-col h-[220px] ${insight.priority === 'high' ? 'bg-gradient-to-r from-red-100 via-red-50 to-background shadow-[0_0_15px_rgba(239,68,68,0.15)]' : 'bg-gradient-to-r from-blue-100 via-blue-50 to-background shadow-[0_0_15px_rgba(59,130,246,0.15)]'}`}>
+                  <Card className={`flex flex-col h-[220px] ${insight.priority === 'high' ? 'bg-gradient-to-r from-chart-5/30 via-chart-5/10 to-background shadow-md' : 'bg-gradient-to-r from-chart-3/30 via-chart-3/10 to-background shadow-md'}`}>
                     <CardContent className="p-4 flex-1">
                       <div className="flex items-start gap-3">
-                        <div className={`p-2 rounded-full ${insight.priority === 'high' ? 'bg-red-100 text-red-600' : 'bg-blue-100 text-blue-600'}`}>
+                        <div className={`p-2 rounded-full ${insight.priority === 'high' ? 'bg-chart-5/20 text-chart-5' : 'bg-chart-3/20 text-chart-3'}`}>
                           {renderIcon(insight.icon)}
                         </div>
                         <div className="flex-1">
                           <div className="flex justify-between items-start">
                             <h4 className="font-medium text-sm">{insight.title}</h4>
                             {insight.priority === 'high' && (
-                              <span className="bg-red-100 text-red-800 text-xs px-2 py-0.5 rounded-full">Important</span>
+                              <span className="bg-chart-5/20 text-chart-5 text-xs px-2 py-0.5 rounded-full">Important</span>
                             )}
                           </div>
                           <p className="text-sm text-muted-foreground mt-1">{insight.description}</p>
@@ -254,7 +254,7 @@ export default function MulviPage() {
                       </div>
                     </CardContent>
                     <CardFooter className="px-4 py-4 bg-transparent flex justify-center border-t mt-auto">
-                      <Button size="default" variant={insight.priority === 'high' ? 'destructive' : 'secondary'} className="w-full">
+                      <Button size="default" variant={insight.priority === 'high' ? 'default' : 'outline'} className={`w-full ${insight.priority === 'high' ? 'bg-chart-5/90 hover:bg-chart-5' : 'border-chart-3/50 hover:bg-chart-3/20'}`}>
                         {insight.actionText}
                       </Button>
                     </CardFooter>
@@ -273,19 +273,19 @@ export default function MulviPage() {
         <div className="mb-6">
           <h3 className="font-medium mb-3">Quick Actions</h3>
           <div className="grid grid-cols-2 gap-3">
-            <Card className="hover:bg-accent/50 cursor-pointer transition-colors border-2 border-transparent hover:border-primary/20 shadow-sm">
+            <Card className="hover:bg-accent/30 cursor-pointer transition-colors border border-transparent hover:border-accent/40 shadow-sm">
               <CardContent className="p-4 flex flex-col items-center justify-center text-center">
-                <div className="bg-primary/10 p-3 rounded-full mb-2">
-                  <Bell className="h-5 w-5 text-primary" />
+                <div className="bg-chart-1/20 p-3 rounded-full mb-2">
+                  <Bell className="h-5 w-5 text-chart-1" />
                 </div>
                 <p className="text-sm font-medium">Set Reminder</p>
               </CardContent>
             </Card>
             
-            <Card className="hover:bg-accent/50 cursor-pointer transition-colors border-2 border-transparent hover:border-primary/20 shadow-sm">
+            <Card className="hover:bg-accent/30 cursor-pointer transition-colors border border-transparent hover:border-accent/40 shadow-sm">
               <CardContent className="p-4 flex flex-col items-center justify-center text-center">
-                <div className="bg-primary/10 p-3 rounded-full mb-2">
-                  <Calendar className="h-5 w-5 text-primary" />
+                <div className="bg-chart-1/20 p-3 rounded-full mb-2">
+                  <Calendar className="h-5 w-5 text-chart-1" />
                 </div>
                 <p className="text-sm font-medium">Make Up Prayers</p>
               </CardContent>

@@ -46,7 +46,7 @@ export function TodaysPrayers({ prayers, completedPrayers, nextPrayerId }: Today
                 key={prayer.id}
                 className={cn(
                   "rounded-xl text-center transition-all h-[110px] flex flex-col relative overflow-hidden",
-                  isCompleted ? "bg-gradient-to-b from-green-500 to-green-600 text-white shadow-md" : 
+                  isCompleted ? "bg-gradient-to-b from-chart-3 to-chart-3/90 text-white shadow-md" : 
                   isNext ? "bg-gradient-to-b from-primary/90 to-primary text-primary-foreground shadow-md border border-primary/30" : 
                   "bg-secondary/30 hover:bg-secondary/40 text-secondary-foreground"
                 )}

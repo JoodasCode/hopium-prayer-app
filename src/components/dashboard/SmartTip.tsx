@@ -32,7 +32,7 @@ export function SmartTip() {
   const currentTip = tips[currentTipIndex];
   
   return (
-    <Card className="mb-4 shadow-sm border-border bg-gradient-to-br from-card to-card/80 overflow-hidden">
+    <Card className="mb-4 shadow-sm border-border bg-gradient-to-br from-accent/30 to-accent/10 overflow-hidden">
       <CardHeader className="flex flex-row items-center justify-between pb-2 pt-4 px-5">
         <div className="flex items-center space-x-2">
           <div className="flex items-center justify-center bg-primary/10 rounded-md p-1">
@@ -66,7 +66,7 @@ export function SmartTip() {
             
             {/* Action menu */}
             {showActionMenu && (
-              <div className="bg-card shadow-md rounded-lg p-3 text-xs space-y-2 border border-border animate-fadeIn">
+              <div className="bg-accent/20 shadow-md rounded-lg p-3 text-xs space-y-2 border border-accent/30 animate-fadeIn">
                 <button className="w-full text-left py-1.5 px-2 rounded hover:bg-secondary/30 flex items-center gap-2 transition-colors">
                   <Calendar size={14} />
                   <span>Add to Google Calendar</span>

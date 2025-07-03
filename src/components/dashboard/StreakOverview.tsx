@@ -44,7 +44,7 @@ export function StreakOverview({ currentStreak, bestStreak, recentDays }: Streak
                 className={cn(
                   "h-8 rounded-md flex items-center justify-center",
                   completed 
-                    ? "bg-gradient-to-br from-primary to-primary/80 shadow-sm" 
+                    ? "bg-gradient-to-br from-chart-1 to-chart-3/80 shadow-sm" 
                     : "bg-secondary/30 dark:bg-secondary/20"
                 )}
                 title={`${completed ? 'Completed' : 'Missed'} prayers`}
@@ -66,7 +66,7 @@ export function StreakOverview({ currentStreak, bestStreak, recentDays }: Streak
                 className={cn(
                   "h-8 rounded-md flex items-center justify-center",
                   completed 
-                    ? "bg-gradient-to-br from-primary to-primary/80 shadow-sm" 
+                    ? "bg-gradient-to-br from-chart-1 to-chart-3/80 shadow-sm" 
                     : "bg-secondary/30 dark:bg-secondary/20"
                 )}
                 title={`${completed ? 'Completed' : 'Missed'} prayers`}

@@ -71,7 +71,8 @@ export function NextPrayerCard({ nextPrayer, onPrayerComplete }: NextPrayerCardP
     const container = confettiRef.current;
     container.innerHTML = '';
     
-    const colors = ['#FFC700', '#FF0058', '#2E7DAF', '#17B978', '#9C27B0'];
+    // Use Mocha Mousse theme colors from our chart palette
+    const colors = ['var(--chart-1)', 'var(--chart-2)', 'var(--chart-3)', 'var(--chart-4)', 'var(--chart-5)'];
     
     for (let i = 0; i < 100; i++) {
       const confetti = document.createElement('div');
