@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { ArrowLeft, BarChart3, TrendingUp, Heart, Calendar, Clock, ArrowUpRight, Sparkles, Target, Award } from 'lucide-react';
 import { EmptyState } from '@/components/ui/empty-state';
 import { useSupabaseClient } from '@/hooks/useSupabaseClient';
-import BottomNav from '@/components/shared/BottomNav';
+import PhantomBottomNav from '@/components/shared/PhantomBottomNav';
 import { cn } from '@/lib/utils';
 
 // Mock data for insights
@@ -293,7 +293,7 @@ export default function InsightsPage() {
             <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
           </div>
         </div>
-        <BottomNav />
+        <PhantomBottomNav />
       </div>
     );
   }
@@ -323,7 +323,7 @@ export default function InsightsPage() {
             onSecondaryAction={() => window.location.href = '/calendar'}
           />
         </div>
-        <BottomNav />
+        <PhantomBottomNav />
       </div>
     );
   }
@@ -594,7 +594,7 @@ export default function InsightsPage() {
       </div>
       
       {/* Bottom Navigation */}
-      <BottomNav />
+      <PhantomBottomNav />
     </div>
   );
 }

@@ -3,366 +3,457 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { ThemeToggle } from '@/components/ui/theme-toggle';
 import { Switch } from '@/components/ui/switch';
 import { Slider } from '@/components/ui/slider';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
+import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { ArrowLeft, Bell, Moon, Sun, User, Shield, Info, Clock, Volume2, UserCircle } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import {
+  Bell, CalendarRange, CheckCircle2, Clock, Edit, Info, 
+  LogOut, MapPin, Moon, Shield, Sun, User, Volume2
+} from 'lucide-react';
 import Link from 'next/link';
-import BottomNav from '@/components/shared/BottomNav';
+import PhantomBottomNav from '@/components/shared/PhantomBottomNav';
 import { cn } from '@/lib/utils';
+import { useAuth } from '@/hooks/useAuth';
+import { useToast } from '@/components/ui/use-toast';
+import { ThemeToggle } from '@/components/ui/theme-toggle';
+import { supabase } from '@/lib/supabase';
 
 export default function SettingsPage() {
-  // State for various settings
+  const { signOut } = useAuth();
+  const { toast } = useToast();
+  
+  // State for user profile
+  const [displayName, setDisplayName] = useState('Ahmed Hassan');
+  const [email, setEmail] = useState('ahmed@example.com');
+  const [isEditing, setIsEditing] = useState(false);
+  
+  // Prayer Notification Settings
   const [notifications, setNotifications] = useState(true);
   const [prayerReminders, setPrayerReminders] = useState(true);
   const [reminderTime, setReminderTime] = useState(15); // minutes before prayer
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [vibrationEnabled, setVibrationEnabled] = useState(true);
-  const [dataCollection, setDataCollection] = useState(true);
+  
+  // Location Settings
   const [locationEnabled, setLocationEnabled] = useState(true);
-  const [textSize, setTextSize] = useState(2); // 1-4 scale
+  const [calculationMethod, setCalculationMethod] = useState('hanafi');
+  
+  // Period Exemption Settings
+  const [periodExemptionEnabled, setPeriodExemptionEnabled] = useState(false);
+  const [menstruationTracking, setMenstruationTracking] = useState(false);
+  const [travelExemption, setTravelExemption] = useState(false);
+  const [illnessExemption, setIllnessExemption] = useState(false);
+  
+  // Habit & Accountability Settings
+  const [streakProtection, setStreakProtection] = useState(true);
+  const [qadaTracking, setQadaTracking] = useState(true);
+  const [communityPresence, setCommunityPresence] = useState(true);
+  const [dailyGoals, setDailyGoals] = useState(true);
+  
+  // Privacy Settings
+  const [dataCollection, setDataCollection] = useState(true);
+  const [shareInsights, setShareInsights] = useState(false);
+  
+  // App preferences
+  const [themePreference, setThemePreference] = useState('system');
   const [reduceAnimations, setReduceAnimations] = useState(false);
-  const [calculationMethod, setCalculationMethod] = useState("hanafi");
+  const [textSize, setTextSize] = useState(1);
+  
+  const handleSignOut = async () => {
+    try {
+      await signOut();
+      toast({
+        title: "Signed out successfully",
+        variant: "default"
+      });
+    } catch (error) {
+      console.error("Error signing out:", error);
+      toast({
+        title: "Sign out failed",
+        description: "Please try again",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleSaveProfile = async () => {
+    try {
+      toast({
+        title: "Profile updated successfully",
+        variant: "default"
+      });
+      setIsEditing(false);
+    } catch (error) {
+      console.error("Error updating profile:", error);
+      toast({
+        title: "Update failed",
+        description: "Please try again",
+        variant: "destructive"
+      });
+    }
+  };
   
   return (
-    <div className="min-h-screen bg-background pb-16">
-      <div className="container max-w-md mx-auto px-3 py-6">
+    <div className="min-h-screen bg-background pb-24">
+      <div className="container max-w-md mx-auto px-4 py-6">
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center gap-2">
-            <Link href="/">
-              <Button variant="ghost" size="icon" className="rounded-full">
-                <ArrowLeft className="h-5 w-5" />
-              </Button>
-            </Link>
-            <h1 className="text-xl font-semibold">Settings</h1>
-          </div>
-          <Link href="/profile">
-            <Button variant="ghost" size="icon" className="rounded-full">
-              <UserCircle className="h-5 w-5" />
-            </Button>
-          </Link>
+          <h1 className="text-xl font-semibold">Settings & Profile</h1>
         </div>
         
+        {/* Profile Card */}
+        <Card className="mb-6 border border-primary/20 w-full overflow-hidden bg-gradient-to-r from-primary/30 to-primary/10">
+          <CardContent className="p-4">
+              <div className="flex items-center gap-3">
+                <Avatar className="h-16 w-16 border-2 border-background">
+                  <AvatarImage src="/images/avatar.jpg" alt={displayName} />
+                  <AvatarFallback>{displayName.substring(0, 2).toUpperCase()}</AvatarFallback>
+                </Avatar>
+                
+                {isEditing ? (
+                  <div className="flex-1">
+                    <Input 
+                      value={displayName} 
+                      onChange={(e) => setDisplayName(e.target.value)}
+                      className="mb-1"
+                    />
+                    <div className="flex gap-2">
+                      <Button size="sm" onClick={handleSaveProfile}>Save</Button>
+                      <Button size="sm" variant="ghost" onClick={() => setIsEditing(false)}>Cancel</Button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex-1">
+                    <div className="flex items-center justify-between">
+                      <h3 className="font-medium">{displayName}</h3>
+                      <Button size="sm" variant="ghost" onClick={() => setIsEditing(true)}>
+                        <Edit className="h-3.5 w-3.5" />
+                      </Button>
+                    </div>
+                    <p className="text-xs text-muted-foreground">{email}</p>
+                    <div className="flex gap-1 mt-1">
+                      <Badge variant="outline" className="text-xs">12 day streak</Badge>
+                      <Badge variant="outline" className="text-xs">Premium</Badge>
+                    </div>
+                  </div>
+                )}
+              </div>
+          </CardContent>
+        </Card>
+        
         {/* Settings Tabs */}
-        <Tabs defaultValue="appearance" className="mb-6">
-          <TabsList className="grid grid-cols-5 mb-4 w-full">
-            <TabsTrigger value="appearance">
-              <div className="flex items-center gap-1">
-                <Sun className="h-4 w-4" />
-                <span>Look</span>
-              </div>
-            </TabsTrigger>
-            <TabsTrigger value="notifications">
-              <div className="flex items-center gap-1">
-                <Bell className="h-4 w-4" />
-                <span>Alerts</span>
-              </div>
-            </TabsTrigger>
-            <TabsTrigger value="privacy">
-              <div className="flex items-center gap-1">
-                <Shield className="h-4 w-4" />
-                <span>Privacy</span>
-              </div>
-            </TabsTrigger>
-            <TabsTrigger value="account">
-              <div className="flex items-center gap-1">
-                <User className="h-4 w-4" />
-                <span>Account</span>
-              </div>
-            </TabsTrigger>
-            <TabsTrigger value="about">
-              <div className="flex items-center gap-1">
-                <Info className="h-4 w-4" />
-                <span>About</span>
-              </div>
-            </TabsTrigger>
+        <Tabs defaultValue="prayer" className="w-full">
+          <TabsList className="grid grid-cols-4 mb-4">
+            <TabsTrigger value="prayer">Prayer</TabsTrigger>
+            <TabsTrigger value="habits">Habits</TabsTrigger>
+            <TabsTrigger value="app">App</TabsTrigger>
+            <TabsTrigger value="about">About</TabsTrigger>
           </TabsList>
           
-          {/* Appearance Tab */}
-          <TabsContent value="appearance" className="space-y-4">
+          {/* Prayer Settings Tab */}
+          <TabsContent value="prayer" className="space-y-4">
             <Card className="mb-6 border border-primary/20 w-full overflow-hidden">
               <CardHeader className="pb-2">
                 <CardTitle className="text-lg flex items-center gap-2">
-                  <Sun className="h-5 w-5" />
-                  Appearance
+                  <MapPin className="h-5 w-5" />
+                  Prayer Settings
                 </CardTitle>
-                <CardDescription>Customize how Hopium looks and feels</CardDescription>
+                <CardDescription>Customize your prayer experience</CardDescription>
               </CardHeader>
-              <CardContent className="space-y-4 px-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 bg-primary/10 rounded-full">
-                      <Moon className="h-5 w-5 text-primary" />
-                    </div>
-                    <div>
-                      <p className="font-medium">Theme</p>
-                      <p className="text-sm text-muted-foreground">Light, dark, or system</p>
-                    </div>
-                  </div>
-                  <ThemeToggle />
+              <CardContent className="space-y-4">
+                {/* Calculation Method */}
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium">Calculation Method</Label>
+                  <Select
+                    value={calculationMethod}
+                    onValueChange={setCalculationMethod}
+                  >
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Select method" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="hanafi">Hanafi</SelectItem>
+                      <SelectItem value="shafi">Shafi'i</SelectItem>
+                      <SelectItem value="north_america">North America (ISNA)</SelectItem>
+                      <SelectItem value="mecca">Umm al-Qura (Mecca)</SelectItem>
+                      <SelectItem value="karachi">University of Islamic Sciences (Karachi)</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
                 
-                <Separator className="my-4" />
-                
-                <div className="space-y-4">
-                  <div>
-                    <div className="flex items-center justify-between mb-2">
-                      <Label className="text-sm font-medium">Text Size</Label>
-                      <span className="text-xs bg-primary/10 text-primary px-2 py-1 rounded-full">
-                        {textSize === 1 ? "Small" : textSize === 2 ? "Medium" : textSize === 3 ? "Large" : "Extra Large"}
-                      </span>
-                    </div>
-                    <Slider
-                      value={[textSize]}
-                      min={1}
-                      max={4}
-                      step={1}
-                      onValueChange={(value) => setTextSize(value[0])}
-                      className="py-2"
-                    />
-                    <div className="flex justify-between text-xs text-muted-foreground mt-1">
-                      <span>A</span>
-                      <span className="text-sm">A</span>
-                      <span className="text-base">A</span>
-                      <span className="text-lg">A</span>
-                    </div>
-                  </div>
-                  
-                  <div className="flex items-center justify-between pt-2">
-                    <div>
-                      <p className="font-medium">Reduce Animations</p>
-                      <p className="text-sm text-muted-foreground">For improved performance</p>
-                    </div>
+                {/* Period Exemption */}
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="period-exemption" className="text-sm font-medium">Period Exemption</Label>
                     <Switch 
-                      checked={reduceAnimations} 
-                      onCheckedChange={setReduceAnimations} 
+                      id="period-exemption" 
+                      checked={periodExemptionEnabled}
+                      onCheckedChange={setPeriodExemptionEnabled}
                     />
                   </div>
+                  <p className="text-xs text-muted-foreground">Track menstruation periods for prayer exemption</p>
+                  
+                  {periodExemptionEnabled && (
+                    <div className="pt-2 pl-2 border-l-2 border-primary/20 mt-2 space-y-2">
+                      <div className="flex items-center justify-between">
+                        <Label htmlFor="menstruation-tracking" className="text-sm">Menstruation Tracking</Label>
+                        <Switch 
+                          id="menstruation-tracking" 
+                          checked={menstruationTracking}
+                          onCheckedChange={setMenstruationTracking}
+                        />
+                      </div>
+                    </div>
+                  )}
+                </div>
+                
+                {/* Travel Exemption */}
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="travel-exemption" className="text-sm font-medium">Travel Exemption</Label>
+                    <Switch 
+                      id="travel-exemption" 
+                      checked={travelExemption}
+                      onCheckedChange={setTravelExemption}
+                    />
+                  </div>
+                  <p className="text-xs text-muted-foreground">Track travel status for prayer modifications</p>
+                </div>
+                
+                {/* Illness Exemption */}
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="illness-exemption" className="text-sm font-medium">Illness Exemption</Label>
+                    <Switch 
+                      id="illness-exemption" 
+                      checked={illnessExemption}
+                      onCheckedChange={setIllnessExemption}
+                    />
+                  </div>
+                  <p className="text-xs text-muted-foreground">Track illness for prayer modifications</p>
                 </div>
               </CardContent>
             </Card>
-          </TabsContent>
-          
-          {/* Notifications Tab */}
-          <TabsContent value="notifications" className="space-y-4">
+            
+            {/* Notifications Settings */}
             <Card className="mb-6 border border-primary/20 w-full overflow-hidden">
               <CardHeader className="pb-2">
                 <CardTitle className="text-lg flex items-center gap-2">
                   <Bell className="h-5 w-5" />
                   Notifications
                 </CardTitle>
-                <CardDescription>Configure your prayer reminders and alerts</CardDescription>
+                <CardDescription>Prayer reminders and alerts</CardDescription>
               </CardHeader>
-              <CardContent className="space-y-4 px-4">
+              <CardContent className="space-y-4">
                 <div className="flex items-center justify-between">
-                  <div>
-                    <p className="font-medium">Prayer Reminders</p>
-                    <p className="text-sm text-muted-foreground">Get notified before prayer times</p>
-                  </div>
+                  <Label htmlFor="notifications" className="text-sm font-medium">Enable Notifications</Label>
                   <Switch 
-                    checked={prayerReminders} 
-                    onCheckedChange={setPrayerReminders} 
+                    id="notifications" 
+                    checked={notifications}
+                    onCheckedChange={setNotifications}
                   />
                 </div>
                 
-                {prayerReminders && (
-                  <div className="pl-4 border-l-2 border-primary/20 mt-2 space-y-4">
-                    <div>
-                      <div className="flex items-center justify-between mb-2">
+                {notifications && (
+                  <div className="space-y-4 pt-2 pl-2 border-l-2 border-primary/20">
+                    <div className="flex items-center justify-between">
+                      <Label htmlFor="prayer-reminders" className="text-sm">Prayer Reminders</Label>
+                      <Switch 
+                        id="prayer-reminders" 
+                        checked={prayerReminders}
+                        onCheckedChange={setPrayerReminders}
+                      />
+                    </div>
+                    
+                    {prayerReminders && (
+                      <div className="space-y-2">
+                        <Label className="text-sm">Reminder Time (minutes before prayer)</Label>
                         <div className="flex items-center gap-2">
-                          <Clock className="h-4 w-4 text-muted-foreground" />
-                          <Label className="text-sm font-medium">Reminder Time</Label>
+                          <Slider 
+                            value={[reminderTime]} 
+                            min={5} 
+                            max={30} 
+                            step={5} 
+                            className="flex-1"
+                            onValueChange={(vals) => setReminderTime(vals[0])} 
+                          />
+                          <span className="text-sm font-medium w-8 text-center">{reminderTime}</span>
                         </div>
-                        <span className="text-xs bg-primary/10 text-primary px-2 py-1 rounded-full">
-                          {reminderTime} min before
-                        </span>
                       </div>
-                      <Slider
-                        value={[reminderTime]}
-                        min={5}
-                        max={30}
-                        step={5}
-                        onValueChange={(value) => setReminderTime(value[0])}
-                        className="py-2"
+                    )}
+                    
+                    <div className="flex items-center justify-between">
+                      <Label htmlFor="sound-enabled" className="text-sm">Sound</Label>
+                      <Switch 
+                        id="sound-enabled" 
+                        checked={soundEnabled}
+                        onCheckedChange={setSoundEnabled}
                       />
                     </div>
                     
                     <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <Volume2 className="h-4 w-4 text-muted-foreground" />
-                        <span className="text-sm font-medium">Sound</span>
-                      </div>
+                      <Label htmlFor="vibration-enabled" className="text-sm">Vibration</Label>
                       <Switch 
-                        checked={soundEnabled} 
-                        onCheckedChange={setSoundEnabled} 
-                      />
-                    </div>
-                    
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm font-medium">Vibration</span>
-                      </div>
-                      <Switch 
-                        checked={vibrationEnabled} 
-                        onCheckedChange={setVibrationEnabled} 
+                        id="vibration-enabled" 
+                        checked={vibrationEnabled}
+                        onCheckedChange={setVibrationEnabled}
                       />
                     </div>
                   </div>
                 )}
-                
-                <Separator className="my-2" />
-                
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="font-medium">Community Updates</p>
-                    <p className="text-sm text-muted-foreground">News and feature announcements</p>
-                  </div>
-                  <Switch 
-                    checked={notifications} 
-                    onCheckedChange={setNotifications} 
-                  />
-                </div>
               </CardContent>
             </Card>
           </TabsContent>
           
-          {/* Privacy Tab */}
-          <TabsContent value="privacy" className="space-y-4">
+          {/* Habits & Accountability Tab */}
+          <TabsContent value="habits" className="space-y-4">
+            <Card className="mb-6 border border-primary/20 w-full overflow-hidden">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <CheckCircle2 className="h-5 w-5" />
+                  Habit Building
+                </CardTitle>
+                <CardDescription>Strengthen your prayer habits</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="streak-protection" className="text-sm font-medium">
+                    Streak Protection
+                  </Label>
+                  <Switch 
+                    id="streak-protection" 
+                    checked={streakProtection}
+                    onCheckedChange={setStreakProtection}
+                  />
+                </div>
+                <p className="text-xs text-muted-foreground">Get reminders to protect your streak</p>
+                
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="qada-tracking" className="text-sm font-medium">
+                    Qada Tracking
+                  </Label>
+                  <Switch 
+                    id="qada-tracking" 
+                    checked={qadaTracking}
+                    onCheckedChange={setQadaTracking}
+                  />
+                </div>
+                <p className="text-xs text-muted-foreground">Track and complete missed prayers</p>
+                
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="daily-goals" className="text-sm font-medium">
+                    Daily Goals
+                  </Label>
+                  <Switch 
+                    id="daily-goals" 
+                    checked={dailyGoals}
+                    onCheckedChange={setDailyGoals}
+                  />
+                </div>
+                <p className="text-xs text-muted-foreground">Set and track personal prayer goals</p>
+                
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="community-presence" className="text-sm font-medium">
+                    Community Presence
+                  </Label>
+                  <Switch 
+                    id="community-presence" 
+                    checked={communityPresence}
+                    onCheckedChange={setCommunityPresence}
+                  />
+                </div>
+                <p className="text-xs text-muted-foreground">See when others in your community are praying</p>
+              </CardContent>
+            </Card>
+            
             <Card className="mb-6 border border-primary/20 w-full overflow-hidden">
               <CardHeader className="pb-2">
                 <CardTitle className="text-lg flex items-center gap-2">
                   <Shield className="h-5 w-5" />
-                  Privacy & Data
+                  Privacy
                 </CardTitle>
-                <CardDescription>Manage your data and privacy settings</CardDescription>
+                <CardDescription>Control your data and privacy</CardDescription>
               </CardHeader>
-              <CardContent className="space-y-4 px-4">
+              <CardContent className="space-y-4">
                 <div className="flex items-center justify-between">
-                  <div>
-                    <p className="font-medium">Data Collection</p>
-                    <p className="text-sm text-muted-foreground">Help improve Hopium with usage data</p>
-                  </div>
+                  <Label htmlFor="data-collection" className="text-sm font-medium">
+                    Data Collection
+                  </Label>
                   <Switch 
-                    checked={dataCollection} 
-                    onCheckedChange={setDataCollection} 
+                    id="data-collection" 
+                    checked={dataCollection}
+                    onCheckedChange={setDataCollection}
                   />
                 </div>
+                <p className="text-xs text-muted-foreground">Allow anonymous data collection to improve the app</p>
                 
                 <div className="flex items-center justify-between">
-                  <div>
-                    <p className="font-medium">Location Services</p>
-                    <p className="text-sm text-muted-foreground">For accurate prayer times</p>
-                  </div>
+                  <Label htmlFor="share-insights" className="text-sm font-medium">
+                    Share Insights
+                  </Label>
                   <Switch 
-                    checked={locationEnabled} 
-                    onCheckedChange={setLocationEnabled} 
+                    id="share-insights" 
+                    checked={shareInsights}
+                    onCheckedChange={setShareInsights}
                   />
                 </div>
-                
-                <Separator className="my-2" />
-                
-                <div className="space-y-2">
-                  <Button variant="outline" className="w-full justify-between" asChild>
-                    <Link href="#">
-                      <span>Privacy Policy</span>
-                      <span className="text-muted-foreground">→</span>
-                    </Link>
-                  </Button>
-                  
-                  <Button variant="outline" className="w-full justify-between text-destructive hover:text-destructive" asChild>
-                    <Link href="#">
-                      <span>Delete My Data</span>
-                      <span className="text-destructive">→</span>
-                    </Link>
-                  </Button>
-                </div>
+                <p className="text-xs text-muted-foreground">Share anonymized prayer patterns with researchers</p>
               </CardContent>
             </Card>
           </TabsContent>
           
-          {/* Account Tab */}
-          <TabsContent value="account" className="space-y-4">
+          {/* App Settings Tab */}
+          <TabsContent value="app" className="space-y-4">
             <Card className="mb-6 border border-primary/20 w-full overflow-hidden">
               <CardHeader className="pb-2">
                 <CardTitle className="text-lg flex items-center gap-2">
-                  <User className="h-5 w-5" />
-                  Account
+                  <Sun className="h-5 w-5" />
+                  Appearance
                 </CardTitle>
-                <CardDescription>Manage your account settings</CardDescription>
+                <CardDescription>Customize app appearance</CardDescription>
               </CardHeader>
-              <CardContent className="space-y-4 px-4">
-                <div className="flex items-center gap-4">
-                  <Avatar className="h-14 w-14">
-                    <AvatarImage src="/avatar.png" alt="User" />
-                    <AvatarFallback>U</AvatarFallback>
-                  </Avatar>
-                  <div>
-                    <h3 className="font-semibold">Abdullah Hassan</h3>
-                    <p className="text-sm text-muted-foreground">abdullah@example.com</p>
-                    <Button variant="link" className="p-0 h-auto text-primary text-xs">Edit Profile</Button>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <Label className="text-sm font-medium">Theme</Label>
+                    <ThemeToggle />
+                  </div>
+                  <p className="text-xs text-muted-foreground">Choose light, dark, or system theme</p>
+                </div>
+                
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium">Text Size</Label>
+                  <div className="flex items-center gap-2">
+                    <Slider 
+                      value={[textSize]} 
+                      min={0.8} 
+                      max={1.2} 
+                      step={0.1} 
+                      className="flex-1"
+                      onValueChange={(vals) => setTextSize(vals[0])} 
+                    />
+                    <span className="text-sm font-medium w-8 text-center">{textSize.toFixed(1)}x</span>
                   </div>
                 </div>
                 
-                <Separator className="my-2" />
-                
-                <div className="space-y-4">
-                  <div>
-                    <Label className="font-medium mb-2 block">Prayer Calculation Method</Label>
-                    <RadioGroup 
-                      value={calculationMethod}
-                      onValueChange={setCalculationMethod}
-                      className="grid grid-cols-1 gap-2"
-                    >
-                      <div className={cn(
-                        "flex items-center justify-between rounded-md border p-3",
-                        calculationMethod === "hanafi" ? "border-primary bg-primary/5" : "border-muted"
-                      )}>
-                        <div className="flex items-center gap-2">
-                          <RadioGroupItem value="hanafi" id="hanafi" />
-                          <Label htmlFor="hanafi" className="font-medium">Hanafi</Label>
-                        </div>
-                        <span className="text-xs text-muted-foreground">Standard in South Asia</span>
-                      </div>
-                      
-                      <div className={cn(
-                        "flex items-center justify-between rounded-md border p-3",
-                        calculationMethod === "shafi" ? "border-primary bg-primary/5" : "border-muted"
-                      )}>
-                        <div className="flex items-center gap-2">
-                          <RadioGroupItem value="shafi" id="shafi" />
-                          <Label htmlFor="shafi" className="font-medium">Shafi'i</Label>
-                        </div>
-                        <span className="text-xs text-muted-foreground">Common in Middle East</span>
-                      </div>
-                      
-                      <div className={cn(
-                        "flex items-center justify-between rounded-md border p-3",
-                        calculationMethod === "north_america" ? "border-primary bg-primary/5" : "border-muted"
-                      )}>
-                        <div className="flex items-center gap-2">
-                          <RadioGroupItem value="north_america" id="north_america" />
-                          <Label htmlFor="north_america" className="font-medium">North America</Label>
-                        </div>
-                        <span className="text-xs text-muted-foreground">ISNA Standard</span>
-                      </div>
-                    </RadioGroup>
-                  </div>
-                  
-                  <Button variant="outline" className="w-full justify-between">
-                    <span>Language</span>
-                    <span className="text-muted-foreground">English →</span>
-                  </Button>
-                  
-                  <Button variant="destructive" className="w-full mt-4">
-                    Sign Out
-                  </Button>
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="reduce-animations" className="text-sm font-medium">
+                    Reduce Animations
+                  </Label>
+                  <Switch 
+                    id="reduce-animations" 
+                    checked={reduceAnimations}
+                    onCheckedChange={setReduceAnimations}
+                  />
                 </div>
+                <p className="text-xs text-muted-foreground">Minimize motion for accessibility</p>
               </CardContent>
             </Card>
           </TabsContent>
@@ -373,48 +464,38 @@ export default function SettingsPage() {
               <CardHeader className="pb-2">
                 <CardTitle className="text-lg flex items-center gap-2">
                   <Info className="h-5 w-5" />
-                  About Hopium
+                  About Mulvi
                 </CardTitle>
-                <CardDescription>App information and support resources</CardDescription>
+                <CardDescription>App information and support</CardDescription>
               </CardHeader>
-              <CardContent className="space-y-4 px-4">
-                <div className="text-center py-4">
-                  <div className="bg-primary/10 h-20 w-20 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <Sun className="h-10 w-10 text-primary" />
+              <CardContent className="space-y-4">
+                <div className="space-y-1">
+                  <h3 className="text-sm font-medium">Version</h3>
+                  <p className="text-xs text-muted-foreground">1.0.0 (Build 145)</p>
+                </div>
+                
+                <div className="space-y-1">
+                  <h3 className="text-sm font-medium">Developer</h3>
+                  <p className="text-xs text-muted-foreground">Mulvi Technologies</p>
+                </div>
+                
+                <div className="space-y-2 pt-2">
+                  <h3 className="text-sm font-medium">Support</h3>
+                  <div className="grid gap-2">
+                    <Button variant="outline" className="w-full justify-start" size="sm">
+                      <User className="mr-2 h-4 w-4" /> Contact Support
+                    </Button>
+                    <Button variant="outline" className="w-full justify-start" size="sm">
+                      <Info className="mr-2 h-4 w-4" /> FAQ & Help Center
+                    </Button>
                   </div>
-                  <h3 className="text-xl font-bold">Hopium Prayer App</h3>
-                  <p className="text-sm text-muted-foreground">Version 1.0.0</p>
                 </div>
                 
                 <Separator className="my-2" />
                 
-                <div className="space-y-2">
-                  <Button variant="outline" className="w-full justify-between" asChild>
-                    <Link href="#">
-                      <span>Help & Support</span>
-                      <span className="text-muted-foreground">→</span>
-                    </Link>
-                  </Button>
-                  
-                  <Button variant="outline" className="w-full justify-between" asChild>
-                    <Link href="#">
-                      <span>Terms of Service</span>
-                      <span className="text-muted-foreground">→</span>
-                    </Link>
-                  </Button>
-                  
-                  <Button variant="outline" className="w-full justify-between" asChild>
-                    <Link href="#">
-                      <span>Open Source Licenses</span>
-                      <span className="text-muted-foreground">→</span>
-                    </Link>
-                  </Button>
-                </div>
-                
-                <div className="text-center text-xs text-muted-foreground mt-6">
-                  <p>Made with ❤️ for mindful prayer</p>
-                  <p className="mt-1">© 2025 Hopium. All rights reserved.</p>
-                </div>
+                <Button onClick={handleSignOut} variant="destructive" className="w-full">
+                  <LogOut className="mr-2 h-4 w-4" /> Sign Out
+                </Button>
               </CardContent>
             </Card>
           </TabsContent>
@@ -422,7 +503,7 @@ export default function SettingsPage() {
       </div>
       
       {/* Bottom Navigation */}
-      <BottomNav />
+      <PhantomBottomNav />
     </div>
   );
 }
