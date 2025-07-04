@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, memo, useMemo, useCallback } from 'react';
+import { useState, memo, useMemo, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -13,33 +13,50 @@ import { useToast } from '@/components/ui/use-toast';
 type StreakOverviewProps = {
   currentStreak: number;
   bestStreak: number;
-  recentDays: boolean[];
+  recentDays?: boolean[];
   streakShields?: number;
   streakAtRisk?: boolean;
   nextMilestone?: number;
   percentToMilestone?: number;
+  isLoading?: boolean;
 };
 
 const StreakOverview = memo(function StreakOverview({ 
-  currentStreak = 7, 
-  bestStreak = 14, 
-  recentDays = new Array(14).fill(true), 
-  streakShields = 2,
-  streakAtRisk = true,
-  nextMilestone = 10,
-  percentToMilestone = 70
+  currentStreak = 0, 
+  bestStreak = 0, 
+  recentDays = [], 
+  streakShields = 0,
+  streakAtRisk = false,
+  nextMilestone,
+  percentToMilestone,
+  isLoading = false
 }: StreakOverviewProps) {
   const { toast } = useToast();
-  const [showAnimation, setShowAnimation] = useState(false);
   const [showShieldDialog, setShowShieldDialog] = useState(false);
+  
+  // Generate recent days data if not provided (for last 14 days)
+  const displayDays = useMemo(() => {
+    if (recentDays.length > 0) return recentDays.slice(-14);
+    
+    // Generate mock data based on current streak for visual consistency
+    const days = new Array(14).fill(false);
+    if (currentStreak > 0) {
+      // Fill the last 'currentStreak' days as completed, up to 14
+      const completedDays = Math.min(currentStreak, 14);
+      for (let i = 14 - completedDays; i < 14; i++) {
+        days[i] = true;
+      }
+    }
+    return days;
+  }, [recentDays, currentStreak]);
   
   // Memoize streak tier calculation
   const streakInfo = useMemo(() => {
-    if (currentStreak >= 100) return { tier: 'diamond', color: 'from-blue-300 to-blue-500', size: 'scale-110' };
-    if (currentStreak >= 30) return { tier: 'platinum', color: 'from-purple-300 to-purple-600', size: 'scale-105' };
-    if (currentStreak >= 14) return { tier: 'gold', color: 'from-yellow-300 to-yellow-600', size: 'scale-100' };
-    if (currentStreak >= 7) return { tier: 'silver', color: 'from-amber-300 to-amber-600', size: 'scale-100' };
-    return { tier: 'bronze', color: 'from-orange-300 to-orange-600', size: 'scale-95' };
+    if (currentStreak >= 100) return { tier: 'diamond', color: 'from-blue-300 to-blue-500' };
+    if (currentStreak >= 30) return { tier: 'platinum', color: 'from-purple-300 to-purple-600' };
+    if (currentStreak >= 14) return { tier: 'gold', color: 'from-yellow-300 to-yellow-600' };
+    if (currentStreak >= 7) return { tier: 'silver', color: 'from-amber-300 to-amber-600' };
+    return { tier: 'bronze', color: 'from-orange-300 to-orange-600' };
   }, [currentStreak]);
   
   // Memoize milestone calculation
@@ -56,15 +73,6 @@ const StreakOverview = memo(function StreakOverview({
     };
   }, [currentStreak]);
   
-  // Animation effect on mount
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setShowAnimation(true);
-    }, 500);
-    
-    return () => clearTimeout(timer);
-  }, []);
-  
   // Handle streak protection with useCallback
   const handleActivateShield = useCallback(() => {
     toast({
@@ -78,25 +86,57 @@ const StreakOverview = memo(function StreakOverview({
   // Day names for the mini calendar
   const dayNames = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
   
+  if (isLoading) {
+    return (
+      <Card className="mb-4">
+        <CardHeader className="pb-2 px-5 pt-4">
+          <div className="flex justify-between items-center">
+            <CardTitle className="text-sm font-medium text-foreground flex items-center">
+              <Calendar className="h-4 w-4 mr-1.5 opacity-70" />
+              Prayer Streak
+            </CardTitle>
+          </div>
+        </CardHeader>
+        <CardContent className="p-5 pt-0">
+          <div className="flex justify-between items-center mb-4">
+            <div className="flex-1">
+              <div className="flex items-center">
+                <div className="h-14 w-14 rounded-full bg-secondary animate-pulse mr-3.5" />
+                <div>
+                  <div className="h-6 w-24 bg-secondary animate-pulse rounded mb-2" />
+                  <div className="h-4 w-16 bg-secondary animate-pulse rounded" />
+                </div>
+              </div>
+            </div>
+          </div>
+          <div className="grid grid-cols-7 gap-2">
+            {Array.from({ length: 14 }).map((_, i) => (
+              <div key={i} className="h-8 bg-secondary animate-pulse rounded-md" />
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+  
   return (
     <Card className={cn(
-      "mb-4 overflow-hidden transition-all duration-700 ease-out p-0",
-      streakAtRisk ? "shadow-md border-amber-500/40" : "shadow-sm border-border",
-      showAnimation ? "translate-y-0 opacity-100" : "translate-y-4 opacity-0"
+      "mb-4 overflow-hidden",
+      streakAtRisk ? "shadow-md border-amber-500/40" : "shadow-sm border-border"
     )}>
       <div className="relative">
         {/* Streak status banner - only shows when streak is at risk */}
         {streakAtRisk && (
           <div className="absolute top-0 left-0 right-0 w-full bg-gradient-to-r from-amber-500/90 to-red-500/90 py-1.5 px-4 text-white flex items-center justify-between text-xs font-medium z-10">
             <div className="flex items-center">
-              <Flame className="h-3.5 w-3.5 mr-1.5 animate-pulse" />
+              <Flame className="h-3.5 w-3.5 mr-1.5" />
               <span>Streak at risk!</span>
             </div>
             <span className="font-bold">8h 23m left</span>
           </div>
         )}
         
-        {/* Card Header - adjusted padding for banner if present */}
+        {/* Card Header */}
         <CardHeader className={cn(
           "pb-2 px-5", 
           streakAtRisk ? "pt-9" : "pt-4"
@@ -124,15 +164,21 @@ const StreakOverview = memo(function StreakOverview({
                   <div className="space-y-2">
                     <div className="flex justify-between items-center">
                       <span className="text-sm">1 Week Streak</span>
-                      <Badge variant="outline" className="bg-gradient-to-r from-orange-300 to-orange-600 text-white">Achieved</Badge>
+                      <Badge variant="outline" className={currentStreak >= 7 ? "bg-gradient-to-r from-orange-300 to-orange-600 text-white" : "bg-muted/50 text-muted-foreground"}>
+                        {currentStreak >= 7 ? "Achieved" : `${7 - currentStreak} days left`}
+                      </Badge>
                     </div>
                     <div className="flex justify-between items-center">
                       <span className="text-sm">2 Week Streak</span>
-                      <Badge variant="outline" className="bg-gradient-to-r from-yellow-300 to-yellow-600 text-white">Achieved</Badge>
+                      <Badge variant="outline" className={currentStreak >= 14 ? "bg-gradient-to-r from-yellow-300 to-yellow-600 text-white" : "bg-muted/50 text-muted-foreground"}>
+                        {currentStreak >= 14 ? "Achieved" : `${14 - currentStreak} days left`}
+                      </Badge>
                     </div>
                     <div className="flex justify-between items-center">
                       <span className="text-sm">1 Month Streak</span>
-                      <Badge variant="outline" className="bg-muted/50 text-muted-foreground">3 days left</Badge>
+                      <Badge variant="outline" className={currentStreak >= 30 ? "bg-gradient-to-r from-purple-300 to-purple-600 text-white" : "bg-muted/50 text-muted-foreground"}>
+                        {currentStreak >= 30 ? "Achieved" : `${30 - currentStreak} days left`}
+                      </Badge>
                     </div>
                   </div>
                 </div>
@@ -152,36 +198,23 @@ const StreakOverview = memo(function StreakOverview({
           <div className="flex justify-between items-center mb-4">
             <div className="flex-1">
               <div className="flex items-center">
-                <div className={cn(
-                  "relative mr-3.5 transition-all duration-500",
-                  showAnimation ? streakInfo.size : "scale-90 opacity-70"
-                )}>
+                <div className="relative mr-3.5">
                   <div className={cn(
                     "h-14 w-14 rounded-full flex items-center justify-center bg-gradient-to-br shadow-lg",
-                    streakInfo.color,
-                    showAnimation && "animate-flame"
+                    streakInfo.color
                   )}>
                     <span className="text-xl font-bold text-white">{currentStreak}</span>
                   </div>
-                  {/* Particles effect for streaks > 7 */}
-                  {currentStreak >= 7 && showAnimation && (
-                    <div className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-yellow-300 animate-ping opacity-70" />
-                  )}
-                  {currentStreak >= 14 && showAnimation && (
-                    <div className="absolute -bottom-1 -right-0 h-3 w-3 rounded-full bg-yellow-300 animate-ping opacity-50 delay-300" />
-                  )}
                 </div>
                 <div>
-                  <div className="font-semibold text-lg">
+                  <div className="font-semibold text-lg flex items-center">
                     Prayer Streak
-                    {currentStreak >= bestStreak && (
-                      <span className="ml-1.5 inline-block animate-bounce">
-                        <Star className="h-4 w-4 text-yellow-500 inline-block" />
-                      </span>
+                    {currentStreak >= bestStreak && currentStreak > 0 && (
+                      <Star className="h-4 w-4 text-yellow-500 ml-1.5" />
                     )}
                   </div>
                   <div className="text-sm text-muted-foreground">
-                    Keep it going!
+                    {currentStreak > 0 ? "Keep it going!" : "Start your streak today!"}
                   </div>
                 </div>
               </div>
@@ -208,8 +241,8 @@ const StreakOverview = memo(function StreakOverview({
                     variant={streakAtRisk ? "default" : "outline"} 
                     size="sm"
                     className={cn(
-                      "rounded-lg flex items-center gap-1.5 transition-all mb-1",
-                      streakAtRisk && "animate-pulse bg-gradient-to-r from-amber-500 to-red-500 text-white border-none"
+                      "rounded-lg flex items-center gap-1.5 mb-1",
+                      streakAtRisk && "bg-gradient-to-r from-amber-500 to-red-500 text-white border-none"
                     )}
                   >
                     <Shield className="h-3.5 w-3.5" />
@@ -270,7 +303,7 @@ const StreakOverview = memo(function StreakOverview({
             </div>
           </div>
           
-          {/* Mini calendar */}
+          {/* Mini calendar - FIXED: Removed flickering animations */}
           <div className="flex flex-col gap-2 mt-5 pt-4 border-t border-border/50">
             <div className="grid grid-cols-7 gap-2 mb-1">
               {dayNames.map((day, index) => (
@@ -280,20 +313,16 @@ const StreakOverview = memo(function StreakOverview({
               ))}
             </div>
             
-            {/* First week - with animation delay */}
+            {/* First week */}
             <div className="grid grid-cols-7 gap-2">
-              {recentDays.slice(0, 7).map((completed, index) => (
+              {displayDays.slice(0, 7).map((completed, index) => (
                 <div 
                   key={`week1-${index}`}
                   className={cn(
-                    "h-8 rounded-md flex items-center justify-center transition-all duration-300 ease-out",
+                    "h-8 rounded-md flex items-center justify-center",
                     completed 
                       ? "bg-gradient-to-br from-primary/80 to-primary shadow-sm" 
-                      : "bg-secondary/30 dark:bg-secondary/20",
-                    showAnimation 
-                      ? "opacity-100 scale-100" 
-                      : "opacity-0 scale-95",
-                    `transition-delay-${index * 50}`
+                      : "bg-secondary/30 dark:bg-secondary/20"
                   )}
                   title={`${completed ? 'Completed' : 'Missed'} prayers`}
                 >
@@ -306,20 +335,16 @@ const StreakOverview = memo(function StreakOverview({
               ))}
             </div>
             
-            {/* Second week - with animation delay */}
+            {/* Second week */}
             <div className="grid grid-cols-7 gap-2">
-              {recentDays.slice(7, 14).map((completed, index) => (
+              {displayDays.slice(7, 14).map((completed, index) => (
                 <div 
                   key={`week2-${index}`}
                   className={cn(
-                    "h-8 rounded-md flex items-center justify-center transition-all duration-300 ease-out",
+                    "h-8 rounded-md flex items-center justify-center",
                     completed 
                       ? "bg-gradient-to-br from-primary/80 to-primary shadow-sm" 
-                      : "bg-secondary/30 dark:bg-secondary/20",
-                    showAnimation 
-                      ? "opacity-100 scale-100" 
-                      : "opacity-0 scale-95",
-                    `transition-delay-${(index + 7) * 50}`
+                      : "bg-secondary/30 dark:bg-secondary/20"
                   )}
                   title={`${completed ? 'Completed' : 'Missed'} prayers`}
                 >

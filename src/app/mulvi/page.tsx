@@ -2,6 +2,10 @@
 
 import { useState, useRef, useEffect } from 'react';
 import PhantomBottomNav from '@/components/shared/PhantomBottomNav';
+import { useAuth } from '@/hooks/useAuth';
+import { useConversations } from '@/hooks/useConversations';
+import { usePrayerInsights } from '@/hooks/usePrayerInsights';
+import { useNotifications } from '@/hooks/useNotifications';
 
 // UI Components from shadcn
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -55,134 +59,56 @@ const conversationStarters = [
 ];
 
 export default function MulviPage() {
-  // States
+  const { session } = useAuth();
+  const userId = session?.user?.id;
+  
+  // Backend hooks
+  const { insights, isLoading: insightsLoading, dismissInsight } = usePrayerInsights(userId);
+  const { 
+    currentConversation, 
+    messages, 
+    createConversation, 
+    loadConversation, 
+    sendMessage: sendChatMessage,
+    isLoading: chatLoading 
+  } = useConversations(userId);
+  const { setReminder } = useNotifications(userId);
+  
+  // UI States
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [showReminderDialog, setShowReminderDialog] = useState(false);
   const [showInsightDialog, setShowInsightDialog] = useState(false);
   const [showMakeupDialog, setShowMakeupDialog] = useState(false);
   const [activeInsight, setActiveInsight] = useState<PrayerInsight | null>(null);
   const [inputValue, setInputValue] = useState('');
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: '1',
-      content: 'Assalamu alaikum! I\'m your Mulvi prayer assistant. I\'m here to help you stay consistent with your prayers. How can I assist you today?',
-      role: 'assistant',
-      timestamp: new Date(),
-    }
-  ]);
   const [isTyping, setIsTyping] = useState(false);
   
   // Reference for scrolling to bottom of chat
   const messagesEndRef = useRef<HTMLDivElement>(null);
   
-  // Example insights
-  const insights: PrayerInsight[] = [
-    {
-      id: 'insight-1',
-      title: 'Fajr Consistency',
-      description: 'You\'ve been consistent with Fajr prayer for 5 days. Keep it up!',
-      icon: 'LineChart',
-      actionText: 'View Details',
-      priority: 'high',
-    },
-    {
-      id: 'insight-2',
-      title: 'Streak at Risk',
-      description: 'Your Asr prayer streak is at risk today. Don\'t miss it!',
-      icon: 'AlertTriangle',
-      actionText: 'Set Reminder',
-      priority: 'high',
-    },
-    {
-      id: 'insight-3',
-      title: 'Weekly Progress',
-      description: 'You completed 93% of your prayers this week, better than last week!',
-      icon: 'LineChart',
-      actionText: 'View Progress',
-      priority: 'medium',
-    },
-    {
-      id: 'insight-4',
-      title: 'Maghrib Reminder',
-      description: 'Maghrib time is in 15 minutes. Prepare for prayer!',
-      icon: 'Bell',
-      actionText: 'Dismiss',
-      priority: 'high',
-    }
-  ];
-  
   // Chat functions
-  const handleSendMessage = () => {
+  const handleSendMessage = async () => {
     if (!inputValue.trim()) return;
     
-    // Add user message
-    const userMessage: Message = {
-      id: `msg-${Date.now()}-user`,
-      content: inputValue,
-      role: 'user',
-      timestamp: new Date(),
-    };
+    // Create conversation if none exists
+    if (!currentConversation) {
+      const conversationId = await createConversation();
+      if (conversationId) {
+        await loadConversation(conversationId);
+      }
+    }
     
-    setMessages(prev => [...prev, userMessage]);
-    setInputValue('');
-    
-    // Simulate assistant typing
+    // Send message through backend
     setIsTyping(true);
-    
-    // Simulate assistant response after a delay
-    setTimeout(() => {
-      const assistantMessage: Message = {
-        id: `msg-${Date.now()}-assistant`,
-        content: `I understand you're asking about "${userMessage.content}". As your prayer assistant, I'm focused on helping you maintain consistent prayers. What specific challenge are you facing with your prayer routine?`,
-        role: 'assistant',
-        timestamp: new Date(),
-      };
-      
-      setMessages(prev => [...prev, assistantMessage]);
-      setIsTyping(false);
-    }, 1500);
+    await sendChatMessage(inputValue);
+    setInputValue('');
+    setIsTyping(false);
   };
   
   // Handle starter question click
-  const handleStarterClick = (question: string) => {
-    // Add user message
-    const userMessage: Message = {
-      id: `msg-${Date.now()}-user`,
-      content: question,
-      role: 'user',
-      timestamp: new Date(),
-    };
-    
-    setMessages(prev => [...prev, userMessage]);
-    
-    // Simulate assistant typing
-    setIsTyping(true);
-    
-    // Simulate assistant response after a delay
-    setTimeout(() => {
-      let response = '';
-      
-      // Simple response logic based on the question
-      if (question.includes('consistent')) {
-        response = "Consistency in prayers comes from building good habits. Try setting specific prayer times in your daily schedule, creating dedicated prayer spaces, and using reminders effectively. Would you like me to help you set up a prayer routine?";
-      } else if (question.includes('miss')) {
-        response = "If you miss a prayer, try to make it up as soon as you remember. This is called 'qada'. Our app can help you track missed prayers and remind you to complete them. Would you like to set up qada reminders?";
-      } else if (question.includes('work')) {
-        response = "Praying at work can be challenging. Consider finding a quiet space, using your lunch break for prayers, and speaking with your supervisor about short prayer breaks if needed. Would you like some specific strategies for your workplace?";
-      } else if (question.includes('Fajr')) {
-        response = "Waking up for Fajr is one of the biggest challenges! Try using multiple alarms, placing your alarm away from your bed, having wudu before sleeping, and making dua to wake up. Would you like to see more Fajr-specific strategies?";
-      }
-      
-      const assistantMessage: Message = {
-        id: `msg-${Date.now()}-assistant`,
-        content: response,
-        role: 'assistant',
-        timestamp: new Date(),
-      };
-      
-      setMessages(prev => [...prev, assistantMessage]);
-      setIsTyping(false);
-    }, 1500);
+  const handleStarterClick = async (question: string) => {
+    setInputValue(question);
+    await handleSendMessage();
   };
   
   // Handle Enter key press in chat input
@@ -206,10 +132,21 @@ export default function MulviPage() {
     return iconMap[iconName] || <Info className="h-4 w-4" />;
   };
   
+  // Initialize conversation when chat opens
+  useEffect(() => {
+    if (isChatOpen && !currentConversation && userId) {
+      createConversation().then(conversationId => {
+        if (conversationId) {
+          loadConversation(conversationId);
+        }
+      });
+    }
+  }, [isChatOpen, currentConversation, userId]);
+
   // Effect to scroll to bottom of messages when they update
-  useState(() => {
+  useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  });
+  }, [messages]);
   
   return (
     <div className="min-h-screen bg-background pb-24">
@@ -237,9 +174,22 @@ export default function MulviPage() {
             </Button>
           </div>
           
-          <Carousel className="w-full">
-            <CarouselContent>
-              {insights.map((insight) => (
+          {insightsLoading ? (
+            <div className="space-y-3">
+              {[...Array(3)].map((_, i) => (
+                <Card key={i} className="animate-pulse h-[220px]">
+                  <CardContent className="p-4">
+                    <div className="h-4 bg-muted rounded mb-2"></div>
+                    <div className="h-3 bg-muted rounded mb-4"></div>
+                    <div className="h-8 bg-muted rounded"></div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          ) : insights.length > 0 ? (
+            <Carousel className="w-full">
+              <CarouselContent>
+                {insights.map((insight) => (
                 <CarouselItem key={insight.id} className="pb-2">
                   <Card className={`flex flex-col h-[220px] ${insight.priority === 'high' ? 'bg-gradient-to-r from-chart-5/30 via-chart-5/10 to-background shadow-md' : 'bg-gradient-to-r from-chart-3/30 via-chart-3/10 to-background shadow-md'}`}>
                     <CardContent className="p-4 flex-1">
@@ -263,15 +213,12 @@ export default function MulviPage() {
                         size="default" 
                         variant={insight.priority === 'high' ? 'default' : 'outline'} 
                         className={`w-full ${insight.priority === 'high' ? 'bg-chart-5/90 hover:bg-chart-5' : 'border-chart-3/50 hover:bg-chart-3/20'}`}
-                        onClick={() => {
+                        onClick={async () => {
                           setActiveInsight(insight);
                           if (insight.actionText === 'Set Reminder') {
                             setShowReminderDialog(true);
                           } else if (insight.actionText === 'Dismiss') {
-                            // Remove the insight from the list
-                            const updatedInsights = insights.filter(item => item.id !== insight.id);
-                            // This would normally update in database
-                            console.log('Dismissed insight:', insight.id);
+                            await dismissInsight(insight.id);
                           } else {
                             // For View Details, View Progress, etc.
                             setShowInsightDialog(true);
@@ -290,6 +237,14 @@ export default function MulviPage() {
               <CarouselNext className="relative static transform-none mx-1 h-7 w-7" />
             </div>
           </Carousel>
+          ) : (
+            <Card className="h-[220px] flex items-center justify-center">
+              <CardContent className="text-center">
+                <p className="text-muted-foreground">No insights available yet.</p>
+                <p className="text-sm text-muted-foreground mt-1">Complete some prayers to see personalized insights!</p>
+              </CardContent>
+            </Card>
+          )}
         </div>
         
         {/* Quick Actions */}
@@ -472,10 +427,13 @@ export default function MulviPage() {
           
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowReminderDialog(false)}>Cancel</Button>
-            <Button onClick={() => {
-              setShowReminderDialog(false);
-              // Show success toast or feedback
-              console.log('Reminder set successfully');
+            <Button onClick={async () => {
+              // This would be enhanced to use the selected prayer and time from the dialog
+              const success = await setReminder('next_prayer', 15); // Default: 15 minutes before next prayer
+              if (success) {
+                setShowReminderDialog(false);
+                // Could show success toast here
+              }
             }}>Set Reminder</Button>
           </DialogFooter>
         </DialogContent>

@@ -1,6 +1,70 @@
 -- HOPIUM PRAYER APP - EXTENDED DATABASE SCHEMA
 -- This file contains additional tables and functionality beyond the core schema
 
+-- PERIOD EXEMPTION TRACKING
+
+-- Period exemption records table
+CREATE TABLE public.period_exemptions (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  user_id UUID REFERENCES public.users(id) ON DELETE CASCADE,
+  start_date DATE NOT NULL,
+  end_date DATE,
+  exemption_type TEXT NOT NULL CHECK (exemption_type IN ('menstruation', 'postpartum', 'illness', 'travel')),
+  notes TEXT,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Menstruation tracking table
+CREATE TABLE public.menstruation_tracking (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  user_id UUID REFERENCES public.users(id) ON DELETE CASCADE,
+  cycle_start_date DATE NOT NULL,
+  cycle_length INTEGER, -- in days
+  period_length INTEGER, -- in days
+  symptoms TEXT[],
+  notes TEXT,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- User settings table (expanded to support individual fields)
+CREATE TABLE public.user_settings (
+  user_id UUID REFERENCES public.users(id) ON DELETE CASCADE PRIMARY KEY,
+  
+  -- Prayer settings
+  calculation_method TEXT DEFAULT 'hanafi',
+  period_exemption BOOLEAN DEFAULT FALSE,
+  menstruation_tracking BOOLEAN DEFAULT FALSE,
+  travel_exemption BOOLEAN DEFAULT FALSE,
+  illness_exemption BOOLEAN DEFAULT FALSE,
+  
+  -- Notification settings
+  notifications BOOLEAN DEFAULT TRUE,
+  prayer_reminders BOOLEAN DEFAULT TRUE,
+  reminder_time INTEGER DEFAULT 15, -- minutes before prayer
+  sound_enabled BOOLEAN DEFAULT TRUE,
+  vibration_enabled BOOLEAN DEFAULT TRUE,
+  
+  -- Habit settings
+  streak_protection BOOLEAN DEFAULT TRUE,
+  qada_tracking BOOLEAN DEFAULT TRUE,
+  daily_goals BOOLEAN DEFAULT TRUE,
+  community_presence BOOLEAN DEFAULT TRUE,
+  
+  -- Privacy settings
+  data_collection BOOLEAN DEFAULT TRUE,
+  share_insights BOOLEAN DEFAULT FALSE,
+  
+  -- Appearance settings
+  text_size NUMERIC DEFAULT 1.0,
+  reduce_animations BOOLEAN DEFAULT FALSE,
+  
+  -- Timestamps
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
 -- ACHIEVEMENTS AND GOALS
 
 -- Achievements table

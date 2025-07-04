@@ -11,39 +11,21 @@ import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Flame, Calendar, TrendingUp, Award, ChevronRight, Clock, CheckCircle, AlertCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useAuth } from '@/hooks/useAuth';
+import { useStatsAnalytics } from '@/hooks/useStatsAnalytics';
 
 export default function StatsPage() {
   const router = useRouter();
-  // State for streak data (would come from API/Supabase in production)
-  const [streak, setStreak] = useState({ current: 14, best: 21, weekChange: 15 });
-  const [todayProgress, setTodayProgress] = useState(3); // Out of 5 prayers
+  const { session } = useAuth();
+  const userId = session?.user?.id;
+  
+  // Fetch real analytics data from backend
+  const { analytics, isLoading, error } = useStatsAnalytics(userId);
+  
+  // UI state
   const [animateStreak, setAnimateStreak] = useState(false);
   const [showAchievementsDialog, setShowAchievementsDialog] = useState(false);
   const [activeTab, setActiveTab] = useState<"all" | "fajr" | "dhuhr" | "asr" | "maghrib" | "isha">("all");
-  const [prayerStats, setPrayerStats] = useState([
-    { name: 'Fajr', completion: 65, status: 'challenge' },
-    { name: 'Dhuhr', completion: 90, status: 'consistent' },
-    { name: 'Asr', completion: 82, status: 'consistent' },
-    { name: 'Maghrib', completion: 95, status: 'consistent' },
-    { name: 'Isha', completion: 78, status: 'improving' },
-  ]);
-  
-  const [weeklyData, setWeeklyData] = useState([
-    { day: 'Mon', completedCount: 4, totalCount: 5 },
-    { day: 'Tue', completedCount: 5, totalCount: 5 },
-    { day: 'Wed', completedCount: 3, totalCount: 5 },
-    { day: 'Thu', completedCount: 5, totalCount: 5 }, // Today
-    { day: 'Fri', completedCount: 0, totalCount: 5 },
-    { day: 'Sat', completedCount: 0, totalCount: 5 },
-    { day: 'Sun', completedCount: 0, totalCount: 5 },
-  ]);
-  
-  const [nextMilestone, setNextMilestone] = useState({
-    name: '30-Day Perfect Streak',
-    daysLeft: 16,
-    progress: 14/30 * 100, // 47%
-    reward: 'Diamond Badge'
-  });
   
   // Trigger streak animation periodically for demo purposes
   useEffect(() => {
@@ -56,9 +38,69 @@ export default function StatsPage() {
   }, []);
   
   // Get challenge area (lowest completion prayer)
-  const challengePrayer = prayerStats.reduce((prev, current) => 
-    (prev.completion < current.completion) ? prev : current
-  );
+  const challengePrayer = (analytics?.prayerStats && analytics.prayerStats.length > 0) 
+    ? analytics.prayerStats.reduce((prev, current) => 
+        (prev.completion < current.completion) ? prev : current
+      )
+    : null;
+
+  // Show loading state
+  if (isLoading) {
+    return (
+      <div className="bg-background min-h-screen pb-24">
+        <header className="w-full bg-background pt-safe-top">
+          <div className="bg-gradient-to-b from-primary/5 to-transparent py-4 px-4">
+            <div className="max-w-md mx-auto flex items-center justify-between">
+              <div>
+                <h1 className="text-base font-semibold">Your Prayer Stats</h1>
+                <p className="text-xs text-muted-foreground mt-1">Loading...</p>
+              </div>
+            </div>
+          </div>
+        </header>
+        
+        <div className="max-w-md mx-auto px-4 space-y-4 mt-4">
+          {[...Array(4)].map((_, i) => (
+            <Card key={i} className="animate-pulse">
+              <CardContent className="pt-6">
+                <div className="h-20 bg-muted rounded"></div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  // Show error state
+  if (error) {
+    return (
+      <div className="bg-background min-h-screen pb-24">
+        <header className="w-full bg-background pt-safe-top">
+          <div className="bg-gradient-to-b from-primary/5 to-transparent py-4 px-4">
+            <div className="max-w-md mx-auto flex items-center justify-between">
+              <div>
+                <h1 className="text-base font-semibold">Your Prayer Stats</h1>
+                <p className="text-xs text-red-500 mt-1">Error loading stats</p>
+              </div>
+            </div>
+          </div>
+        </header>
+        
+        <div className="max-w-md mx-auto px-4 mt-4">
+          <Card className="border-red-200">
+            <CardContent className="pt-6 text-center">
+              <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
+              <p className="text-red-500 mb-4">{error}</p>
+              <Button onClick={() => window.location.reload()}>Try Again</Button>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
+
+  if (!analytics) return null;
   
   return (
     <div className="bg-background min-h-screen pb-24">
@@ -86,21 +128,33 @@ export default function StatsPage() {
                 )}>
                   <Flame className="h-5 w-5 text-primary" />
                 </div>
-                <span className="text-6xl font-bold text-primary">{streak.current}</span>
+                <span className="text-6xl font-bold text-primary">{analytics.streak.current}</span>
               </div>
               
-              <p className="font-medium mb-1">You're on fire! Keep it up!</p>
+              <p className="font-medium mb-1">
+                {analytics.streak.current > 0 ? "You're on fire! Keep it up!" : "Start your prayer streak today!"}
+              </p>
               
-              <div className="flex items-center gap-1">
-                <TrendingUp className="h-3 w-3 text-green-500" />
-                <span className="text-xs font-medium text-green-500">+{streak.weekChange}% from last week</span>
-              </div>
+              {analytics.streak.weekChange !== 0 && (
+                <div className="flex items-center gap-1">
+                  <TrendingUp className={cn(
+                    "h-3 w-3",
+                    analytics.streak.weekChange > 0 ? "text-green-500" : "text-red-500"
+                  )} />
+                  <span className={cn(
+                    "text-xs font-medium",
+                    analytics.streak.weekChange > 0 ? "text-green-500" : "text-red-500"
+                  )}>
+                    {analytics.streak.weekChange > 0 ? '+' : ''}{analytics.streak.weekChange}% from last week
+                  </span>
+                </div>
+              )}
               
               <div className="mt-4 w-full flex items-center justify-between">
                 <div className="text-center">
                   <p className="text-xs text-muted-foreground mb-1">Today</p>
                   <div className="flex items-center justify-center gap-1">
-                    <p className="font-semibold">{todayProgress}</p>
+                    <p className="font-semibold">{analytics.todayProgress}</p>
                     <p className="text-muted-foreground">/5</p>
                   </div>
                 </div>
@@ -109,14 +163,14 @@ export default function StatsPage() {
                 
                 <div className="text-center">
                   <p className="text-xs text-muted-foreground mb-1">Best Streak</p>
-                  <p className="font-semibold">{streak.best} days</p>
+                  <p className="font-semibold">{analytics.streak.best} days</p>
                 </div>
                 
                 <div className="h-12 w-px bg-border"></div>
                 
                 <div className="text-center">
                   <p className="text-xs text-muted-foreground mb-1">This Month</p>
-                  <p className="font-semibold">21 perfect days</p>
+                  <p className="font-semibold">{analytics.monthlyPerfectDays} perfect days</p>
                 </div>
               </div>
             </div>
@@ -131,14 +185,14 @@ export default function StatsPage() {
           
           <CardContent className="pt-0 pb-4">
             <div className="flex items-center justify-between">
-              {weeklyData.map((day, index) => {
-                const isToday = index === 3; // Thursday is today in our mock data
-                const isPast = index < 3;
-                const isFuture = index > 3;
+              {analytics.weeklyData.map((day, index) => {
+                const isToday = index === analytics.weeklyData.length - 1; // Last day is today
+                const isPast = new Date(day.date) < new Date();
+                const isFuture = new Date(day.date) > new Date();
                 
                 // Calculate completion status
                 let bgColor = 'bg-secondary/40';
-                if (isPast) {
+                if (isPast || isToday) {
                   bgColor = day.completedCount === day.totalCount ? 'bg-primary' : 
                            day.completedCount > 0 ? 'bg-primary/50' : 'bg-secondary/40';
                 }
@@ -185,7 +239,7 @@ export default function StatsPage() {
               
               <TabsContent value="all" className="mt-0">
                 <div className="flex flex-col gap-3">
-                  {prayerStats.map((prayer) => (
+                  {analytics.prayerStats.map((prayer) => (
                     <div key={prayer.name} className="flex items-center gap-3">
                       <div className="w-16 text-sm font-medium">{prayer.name}</div>
                       
@@ -213,7 +267,7 @@ export default function StatsPage() {
               </TabsContent>
               
               {/* Individual prayer tabs */}
-              {prayerStats.map((prayer) => {
+              {analytics.prayerStats.map((prayer) => {
                 const prayerName = prayer.name.toLowerCase();
                 return (
                   <TabsContent key={prayerName} value={prayerName} className="mt-0">
@@ -258,21 +312,23 @@ export default function StatsPage() {
               })}
             </Tabs>
             
-            <div className="mt-4 p-3 bg-amber-50 dark:bg-amber-900/20 rounded-lg">
-              <div className="flex items-start gap-2">
-                <div className="mt-0.5">
-                  <AlertCircle className="h-4 w-4 text-amber-500" />
-                </div>
-                <div>
-                  <p className="text-sm font-medium">Fajr is your challenge prayer</p>
-                  <p className="text-xs text-muted-foreground">Try setting an alarm 10 minutes earlier to give yourself more time.</p>
-                  
-                  <Button size="sm" variant="outline" className="mt-2 h-8 text-xs rounded-lg border-primary/20">
-                    Adjust Fajr Settings
-                  </Button>
+            {challengePrayer && (
+              <div className="mt-4 p-3 bg-amber-50 dark:bg-amber-900/20 rounded-lg">
+                <div className="flex items-start gap-2">
+                  <div className="mt-0.5">
+                    <AlertCircle className="h-4 w-4 text-amber-500" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium">{challengePrayer.name} is your challenge prayer</p>
+                    <p className="text-xs text-muted-foreground">Try setting an alarm 10 minutes earlier to give yourself more time.</p>
+                    
+                    <Button size="sm" variant="outline" className="mt-2 h-8 text-xs rounded-lg border-primary/20">
+                      Adjust {challengePrayer.name} Settings
+                    </Button>
+                  </div>
                 </div>
               </div>
-            </div>
+            )}
           </CardContent>
         </Card>
         
@@ -290,21 +346,21 @@ export default function StatsPage() {
                   <Award className="h-5 w-5 text-primary" />
                 </div>
                 <div>
-                  <p className="font-medium">{nextMilestone.name}</p>
-                  <p className="text-xs text-muted-foreground">Reward: {nextMilestone.reward}</p>
+                  <p className="font-medium">{analytics.nextMilestone.name}</p>
+                  <p className="text-xs text-muted-foreground">Reward: {analytics.nextMilestone.reward}</p>
                 </div>
               </div>
               
               <Badge variant="outline" className="bg-primary/5 hover:bg-primary/10">
-                {nextMilestone.daysLeft} days left
+                {analytics.nextMilestone.daysLeft} days left
               </Badge>
             </div>
             
             <div className="space-y-1">
-              <Progress value={nextMilestone.progress} className="h-2" />
+              <Progress value={analytics.nextMilestone.progress} className="h-2" />
               <div className="flex items-center justify-between">
-                <span className="text-xs text-muted-foreground">{Math.round(nextMilestone.progress)}% complete</span>
-                <span className="text-xs font-medium">{nextMilestone.daysLeft} days to go</span>
+                <span className="text-xs text-muted-foreground">{Math.round(analytics.nextMilestone.progress)}% complete</span>
+                <span className="text-xs font-medium">{analytics.nextMilestone.daysLeft} days to go</span>
               </div>
             </div>
             
@@ -330,7 +386,7 @@ export default function StatsPage() {
                 onClick={() => router.push('/calendar')}
               >
                 <Calendar className="h-4 w-4" />
-                <span>July 2025</span>
+                <span>{new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}</span>
               </Button>
             </div>
           </CardHeader>
@@ -343,54 +399,35 @@ export default function StatsPage() {
               ))}
             </div>
             
-            {/* Calendar grid with dots */}
+            {/* Calendar grid with real data */}
             <div className="grid grid-cols-7 gap-1">
-              {/* First week with some empty spaces */}
-              <div className="aspect-square"></div>
-              {[...Array(6)].map((_, i) => (
-                <div key={`week0-${i}`} className="aspect-square rounded-full border border-primary flex items-center justify-center">
-                  <div className="h-2 w-2 rounded-full bg-primary"></div>
-                </div>
-              ))}
-              
-              {/* Second week */}
-              {[...Array(7)].map((_, i) => (
-                <div key={`week1-${i}`} className={cn(
-                  "aspect-square rounded-full flex items-center justify-center",
-                  i < 5 ? "border border-primary" : "border border-muted"
-                )}>
-                  <div className={i < 5 ? "h-2 w-2 rounded-full bg-primary" : ""} />
-                </div>
-              ))}
-              
-              {/* Third week - with current day */}
-              {[...Array(7)].map((_, i) => (
-                <div key={`week2-${i}`} className={cn(
-                  "aspect-square flex items-center justify-center",
-                  i === 3 ? "bg-primary text-primary-foreground rounded-full" : 
-                  i < 3 ? "border border-primary rounded-full" : "border border-muted rounded-full"
-                )}>
-                  {i === 3 ? (
-                    <span className="text-xs font-medium">3</span>
-                  ) : (
-                    <div className={i < 3 ? "h-2 w-2 rounded-full bg-primary" : ""} />
-                  )}
-                </div>
-              ))}
-              
-              {/* Fourth week */}
-              {[...Array(7)].map((_, i) => (
-                <div key={`week3-${i}`} className="aspect-square rounded-full border border-muted flex items-center justify-center">
-                  <div className="" />
-                </div>
-              ))}
-              
-              {/* Fifth week (partial) */}
-              {[...Array(5)].map((_, i) => (
-                <div key={`week4-${i}`} className="aspect-square rounded-full border border-muted flex items-center justify-center">
-                  <div className="" />
-                </div>
-              ))}
+              {analytics.monthlyData.map((dayData) => {
+                const isToday = dayData.day === new Date().getDate();
+                
+                return (
+                  <div 
+                    key={dayData.day} 
+                    className={cn(
+                      "aspect-square flex items-center justify-center",
+                      dayData.status === 'completed' ? "bg-primary text-primary-foreground rounded-full" :
+                      dayData.status === 'partial' ? "border border-primary rounded-full" :
+                      dayData.status === 'missed' ? "border border-muted rounded-full" :
+                      "border border-muted rounded-full opacity-50",
+                      isToday && "ring-2 ring-primary ring-offset-1"
+                    )}
+                  >
+                    {dayData.status === 'completed' ? (
+                      <CheckCircle className="h-3 w-3" />
+                    ) : dayData.status === 'partial' ? (
+                      <div className="h-2 w-2 rounded-full bg-primary" />
+                    ) : dayData.status === 'future' ? (
+                      <span className="text-xs text-muted-foreground">{dayData.day}</span>
+                    ) : (
+                      <div className="" />
+                    )}
+                  </div>
+                );
+              })}
             </div>
             
             {/* Legend */}
@@ -430,55 +467,46 @@ export default function StatsPage() {
           <div className="space-y-4 py-4">
             {/* Unlocked achievements */}
             <div>
-              <h4 className="text-sm font-medium mb-2">Unlocked (3)</h4>
+              <h4 className="text-sm font-medium mb-2">
+                Unlocked ({analytics.achievements.filter(a => a.unlocked).length})
+              </h4>
               <div className="space-y-3">
-                <div className="flex items-center gap-3 p-3 rounded-lg bg-primary/5">
-                  <div className="bg-primary/10 p-2 rounded-full">
-                    <Flame className="h-5 w-5 text-primary" />
+                {analytics.achievements.filter(a => a.unlocked).map((achievement) => (
+                  <div key={achievement.id} className="flex items-center gap-3 p-3 rounded-lg bg-primary/5">
+                    <div className="bg-primary/10 p-2 rounded-full">
+                      {achievement.icon === 'flame' && <Flame className="h-5 w-5 text-primary" />}
+                      {achievement.icon === 'sun' && <CheckCircle className="h-5 w-5 text-primary" />}
+                      {achievement.icon === 'award' && <Award className="h-5 w-5 text-primary" />}
+                      {achievement.icon === 'trophy' && <Award className="h-5 w-5 text-primary" />}
+                    </div>
+                    <div>
+                      <p className="font-medium">{achievement.name}</p>
+                      <p className="text-xs text-muted-foreground">{achievement.description}</p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="font-medium">First Week Streak</p>
-                    <p className="text-xs text-muted-foreground">Completed all prayers for 7 consecutive days</p>
-                  </div>
-                </div>
-                
-                <div className="flex items-center gap-3 p-3 rounded-lg bg-primary/5">
-                  <div className="bg-primary/10 p-2 rounded-full">
-                    <CheckCircle className="h-5 w-5 text-primary" />
-                  </div>
-                  <div>
-                    <p className="font-medium">Fajr Warrior</p>
-                    <p className="text-xs text-muted-foreground">Completed Fajr prayer on time for 10 days</p>
-                  </div>
-                </div>
-                
-                <div className="flex items-center gap-3 p-3 rounded-lg bg-primary/5">
-                  <div className="bg-primary/10 p-2 rounded-full">
-                    <Award className="h-5 w-5 text-primary" />
-                  </div>
-                  <div>
-                    <p className="font-medium">Perfect Day</p>
-                    <p className="text-xs text-muted-foreground">Completed all five prayers on time in a single day</p>
-                  </div>
-                </div>
+                ))}
               </div>
             </div>
             
             {/* Locked achievements */}
-            <div>
-              <h4 className="text-sm font-medium mb-2">Coming Soon</h4>
-              <div className="space-y-3">
-                <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
-                  <div className="bg-muted p-2 rounded-full">
-                    <Award className="h-5 w-5 text-muted-foreground" />
-                  </div>
-                  <div>
-                    <p className="font-medium text-muted-foreground">{nextMilestone.name}</p>
-                    <p className="text-xs text-muted-foreground">Maintain your streak for 30 consecutive days</p>
-                  </div>
+            {analytics.achievements.filter(a => !a.unlocked).length > 0 && (
+              <div>
+                <h4 className="text-sm font-medium mb-2">Coming Soon</h4>
+                <div className="space-y-3">
+                  {analytics.achievements.filter(a => !a.unlocked).map((achievement) => (
+                    <div key={achievement.id} className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
+                      <div className="bg-muted p-2 rounded-full">
+                        <Award className="h-5 w-5 text-muted-foreground" />
+                      </div>
+                      <div>
+                        <p className="font-medium text-muted-foreground">{achievement.name}</p>
+                        <p className="text-xs text-muted-foreground">{achievement.description}</p>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
-            </div>
+            )}
           </div>
           
           <DialogFooter>

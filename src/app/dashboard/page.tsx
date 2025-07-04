@@ -12,7 +12,7 @@ import { cn } from '@/lib/utils';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { 
   Sun, Moon, Star, Clock, CheckCircle, RefreshCw, MapPin, 
-  Heart, Calendar, Award, ArrowRight, ChevronRight, Bell, X, CalendarCheck
+  Heart, Calendar, Award, ArrowRight, ChevronRight, Bell, X, CalendarCheck, Sunset
 } from 'lucide-react';
 import PhantomBottomNav from '@/components/shared/PhantomBottomNav';
 import { lazy, Suspense } from 'react';
@@ -23,9 +23,12 @@ const StreakOverview = lazy(() => import('@/components/dashboard/StreakOverview'
 const LocationPermissionModal = lazy(() => import('@/components/modals/LocationPermissionModal').then(module => ({ default: module.LocationPermissionModal })));
 import { useAuth } from '@/hooks/useAuth';
 import { useUserStats } from '@/hooks/useUserStats';
-import { usePrayerTimes } from '@/hooks/usePrayerTimes';
+import { usePrayerWithRecords } from '@/hooks/usePrayerWithRecords';
+import { useCommunityStats } from '@/hooks/useCommunityStats';
+import { useNotifications } from '@/hooks/useNotifications';
 import { PrayerTimesErrorFallback } from '@/components/ErrorBoundary';
 import { calculateQiblaDirection } from '@/lib/prayerTimes';
+import { getTimeBasedGreeting, getDisplayName } from '@/lib/greetings';
 import type { Prayer } from '@/types';
 
 export default function DashboardPage() {
@@ -50,23 +53,25 @@ export default function DashboardPage() {
   const { session } = useAuth();
   const userId = session?.user?.id;
   
-  // Get real prayer times
+  // Get real prayer times integrated with database records
   const { 
     prayers, 
     nextPrayer, 
     location: userLocation, 
     isLoading: prayerTimesLoading, 
-    error: prayerTimesError 
-  } = usePrayerTimes({ userId });
+    error: prayerTimesError,
+    todaysProgress,
+    completePrayerWithReflection
+  } = usePrayerWithRecords({ userId });
   
   // Fetch user stats including streak data
   const { userStats, isLoading: statsLoading } = useUserStats(userId);
   
-  // Create an object for streak data from userStats or use defaults if loading
-  const streak = {
-    current: userStats?.current_streak ?? 7, // Fallback to 7 if data not loaded yet
-    best: userStats?.best_streak ?? 14 // Fallback to 14 if data not loaded yet
-  };
+  // Fetch community statistics
+  const { communityStats, isLoading: communityLoading } = useCommunityStats(userId);
+  
+  // Fetch user notifications and reminders
+  const { setReminder } = useNotifications(userId);
 
   // Get next prayer info from real data or fallback
   const getNextPrayerInfo = () => {
@@ -107,6 +112,38 @@ export default function DashboardPage() {
     return date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
   };
   
+  // Handle prayer completion with reflection data
+  const handlePrayerCompletion = async (reflectionData: {
+    emotion: string;
+    location: string;
+    quality: number;
+    reflection?: string;
+  }) => {
+    if (!selectedPrayer) return;
+    
+    try {
+      await completePrayerWithReflection({
+        prayerType: selectedPrayer.name.toLowerCase(),
+        scheduledTime: selectedPrayer.time.toISOString(),
+        completedTime: new Date().toISOString(),
+        emotion: reflectionData.emotion,
+        location: reflectionData.location,
+        quality: reflectionData.quality,
+        reflection: reflectionData.reflection
+      });
+      
+      // Show success feedback and animate streak
+      setAnimateStreak(true);
+      setTimeout(() => setAnimateStreak(false), 2000);
+      
+      setShowReflectionModal(false);
+      setSelectedPrayer(null);
+    } catch (error) {
+      console.error('Failed to complete prayer:', error);
+      // Could add toast notification here
+    }
+  };
+  
   // Show location modal if location fails and we haven't asked before
   useEffect(() => {
     // Show modal if:
@@ -131,9 +168,23 @@ export default function DashboardPage() {
             <div>
               <div className="flex items-center gap-2">
                 <div className="flex items-center justify-center w-8 h-8 rounded-full bg-primary/10">
-                  <Sun className="h-4 w-4 text-primary" />
+                  {(() => {
+                    const { icon } = getTimeBasedGreeting();
+                    switch (icon) {
+                      case 'sun':
+                        return <Sun className="h-4 w-4 text-primary" />;
+                      case 'sunset':
+                        return <Sunset className="h-4 w-4 text-primary" />;
+                      case 'moon':
+                        return <Moon className="h-4 w-4 text-primary" />;
+                      default:
+                        return <Sun className="h-4 w-4 text-primary" />;
+                    }
+                  })()}
                 </div>
-                <h1 className="text-base font-semibold">Good morning, Ahmed</h1>
+                <h1 className="text-base font-semibold">
+                  {getTimeBasedGreeting().greeting}, {getDisplayName(session?.user)}
+                </h1>
               </div>
               <p className="text-xs text-muted-foreground mt-1 ml-10">{new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}</p>
             </div>
@@ -216,7 +267,17 @@ export default function DashboardPage() {
                 <Button 
                   variant="outline" 
                   className="rounded-lg h-12 border-primary/20 hover:bg-primary/5"
-                  onClick={() => alert('Reminder set')}
+                  onClick={async () => {
+                    const nextUpcomingPrayer = prayers?.find(p => p.status === 'upcoming');
+                    if (nextUpcomingPrayer) {
+                      const success = await setReminder(nextUpcomingPrayer.name, 15); // 15 minutes before
+                      if (success) {
+                        alert(`Reminder set for ${nextUpcomingPrayer.name} prayer (15 minutes before)`);
+                      } else {
+                        alert('Failed to set reminder. Please try again.');
+                      }
+                    }
+                  }}
                 >
                   <Bell className="mr-2 h-4 w-4" /> Remind Me
                 </Button>
@@ -227,9 +288,9 @@ export default function DashboardPage() {
             <div className="px-5 pb-4 pt-2">
               <div className="flex items-center justify-between mb-1.5">
                 <span className="text-xs text-muted-foreground font-medium">Today's progress</span>
-                <span className="text-xs font-medium">1/5 prayers</span>
+                <span className="text-xs font-medium">{todaysProgress.completed}/{todaysProgress.total} prayers</span>
               </div>
-              <Progress value={20} className="h-1.5 bg-secondary/40" />
+              <Progress value={todaysProgress.percentage} className="h-1.5 bg-secondary/40" />
             </div>
           </Card>
         </div>
@@ -247,26 +308,12 @@ export default function DashboardPage() {
           </div>
         }>
           <StreakOverview
-            currentStreak={streak.current}
-            bestStreak={streak.best}
-            recentDays={Array(14).fill(0).map((_, i) => i < streak.current || Math.random() > 0.3)}
-            streakShields={userStats?.streak_shields ?? 2}
-            streakAtRisk={streak.current > 3} // Only show streak at risk for meaningful streaks
-            nextMilestone={
-              streak.current < 7 ? 7 : 
-              streak.current < 14 ? 14 : 
-              streak.current < 30 ? 30 : 
-              streak.current < 100 ? 100 : 365
-            }
-            percentToMilestone={
-              // Calculate percentage to next milestone
-              (() => {
-                const milestones = [7, 14, 30, 100, 365];
-                const nextMile = milestones.find(m => m > streak.current) || (streak.current + 10);
-                const prevMile = milestones.filter(m => m <= streak.current).pop() || 0;
-                return Math.round(((streak.current - prevMile) / (nextMile - prevMile)) * 100);
-              })()
-            }
+            currentStreak={userStats?.current_streak ?? 0}
+            bestStreak={userStats?.best_streak ?? 0}
+            recentDays={[]} // Will be populated from prayer records in future
+            streakShields={userStats?.streak_shields ?? 0}
+            streakAtRisk={false} // Will be calculated based on real data in future
+            isLoading={statsLoading}
           />
         </Suspense>
         
@@ -395,33 +442,50 @@ export default function DashboardPage() {
             </CardHeader>
             
             <CardContent className="px-4 pb-4 pt-0">
-              <div className="flex flex-col gap-3">
-                <div 
-                  className="bg-secondary/20 rounded-lg p-3 flex items-center justify-between cursor-pointer hover:bg-secondary/30 transition-colors"
-                  onClick={() => setShowDialog(true)}
-                >
-                  <div className="flex items-center gap-2">
-                    <div className="bg-secondary/30 rounded-full p-1.5">
-                      <Heart className="h-4 w-4 text-primary" />
-                    </div>
-                    <span className="text-sm">3,240 community members praying</span>
+              {communityLoading ? (
+                <div className="flex flex-col gap-3">
+                  <div className="bg-secondary/20 rounded-lg p-3 animate-pulse">
+                    <div className="h-4 w-48 bg-muted rounded"></div>
                   </div>
-                  <ChevronRight className="h-4 w-4 text-muted-foreground" />
-                </div>
-                
-                <div 
-                  className="bg-secondary/20 rounded-lg p-3 flex items-center justify-between cursor-pointer hover:bg-secondary/30 transition-colors"
-                  onClick={() => setShowDialog(true)}
-                >
-                  <div className="flex items-center gap-2">
-                    <div className="bg-secondary/30 rounded-full p-1.5">
-                      <Award className="h-4 w-4 text-primary" />
-                    </div>
-                    <span className="text-sm">You're in the top 12% this week</span>
+                  <div className="bg-secondary/20 rounded-lg p-3 animate-pulse">
+                    <div className="h-4 w-40 bg-muted rounded"></div>
                   </div>
-                  <ChevronRight className="h-4 w-4 text-muted-foreground" />
                 </div>
-              </div>
+              ) : (
+                <div className="flex flex-col gap-3">
+                  <div 
+                    className="bg-secondary/20 rounded-lg p-3 flex items-center justify-between cursor-pointer hover:bg-secondary/30 transition-colors"
+                    onClick={() => setShowDialog(true)}
+                  >
+                    <div className="flex items-center gap-2">
+                      <div className="bg-secondary/30 rounded-full p-1.5">
+                        <Heart className="h-4 w-4 text-primary" />
+                      </div>
+                      <span className="text-sm">
+                        {communityStats?.users_praying_now?.toLocaleString() || '0'} community members praying today
+                      </span>
+                    </div>
+                    <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                  </div>
+                  
+                  {communityStats?.user_percentile && (
+                    <div 
+                      className="bg-secondary/20 rounded-lg p-3 flex items-center justify-between cursor-pointer hover:bg-secondary/30 transition-colors"
+                      onClick={() => setShowDialog(true)}
+                    >
+                      <div className="flex items-center gap-2">
+                        <div className="bg-secondary/30 rounded-full p-1.5">
+                          <Award className="h-4 w-4 text-primary" />
+                        </div>
+                        <span className="text-sm">
+                          You're in the top {100 - communityStats.user_percentile}% this week
+                        </span>
+                      </div>
+                      <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                    </div>
+                  )}
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>
@@ -531,23 +595,7 @@ export default function DashboardPage() {
             open={showReflectionModal}
             onOpenChange={setShowReflectionModal}
             prayerName={selectedPrayer.name}
-            onComplete={(data) => {
-              // TODO: Save prayer completion to Supabase database
-              if (process.env.NODE_ENV === 'development') {
-                console.log('Prayer completed:', {
-                  prayer: selectedPrayer?.name,
-                  ...data
-                });
-              }
-              
-              // Update streak animation
-              setAnimateStreak(true);
-              setTimeout(() => setAnimateStreak(false), 2000);
-              
-              // Close modal
-              setShowReflectionModal(false);
-              setSelectedPrayer(null);
-            }}
+            onComplete={handlePrayerCompletion}
           />
         </Suspense>
       )}
