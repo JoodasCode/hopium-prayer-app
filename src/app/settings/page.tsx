@@ -14,7 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Bell, CheckCircle2, Edit, Info, 
-  LogOut, MapPin, Sun, User, Volume2
+  LogOut, MapPin, Sun, User, Volume2, Settings, Shield, Palette, Smartphone
 } from 'lucide-react';
 import PhantomBottomNav from '@/components/shared/PhantomBottomNav';
 import { useAuth } from '@/hooks/useAuth';
@@ -23,6 +23,8 @@ import { ThemeToggle } from '@/components/ui/theme-toggle';
 import { useUserSettings } from '@/hooks/useUserSettings';
 import { useUserStats } from '@/hooks/useUserStats';
 import { supabase } from '@/lib/supabase';
+import { cn } from '@/lib/utils';
+import { ds, SPACING, TYPOGRAPHY, SIZING, COLORS } from '@/lib/design-system';
 
 export default function SettingsPage() {
   const { session, signOut, authLoading } = useAuth();
@@ -132,16 +134,29 @@ export default function SettingsPage() {
   
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-background pb-24">
-        <div className="container max-w-md mx-auto px-4 py-6">
-          <div className="flex items-center justify-between mb-6">
-            <h1 className="text-xl font-semibold">Settings & Profile</h1>
+      <div className="bg-background min-h-screen pb-24">
+        {/* Beautiful Loading Header */}
+        <header className="w-full bg-background pt-safe-top">
+          <div className={cn("bg-gradient-to-br from-primary/10 via-primary/5 to-transparent", SPACING.card.comfortable, "px-4")}>
+            <div className="max-w-md mx-auto">
+              <div className={cn("flex items-center", SPACING.gap.default)}>
+                <div className={ds.iconContainer('lg', 'primary')}>
+                  <Settings className={cn(SIZING.icon.default, COLORS.text.primary)} />
+                </div>
+                <div>
+                  <h1 className={TYPOGRAPHY.header.page}>Settings</h1>
+                  <p className={TYPOGRAPHY.muted.default}>Customize your experience</p>
+                </div>
+              </div>
+            </div>
           </div>
-          
-          <div className="space-y-4">
+        </header>
+        
+        <div className="max-w-md mx-auto px-4">
+          <div className={cn("space-y-4", SPACING.margin.lg)}>
             {[...Array(4)].map((_, i) => (
-              <Card key={i} className="animate-pulse">
-                <CardContent className="pt-6">
+              <Card key={i} className={cn("animate-pulse", COLORS.card.default)}>
+                <CardContent className={cn(SPACING.card.default)}>
                   <div className="h-20 bg-muted rounded"></div>
                 </CardContent>
               </Card>
@@ -161,20 +176,35 @@ export default function SettingsPage() {
   }
   
   return (
-    <div className="min-h-screen bg-background pb-24">
-      <div className="container max-w-md mx-auto px-4 py-6">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-6">
-          <h1 className="text-xl font-semibold">Settings & Profile</h1>
+    <div className="bg-background min-h-screen pb-24">
+      {/* Beautiful Header with Gradient */}
+      <header className="w-full bg-background pt-safe-top">
+        <div className={cn("bg-gradient-to-br from-primary/10 via-primary/5 to-transparent", SPACING.card.comfortable, "px-4")}>
+          <div className="max-w-md mx-auto">
+            <div className={cn("flex items-center", SPACING.gap.default)}>
+              <div className={ds.iconContainer('lg', 'primary')}>
+                <Settings className={cn(SIZING.icon.default, COLORS.text.primary)} />
+              </div>
+              <div>
+                <h1 className={TYPOGRAPHY.header.page}>Settings</h1>
+                <p className={TYPOGRAPHY.muted.default}>Customize your experience</p>
+              </div>
+            </div>
+          </div>
         </div>
-        
+      </header>
+      
+      <div className="max-w-md mx-auto px-4">
         {/* Profile Card */}
-        <Card className="mb-6 border border-primary/20 w-full overflow-hidden bg-gradient-to-r from-primary/30 to-primary/10">
-          <CardContent className="p-4">
-              <div className="flex items-center gap-3">
+        <div className={cn(SPACING.margin.lg)}>
+          <Card className={cn(COLORS.card.primary, "border-primary/30 bg-gradient-to-r from-primary/10 to-transparent")}>
+            <CardContent className={cn(SPACING.card.default)}>
+              <div className={cn("flex items-center", SPACING.gap.default)}>
                 <Avatar className="h-16 w-16 border-2 border-background">
                   <AvatarImage src="/images/avatar.jpg" alt={safeDisplayName} />
-                  <AvatarFallback>{safeDisplayName.substring(0, 2).toUpperCase()}</AvatarFallback>
+                  <AvatarFallback className="bg-primary/20 text-primary font-semibold">
+                    {safeDisplayName.substring(0, 2).toUpperCase()}
+                  </AvatarFallback>
                 </Avatar>
                 
                 {isEditing ? (
@@ -182,362 +212,379 @@ export default function SettingsPage() {
                     <Input 
                       value={displayName} 
                       onChange={(e) => setDisplayName(e.target.value)}
-                      className="mb-1"
+                      className={cn("mb-3", COLORS.card.default)}
                     />
-                    <div className="mt-6 flex items-center justify-end gap-2">
-                      <Button variant="outline" onClick={() => setIsEditing(false)} disabled={isSaving}>Cancel</Button>
-                      <Button onClick={handleSaveProfile} disabled={isSaving}>
-                        {isSaving ? 'Saving...' : 'Save Changes'}
+                    <div className={cn("flex items-center justify-end", SPACING.gap.sm)}>
+                      <Button variant="outline" size="sm" onClick={() => setIsEditing(false)} disabled={isSaving}>
+                        Cancel
+                      </Button>
+                      <Button size="sm" onClick={handleSaveProfile} disabled={isSaving}>
+                        {isSaving ? 'Saving...' : 'Save'}
                       </Button>
                     </div>
                   </div>
                 ) : (
                   <div className="flex-1">
                     <div className="flex items-center justify-between">
-                      <h3 className="font-medium">{safeDisplayName}</h3>
+                      <div>
+                        <h3 className={cn(TYPOGRAPHY.header.card, SPACING.margin.xs)}>{safeDisplayName}</h3>
+                        <p className={cn(TYPOGRAPHY.muted.small)}>{session?.user?.email}</p>
+                        {stats && (
+                          <div className={cn("flex items-center gap-2", SPACING.margin.sm)}>
+                            <Badge variant="secondary" className="bg-primary/20 text-primary">
+                              {stats.current_streak} day streak
+                            </Badge>
+                                                         <Badge variant="secondary" className="bg-chart-2/20 text-chart-2">
+                               {stats.total_prayers_completed} prayers
+                             </Badge>
+                          </div>
+                        )}
+                      </div>
                       <Button size="sm" variant="ghost" onClick={() => setIsEditing(true)}>
-                        <Edit className="h-3.5 w-3.5" />
+                        <Edit className={cn(SIZING.icon.xs)} />
                       </Button>
-                    </div>
-                    <p className="text-xs text-muted-foreground">{session?.user?.email}</p>
-                    <div className="flex gap-1 mt-1">
-                      <Badge variant="outline" className="text-xs">
-                        {stats?.current_streak || 0} day streak
-                      </Badge>
-                      <Badge variant="outline" className="text-xs">Premium</Badge>
                     </div>
                   </div>
                 )}
               </div>
-          </CardContent>
-        </Card>
-        
+            </CardContent>
+          </Card>
+        </div>
+
         {/* Settings Tabs */}
-        <Tabs defaultValue="prayer" className="w-full">
-          <TabsList className="grid grid-cols-3 mb-4">
-            <TabsTrigger value="prayer">Prayer</TabsTrigger>
-            <TabsTrigger value="habits">Habits</TabsTrigger>
-            <TabsTrigger value="app">App</TabsTrigger>
-          </TabsList>
-          
-          {/* Prayer Settings Tab */}
-          <TabsContent value="prayer" className="space-y-4">
-            <Card className="mb-6 border border-primary/20 w-full overflow-hidden">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-lg flex items-center gap-2">
-                  <MapPin className="h-5 w-5" />
-                  Prayer Settings
-                </CardTitle>
-                <CardDescription>Customize your prayer experience</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {/* Calculation Method */}
-                <div className="flex justify-between">
-                  <Label className="text-sm font-medium">Method</Label>
-                  <Select 
-                    value={settings?.calculation_method || 'ISNA'} 
-                    onValueChange={(value) => handleSettingUpdate('calculation_method', value, true)}
-                  >
-                    <SelectTrigger className="w-[180px]">
-                      <SelectValue placeholder="Select method" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="ISNA">ISNA</SelectItem>
-                      <SelectItem value="MWL">Muslim World League</SelectItem>
-                      <SelectItem value="Egypt">Egyptian General Authority</SelectItem>
-                      <SelectItem value="Makkah">Umm Al-Qura University</SelectItem>
-                      <SelectItem value="Karachi">University of Islamic Sciences</SelectItem>
-                      <SelectItem value="Tehran">Institute of Geophysics</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                
-                {/* Madhab */}
-                <div className="flex justify-between">
-                  <Label className="text-sm font-medium">Madhab</Label>
-                  <Select 
-                    value={settings?.madhab || 'hanafi'} 
-                    onValueChange={(value) => handleSettingUpdate('madhab', value, true)}
-                  >
-                    <SelectTrigger className="w-[180px]">
-                      <SelectValue placeholder="Select madhab" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="hanafi">Hanafi</SelectItem>
-                      <SelectItem value="shafi">Shafi'i</SelectItem>
-                      <SelectItem value="maliki">Maliki</SelectItem>
-                      <SelectItem value="hanbali">Hanbali</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                
-                {/* Period Exemption */}
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <Label htmlFor="period-exemption" className="text-sm font-medium">Period Exemption</Label>
-                    <Switch 
-                      id="period-exemption" 
-                      checked={settings?.period_exemption || false}
-                      onCheckedChange={(checked) => handleSettingUpdate('period_exemption', checked)}
-                    />
-                  </div>
-                  <p className="text-xs text-muted-foreground">Track menstruation periods for prayer exemption</p>
-                </div>
-                
-                {/* Travel Exemption */}
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <Label htmlFor="travel-exemption" className="text-sm font-medium">Travel Exemption</Label>
-                    <Switch 
-                      id="travel-exemption" 
-                      checked={settings?.travel_exemption || false}
-                      onCheckedChange={(checked) => handleSettingUpdate('travel_exemption', checked)}
-                    />
-                  </div>
-                  <p className="text-xs text-muted-foreground">Track travel status for prayer modifications</p>
-                </div>
-              </CardContent>
-            </Card>
+        <div className={cn(SPACING.margin.lg)}>
+          <Tabs defaultValue="prayer" className="w-full">
+            <TabsList className={cn("grid w-full grid-cols-4", COLORS.card.default)}>
+              <TabsTrigger value="prayer" className="text-xs">Prayer</TabsTrigger>
+              <TabsTrigger value="notifications" className="text-xs">Alerts</TabsTrigger>
+              <TabsTrigger value="app" className="text-xs">App</TabsTrigger>
+              <TabsTrigger value="about" className="text-xs">About</TabsTrigger>
+            </TabsList>
             
+            {/* Prayer Settings */}
+            <TabsContent value="prayer" className={cn("space-y-4", SPACING.margin.default)}>
+              <Card className={cn(COLORS.card.default)}>
+                <CardHeader className={cn(SPACING.card.compact)}>
+                  <div className="flex items-center gap-2">
+                    <div className={ds.iconContainer('sm', 'primary')}>
+                      <User className={cn(SIZING.icon.xs, COLORS.text.primary)} />
+                    </div>
+                    <CardTitle className={TYPOGRAPHY.header.section}>Prayer Preferences</CardTitle>
+                  </div>
+                </CardHeader>
+                <CardContent className={cn(SPACING.card.compact, "space-y-4")}>
+                  {/* Calculation Method */}
+                  <div className="space-y-2">
+                    <Label className={TYPOGRAPHY.body.small}>Calculation Method</Label>
+                    <Select 
+                      value={settings?.calculation_method || 'ISNA'} 
+                      onValueChange={(value) => handleSettingUpdate('calculation_method', value)}
+                    >
+                      <SelectTrigger className={COLORS.card.default}>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="ISNA">ISNA (Islamic Society of North America)</SelectItem>
+                        <SelectItem value="MWL">MWL (Muslim World League)</SelectItem>
+                        <SelectItem value="Egyptian">Egyptian General Authority</SelectItem>
+                        <SelectItem value="Karachi">University of Karachi</SelectItem>
+                        <SelectItem value="UmmAlQura">Umm Al-Qura (Saudi Arabia)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {/* Madhab Selection */}
+                  <div className="space-y-2">
+                    <Label className={TYPOGRAPHY.body.small}>Madhab (School of Thought)</Label>
+                    <Select 
+                      value={settings?.madhab || 'Hanafi'} 
+                      onValueChange={(value) => handleSettingUpdate('madhab', value)}
+                    >
+                      <SelectTrigger className={COLORS.card.default}>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Hanafi">Hanafi</SelectItem>
+                        <SelectItem value="Shafi">Shafi'i</SelectItem>
+                        <SelectItem value="Maliki">Maliki</SelectItem>
+                        <SelectItem value="Hanbali">Hanbali</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <Separator />
+
+                  {/* Period Exemption */}
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <Label className={TYPOGRAPHY.body.default}>Period Exemption</Label>
+                      <p className={cn(TYPOGRAPHY.muted.small, SPACING.margin.xs)}>
+                        Automatically count exempt days for streaks
+                      </p>
+                    </div>
+                    <Switch
+                      checked={settings?.period_exemption || false}
+                      onCheckedChange={(checked) => handleSettingUpdate('period_exemption', checked, true)}
+                    />
+                  </div>
+
+                  {/* Travel Exemption */}
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <Label className={TYPOGRAPHY.body.default}>Travel Exemption</Label>
+                      <p className={cn(TYPOGRAPHY.muted.small, SPACING.margin.xs)}>
+                        Enable travel mode for modified prayer times
+                      </p>
+                    </div>
+                    <Switch
+                      checked={settings?.travel_exemption || false}
+                      onCheckedChange={(checked) => handleSettingUpdate('travel_exemption', checked, true)}
+                    />
+                  </div>
+
+                  {/* Streak Protection */}
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <Label className={TYPOGRAPHY.body.default}>Streak Protection</Label>
+                      <p className={cn(TYPOGRAPHY.muted.small, SPACING.margin.xs)}>
+                        Protect your streak with freeze options
+                      </p>
+                    </div>
+                                         <Switch
+                       checked={settings?.streak_protection || false}
+                       onCheckedChange={(checked) => handleSettingUpdate('streak_protection', checked)}
+                     />
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
             {/* Notifications Settings */}
-            <Card className="mb-6 border border-primary/20 w-full overflow-hidden">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-lg flex items-center gap-2">
-                  <Bell className="h-5 w-5" />
-                  Notifications
-                </CardTitle>
-                <CardDescription>Prayer reminders and alerts</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <Label htmlFor="notifications" className="text-sm font-medium">
-                    All Notifications
-                  </Label>
-                  <Switch 
-                    id="notifications" 
-                    checked={settings?.notifications?.enabled !== false} // Default to true
-                    onCheckedChange={(checked) => handleSettingUpdate('notifications', { 
-                      ...(settings?.notifications || {}), 
-                      enabled: checked 
-                    })}
-                  />
-                </div>
-                
-                {settings?.notifications?.enabled !== false && (
-                  <div className="space-y-4 pt-2 pl-2 border-l-2 border-primary/20">
+            <TabsContent value="notifications" className={cn("space-y-4", SPACING.margin.default)}>
+              <Card className={cn(COLORS.card.default)}>
+                <CardHeader className={cn(SPACING.card.compact)}>
+                  <div className="flex items-center gap-2">
+                    <div className={ds.iconContainer('sm', 'secondary')}>
+                      <Bell className={cn(SIZING.icon.xs, "text-chart-2")} />
+                    </div>
+                    <CardTitle className={TYPOGRAPHY.header.section}>Notification Settings</CardTitle>
+                  </div>
+                </CardHeader>
+                <CardContent className={cn(SPACING.card.compact, "space-y-4")}>
+                  {/* Master Notifications Toggle */}
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <Label className={TYPOGRAPHY.body.default}>Notifications</Label>
+                      <p className={cn(TYPOGRAPHY.muted.small, SPACING.margin.xs)}>
+                        Enable all prayer notifications
+                      </p>
+                    </div>
+                                         <Switch
+                       checked={settings?.notifications?.enabled || false}
+                       onCheckedChange={(checked) => handleSettingUpdate('notifications', { ...settings?.notifications, enabled: checked }, true)}
+                     />
+                  </div>
+
+                  <Separator />
+
+                  {/* Prayer Reminders */}
+                  <div className="space-y-3">
                     <div className="flex items-center justify-between">
-                      <Label htmlFor="prayer-reminders" className="text-sm font-medium">
-                        Prayer Reminders
-                      </Label>
-                      <Switch 
-                        id="prayer-reminders" 
-                        checked={settings?.prayer_reminders !== false} // Default to true
+                      <Label className={TYPOGRAPHY.body.default}>Prayer Reminders</Label>
+                      <Switch
+                        checked={settings?.prayer_reminders || false}
                         onCheckedChange={(checked) => handleSettingUpdate('prayer_reminders', checked)}
                       />
                     </div>
                     
-                    {settings?.prayer_reminders !== false && (
+                    {settings?.prayer_reminders && (
                       <div className="space-y-2">
-                        <Label className="text-sm">Reminder Time (minutes before prayer)</Label>
-                        <div className="flex items-center gap-2">
-                          <Slider 
-                            value={[Number(settings?.reminder_time) || 15]} 
-                            min={5} 
-                            max={30} 
-                            step={5} 
-                            className="flex-1"
-                            onValueChange={(vals) => handleSettingUpdate('reminder_time', vals[0])} 
-                          />
-                          <span className="text-sm font-medium w-8 text-center">{Number(settings?.reminder_time) || 15}</span>
+                        <Label className={TYPOGRAPHY.body.small}>
+                          Remind me {Number(settings?.reminder_time) || 15} minutes before prayer
+                        </Label>
+                        <Slider
+                          value={[Number(settings?.reminder_time) || 15]}
+                          onValueChange={([value]) => handleSettingUpdate('reminder_time', value)}
+                          max={30}
+                          min={5}
+                          step={5}
+                          className="w-full"
+                        />
+                        <div className="flex justify-between text-xs text-muted-foreground">
+                          <span>5 min</span>
+                          <span>30 min</span>
                         </div>
                       </div>
                     )}
-                    
-                    <div className="flex items-center justify-between">
-                      <Label htmlFor="sound-enabled" className="text-sm font-medium">
-                        Sound
-                      </Label>
-                      <Switch 
-                        id="sound-enabled" 
-                        checked={settings?.sound_enabled !== false} // Default to true
-                        onCheckedChange={(checked) => handleSettingUpdate('sound_enabled', checked)}
-                      />
-                    </div>
-                    
-                    <div className="flex items-center justify-between">
-                      <Label htmlFor="vibration-enabled" className="text-sm font-medium">
-                        Vibration
-                      </Label>
-                      <Switch 
-                        id="vibration-enabled" 
-                        checked={settings?.vibration_enabled !== false} // Default to true
-                        onCheckedChange={(checked) => handleSettingUpdate('vibration_enabled', checked)}
-                      />
-                    </div>
                   </div>
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
-          
-          {/* Habits & Accountability Tab */}
-          <TabsContent value="habits" className="space-y-4">
-            <Card className="mb-6 border border-primary/20 w-full overflow-hidden">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-lg flex items-center gap-2">
-                  <CheckCircle2 className="h-5 w-5" />
-                  Habit Building
-                </CardTitle>
-                <CardDescription>Strengthen your prayer habits</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <Label htmlFor="streak-protection" className="text-sm font-medium">
-                    Streak Protection
-                  </Label>
-                  <Switch 
-                    id="streak-protection" 
-                    checked={settings?.streak_protection !== false} // Default to true
-                    onCheckedChange={(checked) => handleSettingUpdate('streak_protection', checked)}
-                  />
-                </div>
-                <p className="text-xs text-muted-foreground">Get reminders to protect your streak</p>
-              </CardContent>
-            </Card>
-          </TabsContent>
-          
-          {/* App Settings Tab */}
-          <TabsContent value="app" className="space-y-4">
-            <Card className="mb-6 border border-primary/20 w-full overflow-hidden">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-lg flex items-center gap-2">
-                  <Sun className="h-5 w-5" />
-                  Appearance
-                </CardTitle>
-                <CardDescription>Customize app appearance</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
+
+                  {/* Sound */}
                   <div className="flex items-center justify-between">
-                    <Label className="text-sm font-medium">Theme</Label>
+                    <div>
+                      <Label className={TYPOGRAPHY.body.default}>Sound</Label>
+                      <p className={cn(TYPOGRAPHY.muted.small, SPACING.margin.xs)}>
+                        Play sound for notifications
+                      </p>
+                    </div>
+                                         <Switch
+                       checked={settings?.sound_enabled || false}
+                       onCheckedChange={(checked) => handleSettingUpdate('sound_enabled', checked)}
+                     />
+                  </div>
+
+                  {/* Vibration */}
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <Label className={TYPOGRAPHY.body.default}>Vibration</Label>
+                      <p className={cn(TYPOGRAPHY.muted.small, SPACING.margin.xs)}>
+                        Vibrate for notifications
+                      </p>
+                    </div>
+                                         <Switch
+                       checked={settings?.vibration_enabled || false}
+                       onCheckedChange={(checked) => handleSettingUpdate('vibration_enabled', checked)}
+                     />
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            {/* App Settings */}
+            <TabsContent value="app" className={cn("space-y-4", SPACING.margin.default)}>
+              <Card className={cn(COLORS.card.default)}>
+                <CardHeader className={cn(SPACING.card.compact)}>
+                  <div className="flex items-center gap-2">
+                    <div className={ds.iconContainer('sm', 'tertiary')}>
+                      <Smartphone className={cn(SIZING.icon.xs, "text-chart-3")} />
+                    </div>
+                    <CardTitle className={TYPOGRAPHY.header.section}>App Preferences</CardTitle>
+                  </div>
+                </CardHeader>
+                <CardContent className={cn(SPACING.card.compact, "space-y-4")}>
+                  {/* Text Size */}
+                  <div className="space-y-3">
+                    <Label className={TYPOGRAPHY.body.default}>
+                      Text Size ({((Number(settings?.text_size) || 1) * 100).toFixed(0)}%)
+                    </Label>
+                    <div className="space-y-2">
+                      <Slider
+                        value={[Number(settings?.text_size) || 1]}
+                        onValueChange={([value]) => {
+                          handleSettingUpdate('text_size', value);
+                          // Apply immediately for preview
+                          document.documentElement.style.fontSize = `${value}rem`;
+                        }}
+                        max={1.2}
+                        min={0.8}
+                        step={0.1}
+                        className="w-full"
+                      />
+                      <div className="flex justify-between text-xs text-muted-foreground">
+                        <span>Small</span>
+                        <span>Large</span>
+                      </div>
+                    </div>
+                    <p className={cn(TYPOGRAPHY.muted.small, "italic")}>
+                      This is how text will look at your selected size.
+                    </p>
+                  </div>
+
+                  <Separator />
+
+                  {/* Animations */}
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <Label className={TYPOGRAPHY.body.default}>Animations</Label>
+                      <p className={cn(TYPOGRAPHY.muted.small, SPACING.margin.xs)}>
+                        Enable smooth transitions and animations
+                      </p>
+                    </div>
+                    <Switch
+                      checked={settings?.animations !== false} // Default to true
+                      onCheckedChange={(checked) => {
+                        handleSettingUpdate('animations', checked);
+                        // Apply immediately for preview
+                        if (checked) {
+                          document.documentElement.style.setProperty('--animation-duration', '0.2s');
+                        } else {
+                          document.documentElement.style.setProperty('--animation-duration', '0s');
+                        }
+                      }}
+                    />
+                  </div>
+
+                  {/* Theme Toggle */}
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <Label className={TYPOGRAPHY.body.default}>Theme</Label>
+                      <p className={cn(TYPOGRAPHY.muted.small, SPACING.margin.xs)}>
+                        Switch between light and dark mode
+                      </p>
+                    </div>
                     <ThemeToggle />
                   </div>
-                  <p className="text-xs text-muted-foreground">Choose light, dark, or system theme</p>
-                </div>
-                
-                <div className="space-y-2">
-                  <Label className="text-sm font-medium">Text Size</Label>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            {/* About Tab */}
+            <TabsContent value="about" className={cn("space-y-4", SPACING.margin.default)}>
+              <Card className={cn(COLORS.card.default)}>
+                <CardHeader className={cn(SPACING.card.compact)}>
                   <div className="flex items-center gap-2">
-                    <Slider 
-                      value={[Number(settings?.text_size) || 1]} 
-                      min={0.8} 
-                      max={1.2} 
-                      step={0.1} 
-                      className="flex-1"
-                      onValueChange={(vals) => {
-                        const size = vals[0];
-                        // Apply text size to document root for live preview
-                        if (typeof document !== 'undefined') {
-                          document.documentElement.style.fontSize = `${size}rem`;
-                        }
-                        // Save setting after a short delay to prevent excessive API calls
-                        setTimeout(() => handleSettingUpdate('text_size', size), 500);
-                      }} 
-                    />
-                    <span className="text-sm font-medium w-8 text-center">{(Number(settings?.text_size) || 1).toFixed(1)}x</span>
+                                         <div className={ds.iconContainer('sm', 'tertiary')}>
+                       <Info className={cn(SIZING.icon.xs, "text-chart-3")} />
+                     </div>
+                    <CardTitle className={TYPOGRAPHY.header.section}>About Lopi</CardTitle>
                   </div>
-                </div>
-                
-                <div className="flex items-center justify-between">
-                  <Label htmlFor="reduce-animations" className="text-sm font-medium">
-                    Reduce Animations
-                  </Label>
-                  <Switch 
-                    id="reduce-animations" 
-                    checked={settings?.reduce_animations || false}
-                    onCheckedChange={(checked) => {
-                      handleSettingUpdate('reduce_animations', checked);
-                      // Apply animation setting to body for live preview
-                      if (typeof document !== 'undefined') {
-                        if (checked) {
-                          document.body.classList.add('reduce-motion');
-                        } else {
-                          document.body.classList.remove('reduce-motion');
-                        }
-                      }
-                    }}
-                  />
-                </div>
-                <p className="text-xs text-muted-foreground">Minimize motion for accessibility</p>
-              </CardContent>
-            </Card>
-            
-            <Card className="mb-6 border border-primary/20 w-full overflow-hidden">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-lg flex items-center gap-2">
-                  <Info className="h-5 w-5" />
-                  About Lopi
-                </CardTitle>
-                <CardDescription>App information and support</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-1">
-                  <h3 className="text-sm font-medium">Version</h3>
-                  <p className="text-xs text-muted-foreground">1.0.0 (Build 145)</p>
-                </div>
-                
-                <div className="space-y-1">
-                  <h3 className="text-sm font-medium">Developer</h3>
-                  <p className="text-xs text-muted-foreground">Lopi Technologies</p>
-                </div>
-                
-                <div className="space-y-2 pt-2">
-                  <h3 className="text-sm font-medium">Support</h3>
-                  <div className="grid gap-2">
-                    <Button 
-                      variant="outline" 
-                      className="w-full justify-start" 
-                      size="sm"
-                      onClick={() => {
-                        if (typeof window !== 'undefined') {
-                          window.open('mailto:support@lopi.app', '_blank');
-                        }
-                      }}
-                    >
-                      <User className="mr-2 h-4 w-4" /> Contact Support
+                </CardHeader>
+                <CardContent className={cn(SPACING.card.compact, "space-y-4")}>
+                  <div className="text-center space-y-2">
+                    <div className={ds.iconContainer('xl', 'primary')}>
+                      <User className={cn(SIZING.icon.lg, COLORS.text.primary)} />
+                    </div>
+                    <h3 className={cn(TYPOGRAPHY.header.card, SPACING.margin.sm)}>Lopi Prayer Tracker</h3>
+                    <p className={cn(TYPOGRAPHY.muted.default)}>Version 1.0.0</p>
+                    <p className={cn(TYPOGRAPHY.muted.small, SPACING.margin.sm)}>
+                      Your personal Islamic prayer companion, designed to help you maintain consistent prayer habits with love and care.
+                    </p>
+                  </div>
+
+                  <Separator />
+
+                  <div className="space-y-3">
+                    <Button variant="outline" className="w-full justify-start" asChild>
+                      <a href="mailto:support@lopi.app" className="flex items-center gap-2">
+                        <Info className={cn(SIZING.icon.xs)} />
+                        Contact Support
+                      </a>
                     </Button>
-                    <Button 
-                      variant="outline" 
-                      className="w-full justify-start" 
-                      size="sm"
-                      onClick={() => {
-                        if (typeof window !== 'undefined') {
-                          window.location.href = '/help';
-                        }
-                      }}
-                    >
-                      <Info className="mr-2 h-4 w-4" /> FAQ & Help Center
+                    
+                    <Button variant="outline" className="w-full justify-start" asChild>
+                      <a href="/privacy" className="flex items-center gap-2">
+                        <Shield className={cn(SIZING.icon.xs)} />
+                        Privacy Policy
+                      </a>
                     </Button>
                   </div>
-                </div>
-                
-                <Separator className="my-2" />
-                
-                <Button 
-                  onClick={handleSignOut} 
-                  variant="destructive" 
-                  className="w-full"
-                  disabled={isSaving}
-                >
-                  <LogOut className="mr-2 h-4 w-4" /> Sign Out
-                </Button>
-              </CardContent>
-            </Card>
-          </TabsContent>
-        </Tabs>
+
+                  <Separator />
+
+                  <Button 
+                    variant="destructive" 
+                    className="w-full" 
+                    onClick={handleSignOut}
+                  >
+                    <LogOut className={cn(SIZING.icon.xs, "mr-2")} />
+                    Sign Out
+                  </Button>
+                </CardContent>
+              </Card>
+            </TabsContent>
+          </Tabs>
+        </div>
       </div>
-      
-      {/* Bottom Navigation */}
+
       <PhantomBottomNav />
     </div>
   );

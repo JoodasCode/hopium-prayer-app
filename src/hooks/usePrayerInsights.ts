@@ -46,7 +46,7 @@ export function usePrayerInsights(userId?: string): UsePrayerInsightsReturn {
         .from('prayer_records')
         .select('*')
         .eq('user_id', userId)
-        .gte('completed_at', sevenDaysAgo.toISOString());
+        .gte('scheduled_time', sevenDaysAgo.toISOString());
 
       // Get today's prayer records
       const today = new Date();
@@ -58,8 +58,8 @@ export function usePrayerInsights(userId?: string): UsePrayerInsightsReturn {
         .from('prayer_records')
         .select('*')
         .eq('user_id', userId)
-        .gte('completed_at', today.toISOString())
-        .lt('completed_at', tomorrow.toISOString());
+        .gte('scheduled_time', today.toISOString())
+        .lt('scheduled_time', tomorrow.toISOString());
 
       // Insight 1: Streak Analysis
       if (userStats?.current_streak >= 5) {

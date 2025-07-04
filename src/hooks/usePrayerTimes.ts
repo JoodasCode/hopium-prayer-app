@@ -10,6 +10,7 @@ import {
   getLocationFromIP 
 } from '@/lib/prayerTimes';
 import type { PrayerTimes, LocationData, Prayer, UsePrayerTimesReturn } from '@/types';
+import { supabase } from '@/lib/supabase';
 
 interface UsePrayerTimesProps {
   userId?: string;
@@ -109,9 +110,23 @@ export function usePrayerTimes({
     queryFn: async () => {
       if (!userId) return [];
       
-      // This would fetch from Supabase in a real implementation
-      // For now, return empty array
-      return [];
+      // Fetch completed prayers from Supabase for the specific date
+      const dateStr = date.toISOString().split('T')[0];
+      const { data, error } = await supabase
+        .from('prayer_records')
+        .select('prayer_type, id')
+        .eq('user_id', userId)
+        .eq('completed', true)
+        .gte('scheduled_time', `${dateStr}T00:00:00`)
+        .lte('scheduled_time', `${dateStr}T23:59:59`);
+      
+      if (error) {
+        console.error('Error fetching completed prayers:', error);
+        return [];
+      }
+      
+      // Return array of prayer IDs in the format expected by generatePrayersForDate
+      return (data || []).map(record => `${record.prayer_type}-${dateStr}`);
     },
     enabled: !!userId,
     staleTime: 5 * 60 * 1000, // 5 minutes
