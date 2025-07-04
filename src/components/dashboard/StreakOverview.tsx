@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, memo, useMemo, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -20,7 +20,7 @@ type StreakOverviewProps = {
   percentToMilestone?: number;
 };
 
-export function StreakOverview({ 
+const StreakOverview = memo(function StreakOverview({ 
   currentStreak = 7, 
   bestStreak = 14, 
   recentDays = new Array(14).fill(true), 
@@ -33,19 +33,17 @@ export function StreakOverview({
   const [showAnimation, setShowAnimation] = useState(false);
   const [showShieldDialog, setShowShieldDialog] = useState(false);
   
-  // Streak tier and visual effects
-  const getStreakTier = (streak: number) => {
-    if (streak >= 100) return { tier: 'diamond', color: 'from-blue-300 to-blue-500', size: 'scale-110' };
-    if (streak >= 30) return { tier: 'platinum', color: 'from-purple-300 to-purple-600', size: 'scale-105' };
-    if (streak >= 14) return { tier: 'gold', color: 'from-yellow-300 to-yellow-600', size: 'scale-100' };
-    if (streak >= 7) return { tier: 'silver', color: 'from-amber-300 to-amber-600', size: 'scale-100' };
+  // Memoize streak tier calculation
+  const streakInfo = useMemo(() => {
+    if (currentStreak >= 100) return { tier: 'diamond', color: 'from-blue-300 to-blue-500', size: 'scale-110' };
+    if (currentStreak >= 30) return { tier: 'platinum', color: 'from-purple-300 to-purple-600', size: 'scale-105' };
+    if (currentStreak >= 14) return { tier: 'gold', color: 'from-yellow-300 to-yellow-600', size: 'scale-100' };
+    if (currentStreak >= 7) return { tier: 'silver', color: 'from-amber-300 to-amber-600', size: 'scale-100' };
     return { tier: 'bronze', color: 'from-orange-300 to-orange-600', size: 'scale-95' };
-  };
+  }, [currentStreak]);
   
-  const streakInfo = getStreakTier(currentStreak);
-  
-  // Milestone calculation
-  const getMilestoneInfo = () => {
+  // Memoize milestone calculation
+  const milestone = useMemo(() => {
     const milestones = [7, 14, 30, 50, 100, 200, 365];
     const nextMile = milestones.find(m => m > currentStreak) || currentStreak + 10;
     const prevMile = milestones.filter(m => m <= currentStreak).pop() || 0;
@@ -56,9 +54,7 @@ export function StreakOverview({
       percent: percent,
       daysLeft: nextMile - currentStreak
     };
-  };
-  
-  const milestone = getMilestoneInfo();
+  }, [currentStreak]);
   
   // Animation effect on mount
   useEffect(() => {
@@ -69,15 +65,15 @@ export function StreakOverview({
     return () => clearTimeout(timer);
   }, []);
   
-  // Handle streak protection
-  const handleActivateShield = () => {
+  // Handle streak protection with useCallback
+  const handleActivateShield = useCallback(() => {
     toast({
       title: "Streak Shield Activated",
       description: "Your prayer streak is now protected for the next 24 hours.",
       variant: "default"
     });
     setShowShieldDialog(false);
-  };
+  }, [toast]);
   
   // Day names for the mini calendar
   const dayNames = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
@@ -340,4 +336,6 @@ export function StreakOverview({
       </div>
     </Card>
   );
-}
+});
+
+export { StreakOverview };

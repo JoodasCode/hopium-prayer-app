@@ -1,5 +1,6 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '@/types/supabase';
+import type { User, UserSettings } from '@/types';
 
 // These environment variables will need to be set in .env.local
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL as string;
@@ -67,7 +68,7 @@ export const getUserProfile = async (userId: string) => {
   return data;
 };
 
-export const updateUserProfile = async (userId: string, updates: any) => {
+export const updateUserProfile = async (userId: string, updates: Partial<User>) => {
   const { data, error } = await supabase
     .from('users')
     .update(updates)
@@ -146,7 +147,7 @@ export const getUserSettings = async (userId: string) => {
   return data;
 };
 
-export const updateUserSettings = async (userId: string, settings: any) => {
+export const updateUserSettings = async (userId: string, settings: Partial<UserSettings>) => {
   const { data, error } = await supabase
     .from('settings')
     .upsert({

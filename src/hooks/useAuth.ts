@@ -83,7 +83,6 @@ export function useAuth() {
 
   // Sign in an existing user
   const signIn = async (email: string, password: string) => {
-    console.log('🔐 SignIn attempt for:', email);
     setIsLoading(true);
     setError(null);
     
@@ -93,32 +92,33 @@ export function useAuth() {
         password,
       });
       
-      console.log('🔐 SignIn response:', { data: !!data, error: error?.message });
-      
       if (error) throw error;
       
       if (data?.user) {
-        console.log('✅ User signed in successfully:', data.user.email);
-        
-        // Check onboarding status and redirect directly
-        const { data: userRecord } = await supabase
+        // Check onboarding status and redirect properly
+        const { data: userRecord, error: userError } = await supabase
           .from('users')
           .select('onboarding_completed')
           .eq('id', data.user.id)
           .single();
         
+        if (userError && userError.code !== 'PGRST116') {
+          throw new Error(`User lookup error: ${userError.message}`);
+        }
+        
+        // Use Next.js router for proper navigation
         if (userRecord?.onboarding_completed) {
-          console.log('🎯 Redirecting to dashboard - onboarding completed');
-          window.location.href = '/dashboard';
+          router.push('/dashboard');
         } else {
-          console.log('🎯 Redirecting to onboarding - not completed');
-          window.location.href = '/onboarding';
+          router.push('/onboarding');
         }
       }
       
       return data;
     } catch (err: any) {
-      console.error('❌ SignIn error:', err);
+      if (process.env.NODE_ENV === 'development') {
+        console.error('SignIn error:', err);
+      }
       setError(err.message || 'An error occurred during sign in');
       return null;
     } finally {

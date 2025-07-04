@@ -306,3 +306,310 @@ USING (
 9. **Deploy to production**
 
 This backend integration plan has been largely completed, with only a few remaining items to finish. The core functionality including authentication, data persistence, and AI assistant with vector search and personalization are now fully implemented.
+
+# Backend Integration Plan - Phase 1
+
+## 🎯 **Head of Product Recommendation**
+
+**Current Assessment**: We have a **solid foundation** with real prayer times, optimized UI, and a comprehensive database. We're ready to transform this from a "demo app" into a **production-ready Islamic prayer tracking platform**.
+
+**Strategic Priority**: **Authentication → Prayer Recording → Statistics → AI Assistant**
+
+---
+
+## 📊 **Current State Analysis**
+
+### **✅ What's Working**
+- **Frontend**: Dashboard with real prayer times, location services, Qibla direction
+- **Database**: 20+ tables deployed with proper relationships and RLS
+- **Infrastructure**: TypeScript, error handling, performance optimizations
+- **Supabase Client**: Basic functions already implemented
+
+### **🔧 What Needs Connection**
+- **Authentication**: Currently mock, needs real Supabase Auth
+- **Prayer Recording**: UI exists but doesn't persist to database
+- **User Statistics**: Mock data, needs real calculations
+- **Settings**: Local only, needs database persistence
+- **AI Assistant**: Placeholder, needs LLM integration
+
+---
+
+## 🚀 **Phase 1: Foundation (Week 1)**
+
+### **Day 1: Environment & Authentication Setup**
+
+#### **1.1 Configure Environment Variables**
+```bash
+# Copy and configure environment
+cp env.local.example .env.local
+```
+
+**Required Variables:**
+```env
+NEXT_PUBLIC_SUPABASE_URL=https://ohilegtcwwmgqolearrh.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
+SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
+NEXT_PUBLIC_APP_URL=http://localhost:3000
+NEXT_PUBLIC_APP_ENV=development
+```
+
+#### **1.2 Get Supabase Credentials**
+- **Project ID**: `ohilegtcwwmgqolearrh`
+- **Need**: Anon key and service role key from Supabase dashboard
+
+#### **1.3 Test Database Connection**
+```typescript
+// Test basic connection
+const testConnection = async () => {
+  const { data, error } = await supabase.from('users').select('count');
+  console.log('Connection test:', { data, error });
+};
+```
+
+### **Day 2: Authentication System**
+
+#### **2.1 Update Auth Hook**
+**File**: `src/hooks/useAuth.ts`
+- Replace mock authentication with real Supabase Auth
+- Implement proper session management
+- Add loading states and error handling
+
+#### **2.2 Update Auth Pages**
+**Files**: `src/app/login/page.tsx`, `src/app/signup/page.tsx`
+- Connect to real authentication functions
+- Add proper form validation
+- Implement error messaging
+
+#### **2.3 Protected Routes**
+**File**: `src/components/auth/ProtectedRoute.tsx`
+- Implement real authentication checks
+- Add loading states
+- Redirect to login when needed
+
+### **Day 3: User Profile System**
+
+#### **3.1 User Creation Flow**
+- Auto-create user profile on signup
+- Initialize default settings
+- Set up onboarding state
+
+#### **3.2 User State Management**
+**File**: `src/contexts/UserStateContext.tsx`
+- Connect to real user data
+- Implement profile updates
+- Add settings persistence
+
+### **Day 4-5: Prayer Recording System**
+
+#### **4.1 Prayer Completion Logic**
+**File**: `src/components/dashboard/TodaysPrayers.tsx`
+- Connect prayer completion buttons to database
+- Implement real-time status updates
+- Add emotional state tracking
+
+#### **4.2 Prayer History**
+- Create prayer records on completion
+- Track completion times
+- Store emotional states and notes
+
+#### **4.3 Statistics Calculation**
+**File**: `src/components/dashboard/StreakOverview.tsx`
+- Calculate real streaks from database
+- Implement completion rate calculations
+- Add weekly/monthly analytics
+
+---
+
+## 🔧 **Technical Implementation Details**
+
+### **Database Functions Needed**
+
+#### **1. Prayer Statistics Function**
+```sql
+CREATE OR REPLACE FUNCTION calculate_user_stats(user_id UUID)
+RETURNS TABLE (
+  current_streak INTEGER,
+  best_streak INTEGER,
+  total_prayers INTEGER,
+  completion_rate DECIMAL
+) AS $$
+BEGIN
+  -- Implementation for calculating user statistics
+  RETURN QUERY
+  SELECT 
+    calculate_current_streak(user_id),
+    calculate_best_streak(user_id),
+    count_total_prayers(user_id),
+    calculate_completion_rate(user_id);
+END;
+$$ LANGUAGE plpgsql;
+```
+
+#### **2. Daily Prayer Creation Function**
+```sql
+CREATE OR REPLACE FUNCTION create_daily_prayers(user_id UUID, prayer_date DATE)
+RETURNS VOID AS $$
+BEGIN
+  -- Create prayer records for each prayer time
+  INSERT INTO prayer_records (user_id, prayer_type, scheduled_time, completed)
+  VALUES 
+    (user_id, 'fajr', prayer_date + '05:00'::time, false),
+    (user_id, 'dhuhr', prayer_date + '12:30'::time, false),
+    (user_id, 'asr', prayer_date + '16:00'::time, false),
+    (user_id, 'maghrib', prayer_date + '19:00'::time, false),
+    (user_id, 'isha', prayer_date + '21:00'::time, false);
+END;
+$$ LANGUAGE plpgsql;
+```
+
+### **Frontend Integration Points**
+
+#### **1. Dashboard Prayer Times**
+```typescript
+// Update usePrayerTimes hook to include database integration
+const usePrayerTimes = () => {
+  const { user } = useAuth();
+  
+  // Get prayer times from calculation
+  const prayerTimes = calculatePrayerTimes(location);
+  
+  // Get prayer completion status from database
+  const { data: prayerRecords } = useQuery({
+    queryKey: ['prayer-records', user?.id, today],
+    queryFn: () => getPrayerRecords(user.id, today),
+    enabled: !!user
+  });
+  
+  // Merge calculation with database status
+  return mergePrayerData(prayerTimes, prayerRecords);
+};
+```
+
+#### **2. Prayer Completion Handler**
+```typescript
+const handlePrayerCompletion = async (prayerId: string) => {
+  try {
+    await markPrayerCompleted(
+      prayerId,
+      new Date().toISOString(),
+      emotionalState,
+      notes
+    );
+    
+    // Update UI immediately
+    queryClient.invalidateQueries(['prayer-records']);
+    queryClient.invalidateQueries(['user-stats']);
+    
+    // Show success feedback
+    toast.success('Prayer recorded successfully!');
+  } catch (error) {
+    toast.error('Failed to record prayer');
+  }
+};
+```
+
+### **Row Level Security (RLS) Policies**
+
+#### **1. Users Table**
+```sql
+-- Users can only see their own data
+CREATE POLICY "Users can view own profile" ON users
+  FOR SELECT USING (auth.uid() = id);
+
+CREATE POLICY "Users can update own profile" ON users
+  FOR UPDATE USING (auth.uid() = id);
+```
+
+#### **2. Prayer Records Table**
+```sql
+-- Users can only access their own prayer records
+CREATE POLICY "Users can view own prayers" ON prayer_records
+  FOR SELECT USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can insert own prayers" ON prayer_records
+  FOR INSERT WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "Users can update own prayers" ON prayer_records
+  FOR UPDATE USING (auth.uid() = user_id);
+```
+
+---
+
+## 📋 **Implementation Checklist**
+
+### **Environment Setup**
+- [ ] Configure `.env.local` with Supabase credentials
+- [ ] Test database connection
+- [ ] Verify RLS policies are active
+
+### **Authentication**
+- [ ] Replace mock auth with Supabase Auth
+- [ ] Update login/signup pages
+- [ ] Implement protected routes
+- [ ] Add loading states and error handling
+
+### **User Management**
+- [ ] Auto-create user profiles on signup
+- [ ] Connect user state to database
+- [ ] Implement settings persistence
+
+### **Prayer System**
+- [ ] Connect prayer completion to database
+- [ ] Implement real-time status updates
+- [ ] Add emotional state tracking
+- [ ] Create prayer history views
+
+### **Statistics**
+- [ ] Calculate real streaks from database
+- [ ] Implement completion rate calculations
+- [ ] Add weekly/monthly analytics
+- [ ] Create statistics dashboard
+
+---
+
+## 🎯 **Success Metrics**
+
+### **Phase 1 Complete When:**
+- [ ] Users can register and login with real accounts
+- [ ] Dashboard shows user-specific prayer data
+- [ ] Prayer completion persists to database
+- [ ] Statistics reflect real user data
+- [ ] Settings persist across sessions
+
+### **Technical Validation:**
+- [ ] No console errors in production
+- [ ] All database queries use proper types
+- [ ] RLS policies prevent unauthorized access
+- [ ] Loading states provide good UX
+- [ ] Error handling covers edge cases
+
+---
+
+## 🚨 **Risk Mitigation**
+
+### **Data Migration**
+- Start with new users, don't migrate existing mock data
+- Use database transactions for multi-step operations
+- Implement proper rollback procedures
+
+### **Performance**
+- Use React Query for efficient data fetching
+- Implement proper database indexing
+- Monitor query performance in production
+
+### **User Experience**
+- Maintain loading states during data operations
+- Provide clear error messages
+- Ensure offline capability where possible
+
+---
+
+## 📞 **Next Actions**
+
+1. **Get Supabase Credentials** - Need anon key and service role key
+2. **Configure Environment** - Set up `.env.local` file
+3. **Test Database Connection** - Verify we can connect and query
+4. **Start with Authentication** - Replace mock auth system
+5. **Connect Prayer Recording** - Core functionality integration
+
+**Ready to begin implementation immediately once credentials are configured.**

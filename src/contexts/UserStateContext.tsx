@@ -72,11 +72,13 @@ export function UserStateProvider({ children }: { children: ReactNode }) {
 
   // Simplified refresh user state from Supabase
   const refreshUserState = async () => {
-    console.log('🔄 RefreshUserState called');
     try {
       // Get current session
-      const { data: { session } } = await supabase.auth.getSession();
-      console.log('🔑 Session:', session ? 'Found' : 'None');
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      
+      if (sessionError) {
+        throw new Error(`Session error: ${sessionError.message}`);
+      }
       
       if (!session) {
         updateUserState({
@@ -90,18 +92,17 @@ export function UserStateProvider({ children }: { children: ReactNode }) {
       const user = session.user;
       
       // Get user profile data
-      console.log('🔍 RefreshUserState - Fetching profile for user:', user.id);
       const { data: profile, error: profileError } = await supabase
         .from('users')
         .select('onboarding_completed')
         .eq('id', user.id)
         .single();
 
-      console.log('📋 RefreshUserState - Profile data:', profile);
-      console.log('❌ RefreshUserState - Profile error:', profileError);
+      if (profileError && profileError.code !== 'PGRST116') {
+        throw new Error(`Profile fetch error: ${profileError.message}`);
+      }
 
       const isOnboardingCompleted = profile?.onboarding_completed || false;
-      console.log('✅ RefreshUserState - isOnboardingCompleted:', isOnboardingCompleted);
       
       // Update user state (simplified - no prayer data counting)
       updateUserState({
@@ -117,7 +118,11 @@ export function UserStateProvider({ children }: { children: ReactNode }) {
         },
       });
     } catch (error) {
-      console.error('Error refreshing user state:', error);
+      // Only log in development
+      if (process.env.NODE_ENV === 'development') {
+        console.error('UserState refresh error:', error);
+      }
+      
       updateUserState({
         isLoading: false,
         isAuthenticated: false,
