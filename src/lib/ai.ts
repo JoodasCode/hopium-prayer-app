@@ -165,3 +165,20 @@ export async function getLopiContextWithVectors(
     return getLopiContext(userId, query, customSupabase);
   }
 }
+
+export async function getRelevantKnowledge(query: string, supabase: any): Promise<string[]> {
+  try {
+    // Simple keyword-based search for now
+    const { data, error } = await supabase
+      .from('mulvi_knowledge')
+      .select('content')
+      .ilike('content', `%${query}%`)
+      .limit(3);
+
+    if (error) throw error;
+    return data?.map((item: any) => item.content) || [];
+  } catch (error) {
+    console.error('Error fetching knowledge:', error);
+    return [];
+  }
+}

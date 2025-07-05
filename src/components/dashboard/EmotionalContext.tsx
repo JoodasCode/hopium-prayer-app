@@ -15,11 +15,11 @@ export function EmotionalContext({ currentEmotion }: EmotionalContextProps) {
   // Get color based on emotion
   const getEmotionColor = () => {
     switch (currentEmotion) {
-      case 'peaceful': return 'text-blue-500';
-      case 'grateful': return 'text-green-500';
-      case 'reflective': return 'text-purple-500';
-      case 'hopeful': return 'text-amber-500';
-      case 'connected': return 'text-red-500';
+      case 'peaceful': return 'text-chart-1';
+      case 'grateful': return 'text-chart-2';
+      case 'reflective': return 'text-chart-3';
+      case 'hopeful': return 'text-chart-4';
+      case 'connected': return 'text-chart-5';
       default: return '';
     }
   };

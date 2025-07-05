@@ -29,7 +29,7 @@ import { QiblaStep } from './steps/QiblaStep';
 import { PrayerBaselineStep } from './steps/PrayerBaselineStep';
 import { RemindersStep } from './steps/RemindersStep';
 import { IntentionStep } from './steps/IntentionStep';
-import { LopiIntroStep } from './steps/LopiIntroStep';
+import { MulviIntroStep } from './steps/MulviIntroStep';
 import { CompletionStep } from './steps/CompletionStep';
 
 export default function OnboardingContainer() {
@@ -49,7 +49,7 @@ export default function OnboardingContainer() {
       isha: false
     },
     intentions: [],
-    lopiEnabled: true
+    mulviEnabled: true
   });
   
   const supabase = useSupabaseClient();
@@ -107,7 +107,7 @@ export default function OnboardingContainer() {
               isha: false
             },
             intentions: onboarding.intentions || [],
-            lopiEnabled: onboarding.lopi_enabled !== false
+            mulviEnabled: onboarding.mulvi_enabled !== false
           });
         } else {
           // Create initial onboarding record
@@ -156,7 +156,7 @@ export default function OnboardingContainer() {
       if ('theme' in updates) supabaseData.theme = updates.theme;
       if ('prayerBaseline' in updates) supabaseData.prayer_baseline = updates.prayerBaseline;
       if ('intentions' in updates) supabaseData.intentions = updates.intentions;
-      if ('lopiEnabled' in updates) supabaseData.lopi_enabled = updates.lopiEnabled;
+      if ('mulviEnabled' in updates) supabaseData.mulvi_enabled = updates.mulviEnabled;
       
       // Always update the step if provided
       if (nextStep !== undefined) {
@@ -222,7 +222,7 @@ export default function OnboardingContainer() {
       
       // Show success message
       toast({
-        title: 'Welcome to Hopium!',
+        title: 'Welcome to Mulvi!',
         description: 'Your journey begins now',
         variant: 'default'
       });
@@ -286,10 +286,10 @@ export default function OnboardingContainer() {
           selectedIntentions={onboardingState.intentions || []} 
         />;
       case 7:
-        return <LopiIntroStep 
-          onNext={(lopiEnabled: boolean) => nextStep({ lopiEnabled })} 
+        return <MulviIntroStep 
+          onNext={(mulviEnabled: boolean) => nextStep({ mulviEnabled })} 
           onBack={prevStep} 
-          initialEnabled={onboardingState.lopiEnabled} 
+          initialEnabled={onboardingState.mulviEnabled} 
         />;
       case 8:
         return <CompletionStep 

@@ -88,7 +88,7 @@ export function CompletionStep({
             
             <div className="flex items-center justify-center space-x-2 text-sm">
               <div className="w-3 h-3 rounded-full bg-primary" />
-              <p>Lopi is ready to support you</p>
+              <p>Mulvi is ready to support you</p>
             </div>
           </motion.div>
           
@@ -103,7 +103,7 @@ export function CompletionStep({
               className="px-8"
             >
               <Home className="mr-2 h-4 w-4" />
-              Enter Hopium
+              Enter Mulvi
             </Button>
           </motion.div>
           

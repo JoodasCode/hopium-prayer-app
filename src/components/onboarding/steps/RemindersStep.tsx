@@ -19,7 +19,7 @@ interface RemindersStepProps {
 }
 
 type ReminderTiming = 'before' | 'after' | 'end';
-type ReminderStyle = 'soft' | 'lopi' | 'none';
+type ReminderStyle = 'soft' | 'mulvi' | 'none';
 
 export function RemindersStep({ onNext, onBack }: RemindersStepProps) {
   const [reminderTiming, setReminderTiming] = useState<ReminderTiming>('before');
@@ -41,7 +41,7 @@ export function RemindersStep({ onNext, onBack }: RemindersStepProps) {
     if (navigator.vibrate) {
       if (value === 'soft') {
         navigator.vibrate(40);
-      } else if (value === 'lopi') {
+      } else if (value === 'mulvi') {
         navigator.vibrate([40, 30, 40]);
       } else {
         navigator.vibrate(20);
@@ -128,11 +128,11 @@ export function RemindersStep({ onNext, onBack }: RemindersStepProps) {
                 </div>
                 
                 <div className="flex items-center space-x-3 p-3 border rounded-md hover:bg-accent transition-colors">
-                  <RadioGroupItem value="lopi" id="style-lopi" />
-                  <Label htmlFor="style-lopi" className="flex items-center cursor-pointer">
+                  <RadioGroupItem value="mulvi" id="style-mulvi" />
+                  <Label htmlFor="style-mulvi" className="flex items-center cursor-pointer">
                     <Bell className="mr-2 h-4 w-4" />
                     <div>
-                      <span className="font-medium">Lopi's spiritual nudge</span>
+                      <span className="font-medium">Mulvi's spiritual nudge</span>
                       <p className="text-sm text-muted-foreground">Personalized message</p>
                     </div>
                   </Label>

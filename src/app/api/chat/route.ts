@@ -7,7 +7,45 @@ const openai = new OpenAI({
 
 export async function POST(request: NextRequest) {
   try {
-    const { messages, userContext } = await request.json();
+    const body = await request.json();
+    const { messages, userContext, message, userId, conversationId } = body;
+    
+    console.log('API received:', { 
+      messagesType: typeof messages, 
+      messagesArray: Array.isArray(messages),
+      messagesLength: messages?.length,
+      messageType: typeof message,
+      bodyKeys: Object.keys(body)
+    });
+    
+    // Handle both old and new request formats
+    let chatMessages = messages;
+    if (!chatMessages && message) {
+      // Convert single message to messages array format
+      chatMessages = [{ role: 'user', content: message }];
+    }
+    
+    // Ensure we have a valid array of messages
+    if (!chatMessages || !Array.isArray(chatMessages)) {
+      console.error('Invalid messages format:', { chatMessages, message, body });
+      return NextResponse.json(
+        { error: 'Invalid messages format. Expected array of message objects.' },
+        { status: 400 }
+      );
+    }
+    
+    // Validate message format
+    const validMessages = chatMessages.filter(msg => 
+      msg && typeof msg === 'object' && msg.role && msg.content
+    );
+    
+    if (validMessages.length === 0) {
+      console.error('No valid messages found:', chatMessages);
+      return NextResponse.json(
+        { error: 'No valid messages provided' },
+        { status: 400 }
+      );
+    }
 
     // Build enhanced system prompt with personal context
     const systemPrompt = `You are Mulvi, an AI spiritual companion for Muslim prayer guidance. You are warm, knowledgeable, and supportive.
@@ -48,14 +86,22 @@ RESPONSE STYLE:
 - Provide actionable Islamic advice
 - Keep responses concise but meaningful
 - Use "MashaAllah" and other Islamic expressions naturally
+- NEVER use markdown formatting like **bold** or *italic* - use natural language for emphasis
+- When mentioning prayer names (Fajr, Dhuhr, Asr, Maghrib, Isha), use them naturally without special formatting
+- Speak conversationally as if talking to a close friend
 
 Remember: You know ${userContext?.userName || 'this person'} personally. Use their context to provide truly personalized spiritual guidance.`;
+
+    console.log('Sending to OpenAI:', {
+      messageCount: validMessages.length,
+      systemPromptLength: systemPrompt.length
+    });
 
     const completion = await openai.chat.completions.create({
       model: "gpt-4o-mini",
       messages: [
         { role: "system", content: systemPrompt },
-        ...messages
+        ...validMessages
       ],
       max_tokens: 500,
       temperature: 0.7,
@@ -66,8 +112,17 @@ Remember: You know ${userContext?.userName || 'this person'} personally. Use the
     return NextResponse.json({ response });
   } catch (error) {
     console.error('OpenAI API error:', error);
+    console.error('Error details:', {
+      message: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined,
+      apiKey: process.env.OPENAI_API_KEY ? 'Present' : 'Missing'
+    });
+    
     return NextResponse.json(
-      { error: 'Failed to generate response' },
+      { 
+        error: 'Failed to generate response',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      },
       { status: 500 }
     );
   }

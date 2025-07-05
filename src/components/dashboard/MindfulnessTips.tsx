@@ -15,7 +15,7 @@ type Tip = {
 };
 
 // AI-driven mindfulness tips based on user behavior patterns
-const lopiTips: Tip[] = [
+const mulviTips: Tip[] = [
   { 
     id: 1, 
     text: "You've been consistent with Fajr this week. Notice how morning prayers set a different tone for your day.", 
@@ -91,41 +91,41 @@ export function MindfulnessTips({
   streak = 0, 
   missedPrayers = [] 
 }: MindfulnessTipsProps) {
-  const [currentTip, setCurrentTip] = useState<Tip>(lopiTips[9]); // Default to a general tip
+  const [currentTip, setCurrentTip] = useState<Tip>(mulviTips[9]); // Default to a general tip
   const [feedbackGiven, setFeedbackGiven] = useState(false);
   
-  // Simulate Lopi AI selecting the most relevant tip based on user behavior
+  // Simulate Mulvi AI selecting the most relevant tip based on user behavior
   const getPersonalizedTip = () => {
     // This would eventually be a more sophisticated algorithm
     // For now, we'll use some simple logic based on the props
     
     if (streak >= 3) {
-      return lopiTips.find(tip => tip.category === 'momentum' && tip.id === 7) || lopiTips[9];
+      return mulviTips.find(tip => tip.category === 'momentum' && tip.id === 7) || mulviTips[9];
     }
     
     if (streak === 0 || streak === 1) {
-      return lopiTips.find(tip => tip.category === 'encouragement') || lopiTips[9];
+      return mulviTips.find(tip => tip.category === 'encouragement') || mulviTips[9];
     }
     
     if (missedPrayers.includes('asr')) {
-      return lopiTips.find(tip => tip.id === 2) || lopiTips[9];
+      return mulviTips.find(tip => tip.id === 2) || mulviTips[9];
     }
     
     if (missedPrayers.includes('isha')) {
-      return lopiTips.find(tip => tip.id === 8) || lopiTips[9];
+      return mulviTips.find(tip => tip.id === 8) || mulviTips[9];
     }
     
     if (userEmotion === 'reflective') {
-      return lopiTips.find(tip => tip.id === 6) || lopiTips[9];
+      return mulviTips.find(tip => tip.id === 6) || mulviTips[9];
     }
     
     if (userEmotion === 'peaceful') {
-      return lopiTips.find(tip => tip.id === 3) || lopiTips[9];
+      return mulviTips.find(tip => tip.id === 3) || mulviTips[9];
     }
     
     // Default to a random tip if no conditions match
-    const randomIndex = Math.floor(Math.random() * lopiTips.length);
-    return lopiTips[randomIndex];
+    const randomIndex = Math.floor(Math.random() * mulviTips.length);
+    return mulviTips[randomIndex];
   };
   
   const refreshTip = () => {
@@ -153,7 +153,7 @@ export function MindfulnessTips({
           </div>
           <div className="flex-1">
             <div className="flex items-center justify-between mb-1">
-              <h3 className="text-base font-medium">Lopi Suggests</h3>
+              <h3 className="text-base font-medium">Mulvi Suggests</h3>
               <span className="text-xs text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
                 AI-powered
               </span>

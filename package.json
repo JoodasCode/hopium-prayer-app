@@ -1,5 +1,5 @@
 {
-  "name": "lopi",
+  "name": "mulvi",
   "version": "1.0.0",
   "private": true,
   "scripts": {
@@ -11,7 +11,7 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "description": "Hopium Prayer App - A PWA for Muslim prayer tracking with emotional design and AI assistance",
+  "description": "Revolutionary prayer tracking with AI insights & streak building",
   "dependencies": {
     "@capacitor/android": "^7.4.1",
     "@capacitor/cli": "^7.4.1",

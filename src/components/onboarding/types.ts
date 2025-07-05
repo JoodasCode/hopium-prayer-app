@@ -52,9 +52,9 @@ export interface IntentionStepProps extends BaseStepProps {
   selectedIntentions?: string[];
 }
 
-// Lopi Intro Step
-export interface LopiIntroStepProps extends BaseStepProps {
-  onNext: (lopiEnabled: boolean) => void;
+// Mulvi Intro Step
+export interface MulviIntroStepProps extends BaseStepProps {
+  onNext: (mulviEnabled: boolean) => void;
   initialEnabled?: boolean;
 }
 
@@ -81,6 +81,6 @@ export interface OnboardingState {
     style?: string;
   };
   intentions?: string[];
-  lopiEnabled?: boolean;
+  mulviEnabled?: boolean;
   completed?: boolean;
 }

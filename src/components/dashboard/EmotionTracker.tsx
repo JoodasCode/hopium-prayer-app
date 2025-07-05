@@ -18,11 +18,11 @@ type Emotion = {
 
 export function EmotionTracker({ currentEmotion, onEmotionSelect }: EmotionTrackerProps) {
   const emotions: Emotion[] = [
-    { name: 'peaceful', color: 'bg-blue-400', label: 'Peaceful' },
-    { name: 'grateful', color: 'bg-green-400', label: 'Grateful' },
-    { name: 'reflective', color: 'bg-purple-400', label: 'Reflective' },
-    { name: 'hopeful', color: 'bg-amber-400', label: 'Hopeful' },
-    { name: 'connected', color: 'bg-red-400', label: 'Connected' },
+    { name: 'peaceful', color: 'bg-chart-1', label: 'Peaceful' },
+    { name: 'grateful', color: 'bg-chart-2', label: 'Grateful' },
+    { name: 'reflective', color: 'bg-chart-3', label: 'Reflective' },
+    { name: 'hopeful', color: 'bg-chart-4', label: 'Hopeful' },
+    { name: 'connected', color: 'bg-chart-5', label: 'Connected' },
   ];
   
   const handleEmotionClick = (emotion: string) => {

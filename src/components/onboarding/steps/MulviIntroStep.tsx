@@ -1,6 +1,6 @@
 /**
- * Lopi Introduction Step for the enhanced onboarding flow
- * Introduces the Lopi AI assistant and gets opt-in
+ * Mulvi Introduction Step for the enhanced onboarding flow
+ * Introduces the Mulvi AI assistant and gets opt-in
  */
 
 'use client';
@@ -13,22 +13,22 @@ import { motion } from 'framer-motion';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 
-interface LopiIntroStepProps {
-  onNext: (enableLopi: boolean) => void;
+interface MulviIntroStepProps {
+  onNext: (enableMulvi: boolean) => void;
   onBack: () => void;
   initialEnabled?: boolean;
 }
 
-export function LopiIntroStep({ 
+export function MulviIntroStep({ 
   onNext, 
   onBack,
   initialEnabled = true
-}: LopiIntroStepProps) {
-  const [enableLopi, setEnableLopi] = useState<boolean>(initialEnabled);
+}: MulviIntroStepProps) {
+  const [enableMulvi, setEnableMulvi] = useState<boolean>(initialEnabled);
   const [showingExample, setShowingExample] = useState<boolean>(false);
   
   const handleToggle = (checked: boolean) => {
-    setEnableLopi(checked);
+    setEnableMulvi(checked);
     
     // Provide haptic feedback on toggle
     if (navigator.vibrate) {
@@ -60,7 +60,7 @@ export function LopiIntroStep({
             </div>
           </div>
           
-          <h2 className="text-2xl font-semibold text-center">Meet Lopi</h2>
+          <h2 className="text-2xl font-semibold text-center">Meet Mulvi</h2>
           
           <p className="text-center text-muted-foreground mb-4">
             Your personal spiritual companion on this journey
@@ -72,7 +72,7 @@ export function LopiIntroStep({
                 <span className="text-xl">🦙</span>
               </div>
               <div className="flex-1">
-                <p className="text-sm font-medium">Lopi</p>
+                <p className="text-sm font-medium">Mulvi</p>
                 <motion.div 
                   className="text-sm mt-1 space-y-2"
                   initial={{ opacity: 0 }}
@@ -80,7 +80,7 @@ export function LopiIntroStep({
                   transition={{ delay: 0.3 }}
                 >
                   {!showingExample ? (
-                    <p>Hello! I'm Lopi, your AI spiritual companion. I'm here to support your prayer journey with personalized guidance.</p>
+                    <p>Hello! I'm Mulvi, your AI spiritual companion. I'm here to support your prayer journey with personalized guidance.</p>
                   ) : (
                     <>
                       <p>I notice you're working on praying Maghrib consistently this week. Would you like me to share a short reflection about the significance of sunset prayers?</p>
@@ -114,21 +114,21 @@ export function LopiIntroStep({
           <div className="space-y-4 mt-4">
             <div className="flex items-center justify-between">
               <div>
-                <Label htmlFor="lopi-enabled" className="text-base font-medium">
-                  Enable Lopi
+                <Label htmlFor="mulvi-enabled" className="text-base font-medium">
+                  Enable Mulvi
                 </Label>
                 <p className="text-sm text-muted-foreground">
                   Get personalized spiritual guidance
                 </p>
               </div>
               <Switch 
-                id="lopi-enabled" 
-                checked={enableLopi} 
+                id="mulvi-enabled" 
+                checked={enableMulvi} 
                 onCheckedChange={handleToggle} 
               />
             </div>
             
-            {enableLopi && (
+            {enableMulvi && (
               <motion.div
                 initial={{ opacity: 0, height: 0 }}
                 animate={{ opacity: 1, height: 'auto' }}
@@ -138,7 +138,7 @@ export function LopiIntroStep({
                 <div className="flex items-center space-x-2 pl-6">
                   <MessageSquare className="h-4 w-4 text-muted-foreground" />
                   <p className="text-sm text-muted-foreground">
-                    Lopi will learn from your prayer patterns
+                    Mulvi will learn from your prayer patterns
                   </p>
                 </div>
                 <div className="flex items-center space-x-2 pl-6">
@@ -157,7 +157,7 @@ export function LopiIntroStep({
             animate={{ opacity: 1 }}
             transition={{ delay: 0.7 }}
           >
-            You can always adjust Lopi's settings later in your profile
+            You can always adjust Mulvi's settings later in your profile
           </motion.div>
         </motion.div>
         
@@ -170,7 +170,7 @@ export function LopiIntroStep({
             Back
           </Button>
           
-          <Button onClick={() => onNext(enableLopi)}>
+          <Button onClick={() => onNext(enableMulvi)}>
             Continue
             <ArrowRight className="ml-2 h-4 w-4" />
           </Button>

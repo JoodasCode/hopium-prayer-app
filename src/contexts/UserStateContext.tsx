@@ -96,7 +96,7 @@ export function UserStateProvider({ children }: { children: ReactNode }) {
         .from('users')
         .select('onboarding_completed')
         .eq('id', user.id)
-        .single();
+        .maybeSingle();
 
       if (profileError && profileError.code !== 'PGRST116') {
         throw new Error(`Profile fetch error: ${profileError.message}`);

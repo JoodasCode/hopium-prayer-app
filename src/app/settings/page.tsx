@@ -136,12 +136,12 @@ export default function SettingsPage() {
     return (
       <div className="bg-background min-h-screen">
         {/* Loading Header - Updated to match dashboard design */}
-        <header className="bg-gradient-to-b from-chart-1/8 to-transparent pt-safe-top pb-6 px-4">
+        <header className="header-gradient pt-safe-top pb-6 px-4">
           <div className="max-w-md mx-auto">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-chart-1/15 flex items-center justify-center">
-                  <Settings className="h-5 w-5 text-chart-1" />
+                <div className="w-10 h-10 rounded-full bg-primary/15 flex items-center justify-center">
+                  <Settings className="h-5 w-5 text-primary" />
                 </div>
                 <div>
                   <h1 className="text-lg font-semibold text-foreground">Settings</h1>
@@ -178,12 +178,12 @@ export default function SettingsPage() {
   return (
     <div className="bg-background min-h-screen">
       {/* Header - Updated to match dashboard design */}
-      <header className="bg-gradient-to-b from-chart-1/8 to-transparent pt-safe-top pb-6 px-4">
+      <header className="header-gradient pt-safe-top pb-6 px-4">
         <div className="max-w-md mx-auto">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-chart-1/15 flex items-center justify-center">
-                <Settings className="h-5 w-5 text-chart-1" />
+              <div className="w-10 h-10 rounded-full bg-primary/15 flex items-center justify-center">
+                <Settings className="h-5 w-5 text-primary" />
               </div>
               <div>
                 <h1 className="text-lg font-semibold text-foreground">Settings</h1>
@@ -535,7 +535,7 @@ export default function SettingsPage() {
                                          <div className={ds.iconContainer('sm', 'tertiary')}>
                        <Info className={cn(SIZING.icon.xs, "text-chart-3")} />
                      </div>
-                    <CardTitle className={TYPOGRAPHY.header.section}>About Lopi</CardTitle>
+                    <CardTitle className={TYPOGRAPHY.header.section}>About Mulvi</CardTitle>
                   </div>
                 </CardHeader>
                 <CardContent className={cn(SPACING.card.compact, "space-y-4")}>
@@ -543,7 +543,7 @@ export default function SettingsPage() {
                     <div className={ds.iconContainer('xl', 'primary')}>
                       <User className={cn(SIZING.icon.lg, COLORS.text.primary)} />
                     </div>
-                    <h3 className={cn(TYPOGRAPHY.header.card, SPACING.margin.sm)}>Lopi Prayer Tracker</h3>
+                    <h3 className={cn(TYPOGRAPHY.header.card, SPACING.margin.sm)}>Mulvi Prayer Tracker</h3>
                     <p className={cn(TYPOGRAPHY.muted.default)}>Version 1.0.0</p>
                     <p className={cn(TYPOGRAPHY.muted.small, SPACING.margin.sm)}>
                       Your personal Islamic prayer companion, designed to help you maintain consistent prayer habits with love and care.
@@ -554,7 +554,7 @@ export default function SettingsPage() {
 
                   <div className="space-y-3">
                     <Button variant="outline" className="w-full justify-start" asChild>
-                      <a href="mailto:support@lopi.app" className="flex items-center gap-2">
+                      <a href="mailto:support@mulvi.app" className="flex items-center gap-2">
                         <Info className={cn(SIZING.icon.xs)} />
                         Contact Support
                       </a>

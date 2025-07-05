@@ -21,22 +21,9 @@ export default function Home() {
           return;
         }
         
-        // User is authenticated, check if onboarding is completed
-        const { data: userRecord } = await supabase
-          .from('users')
-          .select('onboarding_completed')
-          .eq('id', session.user.id)
-          .single();
-        
-        if (userRecord?.onboarding_completed) {
-          // Onboarding completed, go to dashboard
-          router.push('/dashboard');
-        } else {
-          // Onboarding not completed, go to onboarding
-          router.push('/onboarding');
-        }
+        // User is authenticated, go directly to dashboard
+        router.push('/dashboard');
       } catch (error) {
-        console.error('Auth check error:', error);
         // On error, go to login
         router.push('/login');
       } finally {

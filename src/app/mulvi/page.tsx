@@ -14,52 +14,35 @@ import {
   Bot,
   User,
   Sparkles,
-  Clock,
-  TrendingUp,
-  Target,
-  Bell,
-  Zap
+  Clock
 } from 'lucide-react';
-import { useAuth } from '@/hooks/useAuth';
-import { useConversations } from '@/hooks/useConversations';
-import { usePrayerInsights } from '@/hooks/usePrayerInsights';
-import { usePrayerTimes } from '@/hooks/usePrayerTimes';
 import { useRouter } from 'next/navigation';
-
-interface ChatMessage {
-  id: string;
-  content: string;
-  role: 'user' | 'assistant';
-  timestamp: Date;
-}
+import { formatTimeForAPI, formatChatTime } from '@/lib/timeUtils';
+import { useAuth } from '@/hooks/useAuth';
+import { getDisplayName } from '@/lib/greetings';
+import { useUserStats } from '@/hooks/useUserStats';
+import { usePrayerWithRecords } from '@/hooks/usePrayerWithRecords';
 
 export default function MulviPage() {
   const router = useRouter();
-  const { user, session, authLoading } = useAuth();
-  const userId = user?.id;
-  const { insights, isLoading: insightsLoading } = usePrayerInsights(userId);
-  const { 
-    prayerTimes, 
-    nextPrayer, 
-    prayers, 
-    location, 
-    isLoading: prayerTimesLoading 
-  } = usePrayerTimes({ userId });
-  const {
-    conversations,
-    currentConversation,
-    messages,
-    isLoading: conversationsLoading,
-    createConversation,
-    loadConversation,
-    sendMessage
-  } = useConversations(userId);
-
+  const { session } = useAuth();
+  const userId = session?.user?.id;
+  
+  // Get real user data
+  const { userStats } = useUserStats(userId);
+  const { todaysProgress, nextPrayer } = usePrayerWithRecords({ userId });
+  
   const [input, setInput] = useState('');
+  const [messages, setMessages] = useState<Array<{id: string, content: string, role: 'user' | 'assistant', created_at: string}>>([
+    {
+      id: '1',
+      content: "Assalamu alaikum! I'm Mulvi, your AI spiritual companion. How can I support your spiritual journey today?",
+      role: 'assistant',
+      created_at: new Date().toISOString()
+    }
+  ]);
   const [isTyping, setIsTyping] = useState(false);
-  const [isCreatingConversation, setIsCreatingConversation] = useState(false);
 
-  // Scroll to bottom when messages change
   const messagesEndRef = useRef<HTMLDivElement>(null);
   
   const scrollToBottom = () => {
@@ -71,39 +54,102 @@ export default function MulviPage() {
   }, [messages, isTyping]);
 
   const handleSendMessage = async () => {
-    if (!input.trim() || isTyping || isCreatingConversation) return;
+    if (!input.trim() || isTyping) return;
 
-    // If no conversation exists, create one first
-    if (!currentConversation && userId && !isCreatingConversation) {
-      setIsCreatingConversation(true);
-      try {
-        const conversationId = await createConversation();
-        if (!conversationId) {
-          console.error('Failed to create conversation');
-          return;
-        }
-        // Wait a moment for the conversation to be set
-        await new Promise(resolve => setTimeout(resolve, 100));
-      } finally {
-        setIsCreatingConversation(false);
-      }
-    }
+    const userMessage = {
+      id: Date.now().toString(),
+      content: input.trim(),
+      role: 'user' as const,
+      created_at: new Date().toISOString()
+    };
 
-    if (!currentConversation) {
-      console.error('No conversation available');
-      return;
-    }
-
-    const message = input.trim();
+    setMessages(prev => [...prev, userMessage]);
     setInput('');
     setIsTyping(true);
 
     try {
-      await sendMessage(message);
+      // Prepare messages array for API
+      const messagesForAPI = [...messages, userMessage].map(msg => ({
+        role: msg.role,
+        content: msg.content
+      }));
+
+      // Get user's actual name and data
+      const userName = getDisplayName(session?.user) || 'friend';
+      const userEmail = session?.user?.email || '';
+      
+      // Determine current prayer period based on time
+      const currentHour = new Date().getHours();
+      let currentPrayerPeriod = 'afternoon';
+      if (currentHour >= 5 && currentHour < 12) currentPrayerPeriod = 'morning';
+      else if (currentHour >= 12 && currentHour < 15) currentPrayerPeriod = 'midday';
+      else if (currentHour >= 15 && currentHour < 18) currentPrayerPeriod = 'afternoon';
+      else if (currentHour >= 18 && currentHour < 20) currentPrayerPeriod = 'evening';
+      else currentPrayerPeriod = 'night';
+
+      // Call the actual chat API with enhanced context
+      const response = await fetch('/api/chat', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          messages: messagesForAPI,
+          userContext: {
+            userName: userName,
+            userEmail: userEmail,
+            userId: userId,
+            currentTime: formatTimeForAPI(new Date()),
+            currentPrayerPeriod: currentPrayerPeriod,
+            
+            // Real user stats
+            currentStreak: userStats?.current_streak || 0,
+            totalPrayers: userStats?.total_prayers_completed || 0,
+            completionRate: userStats?.completion_rate || 0,
+            
+            // Today's progress
+            todayCompleted: todaysProgress?.completed || 0,
+            todayTotal: todaysProgress?.total || 5,
+            
+            // Next prayer info
+            nextPrayerInfo: nextPrayer ? `${nextPrayer.name} at ${nextPrayer.time.toLocaleTimeString()}` : 'upcoming prayer',
+            
+            // Account info
+            accountAge: session?.user?.created_at ? Math.floor((new Date().getTime() - new Date(session.user.created_at).getTime()) / (1000 * 60 * 60 * 24)) : 0,
+            
+            // User metadata from auth
+            userMetadata: session?.user?.user_metadata || {}
+          }
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || 'Failed to get AI response');
+      }
+
+      const data = await response.json();
+      
+      const aiMessage = {
+        id: (Date.now() + 1).toString(),
+        content: data.response || "I'm here to help with your spiritual journey.",
+        role: 'assistant' as const,
+        created_at: new Date().toISOString()
+      };
+      
+      setMessages(prev => [...prev, aiMessage]);
     } catch (error) {
       console.error('Error sending message:', error);
-      // Restore the input if sending failed
-      setInput(message);
+      
+      // Fallback response
+      const aiMessage = {
+        id: (Date.now() + 1).toString(),
+        content: "I apologize, but I'm having trouble connecting right now. Please make sure your OpenAI API key is configured in your .env.local file. In the meantime, I'm still here to support your spiritual journey!",
+        role: 'assistant' as const,
+        created_at: new Date().toISOString()
+      };
+      
+      setMessages(prev => [...prev, aiMessage]);
     } finally {
       setIsTyping(false);
     }
@@ -117,50 +163,10 @@ export default function MulviPage() {
     }
   };
 
-  // Show loading state while checking authentication or creating initial conversation
-  if (authLoading || (userId && !currentConversation && !conversationsLoading && conversations.length === 0)) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center p-4">
-        <div className="text-center">
-          <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-muted-foreground">
-            {authLoading ? 'Loading Mulvi...' : 'Preparing your conversation...'}
-          </p>
-        </div>
-      </div>
-    );
-  }
-
-  if (!session) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center p-4">
-        <Card className="w-full max-w-md">
-          <CardHeader className="text-center">
-            <div className="mx-auto mb-4 p-3 rounded-full bg-primary/10">
-              <Bot className="h-8 w-8 text-primary" />
-            </div>
-            <CardTitle className="text-2xl mb-2">Meet Mulvi</CardTitle>
-            <p className="text-muted-foreground">
-              Your AI spiritual companion for prayer guidance and Islamic wisdom
-            </p>
-          </CardHeader>
-          <CardContent>
-            <Button 
-              onClick={() => router.push('/login')}
-              className="w-full"
-            >
-              Sign in to chat with Mulvi
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
   return (
     <div className="h-screen bg-background flex flex-col">
-      {/* Fixed Header - Updated to match dashboard design */}
-      <header className="sticky top-0 z-50 bg-gradient-to-b from-chart-1/8 to-transparent pt-safe-top pb-6 px-4 backdrop-blur-sm border-b border-border/20">
+      {/* Fixed Header */}
+      <header className="fixed top-0 left-0 right-0 z-50 bg-background backdrop-blur-md border-b border-border/20 pt-safe-top pb-6 px-4">
         <div className="max-w-md mx-auto">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
@@ -189,60 +195,8 @@ export default function MulviPage() {
       </header>
 
       {/* Chat Messages */}
-      <ScrollArea className="flex-1 px-4 py-2">
+      <ScrollArea className="flex-1 px-4 py-2" style={{ paddingTop: '120px' }}>
         <div className="space-y-4 max-w-3xl mx-auto w-full">
-          {/* Insights as chat messages - Only show if we have insights */}
-          {insights && insights.length > 0 && (
-            <div className="space-y-4">
-              {insights.slice(0, 3).map((insight, index) => (
-                <div key={`insight-${index}`} className="flex gap-3 w-full justify-start">
-                  <Avatar className="h-8 w-8 shrink-0 mt-1">
-                    <AvatarImage src="/mulvi-avatar.png" alt="Mulvi" />
-                    <AvatarFallback className="bg-primary/10">
-                      <Bot className="h-4 w-4 text-primary" />
-                    </AvatarFallback>
-                  </Avatar>
-                  
-                  <div className="max-w-[85%] sm:max-w-[80%] space-y-2 text-left">
-                    <div className="inline-block rounded-2xl px-4 py-3 text-sm leading-relaxed bg-muted/80">
-                      <div className="flex items-start gap-2">
-                        <div className="p-1 rounded-full bg-primary/10 shrink-0 mt-0.5">
-                          {insight.type === 'streak' && <TrendingUp className="h-3 w-3 text-primary" />}
-                          {insight.type === 'challenge' && <Target className="h-3 w-3 text-primary" />}
-                          {insight.type === 'progress' && <Zap className="h-3 w-3 text-primary" />}
-                          {insight.type === 'reminder' && <Bell className="h-3 w-3 text-primary" />}
-                          {insight.type === 'achievement' && <Sparkles className="h-3 w-3 text-primary" />}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="font-medium leading-tight mb-1">
-                            {insight.title}
-                          </p>
-                          <p className="text-muted-foreground text-sm leading-relaxed">
-                            {insight.description}
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                    
-                    <div className="flex items-center gap-2 text-xs text-muted-foreground px-2 justify-start">
-                      <Clock className="h-3 w-3" />
-                      <span>Now</span>
-                    </div>
-                  </div>
-                </div>
-              ))}
-              
-              {/* Separator between insights and regular messages */}
-              {messages.length > 0 && (
-                <div className="flex items-center gap-4 my-6">
-                  <div className="flex-1 h-px bg-border"></div>
-                  <span className="text-xs text-muted-foreground bg-background px-3">Earlier messages</span>
-                  <div className="flex-1 h-px bg-border"></div>
-                </div>
-              )}
-            </div>
-          )}
-
           {messages.map((message) => (
             <div
               key={message.id}
@@ -283,7 +237,7 @@ export default function MulviPage() {
                   message.role === 'user' ? 'justify-end' : 'justify-start'
                 )}>
                   <Clock className="h-3 w-3" />
-                  <span>{message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                  <span>{formatChatTime(new Date(message.created_at))}</span>
                 </div>
               </div>
               
@@ -308,72 +262,47 @@ export default function MulviPage() {
                 </AvatarFallback>
               </Avatar>
               <div className="max-w-[85%] sm:max-w-[80%]">
-                <div className="inline-block rounded-2xl px-4 py-3 bg-muted/80">
+                <div className="inline-block rounded-2xl px-4 py-3 text-sm leading-relaxed bg-muted/80">
                   <div className="flex items-center gap-2">
-                    <div className="flex space-x-1">
-                      <div className="w-2 h-2 bg-primary/60 rounded-full animate-bounce [animation-delay:-0.3s]"></div>
-                      <div className="w-2 h-2 bg-primary/60 rounded-full animate-bounce [animation-delay:-0.15s]"></div>
-                      <div className="w-2 h-2 bg-primary/60 rounded-full animate-bounce"></div>
+                    <div className="flex gap-1">
+                      <div className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
+                      <div className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
+                      <div className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
                     </div>
-                    <span className="text-sm text-muted-foreground ml-2">Mulvi is typing...</span>
+                    <span className="text-muted-foreground text-xs">Mulvi is typing...</span>
                   </div>
                 </div>
               </div>
             </div>
           )}
           
-          {/* Scroll target */}
           <div ref={messagesEndRef} />
         </div>
       </ScrollArea>
-      
-      {/* Input Area - Fixed mobile layout */}
-      <div className="border-t bg-card/50 backdrop-blur-sm">
-        <div className="p-3 max-w-3xl mx-auto w-full">
-          <form 
-            onSubmit={(e) => {
-              e.preventDefault();
-              handleSendMessage();
-            }}
-            className="flex gap-3 items-end"
-          >
+
+      {/* Message Input */}
+      <div className="sticky bottom-0 bg-background border-t border-border p-4">
+        <div className="max-w-3xl mx-auto">
+          <div className="flex gap-3 items-end">
             <div className="flex-1 relative">
               <Textarea
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
-                onKeyPress={handleKeyPress}
-                placeholder="Ask Mulvi anything..."
-                className="min-h-[48px] max-h-32 resize-none rounded-2xl border-2 border-border px-4 py-3 pr-14 text-sm font-normal leading-relaxed transition-all duration-200 focus:border-primary focus:ring-0 placeholder:text-muted-foreground/60 w-full overflow-hidden bg-background text-foreground shadow-sm text-center"
-                rows={1}
-                style={{
-                  fontFamily: 'var(--font-sans)',
-                  WebkitFontSmoothing: 'antialiased',
-                  MozOsxFontSmoothing: 'grayscale',
-                  textAlign: 'center',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center'
-                }}
+                onKeyDown={handleKeyPress}
+                placeholder="Ask Mulvi about prayers, Islamic guidance, or spiritual support..."
+                className="min-h-[44px] max-h-32 resize-none pr-12 text-sm leading-relaxed"
+                disabled={isTyping}
               />
-              <Button
-                type="submit"
-                disabled={!input.trim() || isTyping || isCreatingConversation}
-                size="icon"
-                className={cn(
-                  "absolute right-2 top-1/2 -translate-y-1/2 h-9 w-9 rounded-xl transition-all duration-200 shadow-sm",
-                  input.trim() && !isTyping && !isCreatingConversation
-                    ? "bg-primary hover:bg-primary/90 scale-100 shadow-primary/20" 
-                    : "bg-muted-foreground/30 scale-90 shadow-none"
-                )}
-              >
-                {(isTyping || isCreatingConversation) ? (
-                  <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
-                ) : (
-                  <Send className="h-4 w-4" />
-                )}
-              </Button>
             </div>
-          </form>
+            <Button
+              onClick={handleSendMessage}
+              disabled={!input.trim() || isTyping}
+              size="icon"
+              className="h-11 w-11 shrink-0"
+            >
+              <Send className="h-4 w-4" />
+            </Button>
+          </div>
         </div>
       </div>
     </div>

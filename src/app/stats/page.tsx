@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect, useRef, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import PhantomBottomNav from '@/components/shared/PhantomBottomNav';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -14,12 +14,13 @@ import {
   Flame, Calendar, TrendingUp, Award, ChevronRight, Clock, CheckCircle, 
   AlertCircle, Target, Star, Trophy, Zap, Sun, Moon, Sunset, 
   BarChart3, Activity, Sparkles, ArrowUp, ArrowDown, Play, BookOpen,
-  Crown, Shield, Gem, Medal, Gift, Coins, Swords, Heart
+  Crown, Shield, Gem, Medal, Gift, Coins, Swords, Heart, Bell
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ds, SPACING, TYPOGRAPHY, SIZING, COLORS } from '@/lib/design-system';
 import { useAuth } from '@/hooks/useAuth';
 import { useStatsAnalytics } from '@/hooks/useStatsAnalytics';
+import { usePrayerInsights } from '@/hooks/usePrayerInsights';
 import confetti from 'canvas-confetti';
 
 import { 
@@ -78,20 +79,36 @@ const chartConfig = {
   }
 } as const;
 
-export default function StatsPage() {
+// Create a separate component for the stats content that uses useSearchParams
+function StatsContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { session } = useAuth();
   const userId = session?.user?.id;
+  
+  // Get tab from URL query parameter
+  const tabFromUrl = searchParams?.get('tab') as "overview" | "prayers" | "gamification" | "insights" | null;
   
   // Fetch real analytics data from backend
   const { analytics, isLoading, error } = useStatsAnalytics(userId);
   
+  // Fetch prayer insights
+  const { insights, isLoading: insightsLoading } = usePrayerInsights(userId);
+  
   // UI state
   const [showAchievementsDialog, setShowAchievementsDialog] = useState(false);
-  const [activeTab, setActiveTab] = useState<"overview" | "prayers" | "gamification">("overview");
+  const [activeTab, setActiveTab] = useState<"overview" | "prayers" | "gamification" | "insights">(tabFromUrl || "overview");
   const [newAchievements, setNewAchievements] = useState<any[]>([]);
   const [showCelebration, setShowCelebration] = useState(false);
+  const [insightFilter, setInsightFilter] = useState<'all' | 'streak' | 'reminder' | 'progress' | 'challenge' | 'achievement'>('all');
   const celebrationRef = useRef<NodeJS.Timeout | null>(null);
+  
+  // Update active tab when URL changes
+  useEffect(() => {
+    if (tabFromUrl && ['overview', 'prayers', 'gamification', 'insights'].includes(tabFromUrl)) {
+      setActiveTab(tabFromUrl);
+    }
+  }, [tabFromUrl]);
   
   // Real gamification data using comprehensive leveling system
   const estimatedPrayers = analytics?.streak.current ? analytics.streak.current * 4 : 20; // Estimate based on streak
@@ -200,12 +217,12 @@ export default function StatsPage() {
     return (
       <div className="bg-background min-h-screen">
         {/* Loading Header - Updated to match dashboard design */}
-        <header className="bg-gradient-to-b from-chart-1/8 to-transparent pt-safe-top pb-6 px-4">
+        <header className="header-gradient pt-safe-top pb-6 px-4">
           <div className="max-w-md mx-auto">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-chart-1/15 flex items-center justify-center">
-                  <BarChart3 className="h-5 w-5 text-chart-1" />
+                <div className="w-10 h-10 rounded-full bg-primary/15 flex items-center justify-center">
+                  <BarChart3 className="h-5 w-5 text-primary" />
                 </div>
                 <div>
                   <h1 className="text-lg font-semibold text-foreground">Prayer Analytics</h1>
@@ -241,12 +258,12 @@ export default function StatsPage() {
   return (
     <div className="bg-background min-h-screen">
       {/* Header - Updated to match dashboard design */}
-      <header className="bg-gradient-to-b from-chart-1/8 to-transparent pt-safe-top pb-6 px-4">
+      <header className="header-gradient pt-safe-top pb-6 px-4">
         <div className="max-w-md mx-auto">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-chart-1/15 flex items-center justify-center">
-                <BarChart3 className="h-5 w-5 text-chart-1" />
+              <div className="w-10 h-10 rounded-full bg-primary/15 flex items-center justify-center">
+                <BarChart3 className="h-5 w-5 text-primary" />
               </div>
               <div>
                 <h1 className="text-lg font-semibold text-foreground">Prayer Analytics</h1>
@@ -262,13 +279,19 @@ export default function StatsPage() {
       <div className="max-w-md mx-auto px-4">
         {/* Navigation Tabs */}
         <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as any)} className="w-full">
-          <TabsList className="grid w-full grid-cols-3 mb-4">
+          <TabsList className="grid w-full grid-cols-4 mb-4">
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="prayers">Prayers</TabsTrigger>
             <TabsTrigger value="gamification">
               <div className="flex items-center gap-1">
                 <Trophy className="h-3 w-3" />
                 Rewards
+              </div>
+            </TabsTrigger>
+            <TabsTrigger value="insights">
+              <div className="flex items-center gap-1">
+                <Sparkles className="h-3 w-3" />
+                Insights
               </div>
             </TabsTrigger>
           </TabsList>
@@ -516,10 +539,10 @@ export default function StatsPage() {
                 };
 
                 const getPrayerColor = (completion: number) => {
-                  if (completion >= 90) return "text-green-600 bg-green-50 border-green-200";
-                  if (completion >= 70) return "text-blue-600 bg-blue-50 border-blue-200";
-                  if (completion >= 50) return "text-yellow-600 bg-yellow-50 border-yellow-200";
-                  return "text-red-600 bg-red-50 border-red-200";
+                  if (completion >= 90) return "text-chart-3 bg-chart-3/10 border-chart-3/20";
+                  if (completion >= 70) return "text-chart-1 bg-chart-1/10 border-chart-1/20";
+                  if (completion >= 50) return "text-chart-4 bg-chart-4/10 border-chart-4/20";
+                  return "text-chart-5 bg-chart-5/10 border-chart-5/20";
                 };
 
                 const Icon = getPrayerIcon(prayer.name);
@@ -543,9 +566,9 @@ export default function StatsPage() {
                         <div className="text-right">
                           <div className="flex items-center gap-1">
                             {prayer.weeklyTrend > 0 ? (
-                              <ArrowUp className="h-3 w-3 text-green-600" />
+                              <ArrowUp className="h-3 w-3 text-chart-3" />
                             ) : prayer.weeklyTrend < 0 ? (
-                              <ArrowDown className="h-3 w-3 text-red-600" />
+                              <ArrowDown className="h-3 w-3 text-chart-5" />
                             ) : null}
                             <span className="text-xs font-medium">
                               {Math.abs(prayer.weeklyTrend || 0)}%
@@ -836,6 +859,236 @@ export default function StatsPage() {
               </Card>
             </div>
           </TabsContent>
+
+          {/* INSIGHTS TAB */}
+          <TabsContent value="insights" className="space-y-4">
+            {/* Insights Header */}
+            <Card className="border-primary/20">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <Sparkles className="h-4 w-4" />
+                  Prayer Insights
+                </CardTitle>
+                <CardDescription>
+                  AI-powered insights based on your prayer patterns and journey
+                </CardDescription>
+              </CardHeader>
+            </Card>
+
+            {/* Filter Buttons */}
+            <div className="flex flex-wrap gap-2">
+              {[
+                { value: 'all', label: 'All', icon: Sparkles },
+                { value: 'streak', label: 'Streaks', icon: Flame },
+                { value: 'reminder', label: 'Reminders', icon: Bell },
+                { value: 'progress', label: 'Progress', icon: TrendingUp },
+                { value: 'challenge', label: 'Challenges', icon: Target },
+                { value: 'achievement', label: 'Achievements', icon: Award }
+              ].map((filter) => (
+                <Button
+                  key={filter.value}
+                  variant={insightFilter === filter.value ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setInsightFilter(filter.value as any)}
+                  className="text-xs"
+                >
+                  <filter.icon className="h-3 w-3 mr-1" />
+                  {filter.label}
+                </Button>
+              ))}
+            </div>
+
+            {/* Insights Content */}
+            {insightsLoading ? (
+              <div className="flex items-center justify-center py-12">
+                <div className="text-center">
+                  <Sparkles className="h-8 w-8 animate-pulse mx-auto mb-4 text-primary" />
+                  <p className="text-lg font-medium mb-2">Generating insights...</p>
+                  <p className="text-muted-foreground">Analyzing your prayer journey</p>
+                </div>
+              </div>
+            ) : insights && insights.length > 0 ? (
+              <div className="space-y-4">
+                {insights
+                  .filter(insight => insightFilter === 'all' || insight.type === insightFilter)
+                  .map((insight, index) => {
+                    const getInsightIcon = (icon: string) => {
+                      switch (icon) {
+                        case 'LineChart': return <TrendingUp className="h-5 w-5" />;
+                        case 'AlertTriangle': return <AlertCircle className="h-5 w-5" />;
+                        case 'Bell': return <Bell className="h-5 w-5" />;
+                        case 'Trophy': return <Trophy className="h-5 w-5" />;
+                        case 'Target': return <Target className="h-5 w-5" />;
+                        default: return <Sparkles className="h-5 w-5" />;
+                      }
+                    };
+
+                    const getInsightColor = (type: string, priority: string) => {
+                      if (priority === 'high') return 'border-red-200 bg-red-50 dark:border-red-800 dark:bg-red-950';
+                      if (type === 'streak') return 'border-orange-200 bg-orange-50 dark:border-orange-800 dark:bg-orange-950';
+                      if (type === 'achievement') return 'border-green-200 bg-green-50 dark:border-green-800 dark:bg-green-950';
+                      if (type === 'reminder') return 'border-blue-200 bg-blue-50 dark:border-blue-800 dark:bg-blue-950';
+                      if (type === 'challenge') return 'border-purple-200 bg-purple-50 dark:border-purple-800 dark:bg-purple-950';
+                      return 'border-primary/20 bg-primary/5';
+                    };
+
+                    const getPriorityBadge = (priority: string) => {
+                      const colors = {
+                        high: 'bg-red-100 text-red-800',
+                        medium: 'bg-yellow-100 text-yellow-800',
+                        low: 'bg-gray-100 text-gray-800'
+                      };
+                      return colors[priority as keyof typeof colors] || colors.low;
+                    };
+
+                    return (
+                      <Card key={insight.id} className={cn("border-l-4", getInsightColor(insight.type, insight.priority))}>
+                        <CardContent className="pt-4 pb-4">
+                          <div className="space-y-3">
+                            {/* Header */}
+                            <div className="flex items-start justify-between">
+                              <div className="flex items-start gap-3">
+                                <div className="p-2 rounded-full bg-background/80">
+                                  {getInsightIcon(insight.icon)}
+                                </div>
+                                <div className="space-y-1">
+                                  <h3 className="font-semibold text-sm">{insight.title}</h3>
+                                  <p className="text-sm text-muted-foreground">{insight.description}</p>
+                                </div>
+                              </div>
+                              <Badge variant="outline" className={cn("text-xs", getPriorityBadge(insight.priority))}>
+                                {insight.priority}
+                              </Badge>
+                            </div>
+
+                            {/* Data Display */}
+                            {insight.data && (
+                              <div className="ml-11 p-3 bg-background/50 rounded-lg">
+                                {insight.type === 'streak' && (
+                                  <div className="flex items-center gap-4">
+                                    <div className="text-center">
+                                      <p className="text-2xl font-bold text-primary">{insight.data.streakDays}</p>
+                                      <p className="text-xs text-muted-foreground">Days</p>
+                                    </div>
+                                    <div className="flex-1">
+                                      <Progress value={Math.min(100, (insight.data.streakDays / 30) * 100)} className="h-2" />
+                                      <p className="text-xs text-muted-foreground mt-1">Progress to 30-day milestone</p>
+                                    </div>
+                                  </div>
+                                )}
+
+                                {insight.type === 'progress' && insight.data.weeklyCompletion && (
+                                  <div className="flex items-center gap-4">
+                                    <div className="text-center">
+                                      <p className="text-2xl font-bold text-primary">{Math.round(insight.data.weeklyCompletion * 100)}%</p>
+                                      <p className="text-xs text-muted-foreground">This Week</p>
+                                    </div>
+                                    <div className="flex-1">
+                                      <Progress value={insight.data.weeklyCompletion * 100} className="h-2" />
+                                      <p className="text-xs text-muted-foreground mt-1">Weekly completion rate</p>
+                                    </div>
+                                  </div>
+                                )}
+
+                                {insight.type === 'reminder' && insight.data.completed !== undefined && (
+                                  <div className="flex items-center gap-4">
+                                    <div className="text-center">
+                                      <p className="text-2xl font-bold text-primary">{insight.data.completed}/5</p>
+                                      <p className="text-xs text-muted-foreground">Today</p>
+                                    </div>
+                                    <div className="flex-1">
+                                      <Progress value={(insight.data.completed / 5) * 100} className="h-2" />
+                                      <p className="text-xs text-muted-foreground mt-1">Daily progress</p>
+                                    </div>
+                                  </div>
+                                )}
+
+                                {insight.type === 'challenge' && insight.data.completionRate && (
+                                  <div className="flex items-center gap-4">
+                                    <div className="text-center">
+                                      <p className="text-2xl font-bold text-red-600">{Math.round(insight.data.completionRate * 100)}%</p>
+                                      <p className="text-xs text-muted-foreground">This Week</p>
+                                    </div>
+                                    <div className="flex-1">
+                                      <Progress value={insight.data.completionRate * 100} className="h-2" />
+                                      <p className="text-xs text-muted-foreground mt-1">{insight.data.prayerType} completion rate</p>
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+                            )}
+
+                            {/* Action Button */}
+                            <div className="ml-11">
+                              <Button 
+                                variant="outline" 
+                                size="sm" 
+                                className="text-xs"
+                                onClick={() => {
+                                  const message = (() => {
+                                    switch (insight.type) {
+                                      case 'streak':
+                                        return `Help me maintain my ${insight.data?.streakDays || 0}-day prayer streak. What strategies can you suggest?`;
+                                      case 'challenge':
+                                        return `I'm struggling with ${insight.data?.prayerType || 'prayer'} completion (${Math.round((insight.data?.completionRate || 0) * 100)}% this week). Can you help me improve?`;
+                                      case 'progress':
+                                        return `My weekly prayer completion is ${Math.round((insight.data?.weeklyCompletion || 0) * 100)}%. How can I improve my consistency?`;
+                                      case 'reminder':
+                                        return `I need help with prayer reminders and staying on track. What advice do you have?`;
+                                      case 'achievement':
+                                        return `I want to celebrate my prayer achievements and set new goals. Can you help me plan my next steps?`;
+                                      default:
+                                        return `I need guidance with my prayer journey. ${insight.description}`;
+                                    }
+                                  })();
+                                  router.push(`/mulvi?message=${encodeURIComponent(message)}`);
+                                }}
+                              >
+                                {insight.actionText}
+                                <ChevronRight className="h-3 w-3 ml-1" />
+                              </Button>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    );
+                  })}
+
+                {/* Show message if no insights match filter */}
+                {insights.filter(insight => insightFilter === 'all' || insight.type === insightFilter).length === 0 && (
+                  <Card className="border-dashed">
+                    <CardContent className="pt-6 pb-6 text-center">
+                      <Sparkles className="h-12 w-12 mx-auto mb-4 text-muted-foreground/50" />
+                      <h3 className="font-semibold mb-2">No {insightFilter === 'all' ? '' : insightFilter} insights yet</h3>
+                      <p className="text-sm text-muted-foreground mb-4">
+                        {insightFilter === 'all' 
+                          ? 'Continue your prayer journey to unlock personalized insights'
+                          : `No ${insightFilter} insights available. Try a different filter.`}
+                      </p>
+                      {insightFilter !== 'all' && (
+                        <Button variant="outline" size="sm" onClick={() => setInsightFilter('all')}>
+                          View All Insights
+                        </Button>
+                      )}
+                    </CardContent>
+                  </Card>
+                )}
+              </div>
+            ) : (
+              <Card className="border-dashed">
+                <CardContent className="pt-6 pb-6 text-center">
+                  <Sparkles className="h-12 w-12 mx-auto mb-4 text-muted-foreground/50" />
+                  <h3 className="font-semibold mb-2">No insights available yet</h3>
+                  <p className="text-sm text-muted-foreground mb-4">
+                    Continue your prayer journey to unlock personalized insights
+                  </p>
+                  <Button onClick={() => router.push('/dashboard')} size="sm">
+                    Go to Dashboard
+                  </Button>
+                </CardContent>
+              </Card>
+            )}
+          </TabsContent>
         </Tabs>
       </div>
 
@@ -877,5 +1130,45 @@ export default function StatsPage() {
 
       <PhantomBottomNav />
     </div>
+  );
+}
+
+export default function StatsPage() {
+  return (
+    <Suspense fallback={
+      <div className="bg-background min-h-screen">
+        <header className="header-gradient pt-safe-top pb-6 px-4">
+          <div className="max-w-md mx-auto">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-primary/15 flex items-center justify-center">
+                  <BarChart3 className="h-5 w-5 text-primary" />
+                </div>
+                <div>
+                  <h1 className="text-lg font-semibold text-foreground">Prayer Analytics</h1>
+                  <p className="text-sm text-muted-foreground">
+                    {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </header>
+        
+        <div className="max-w-md mx-auto px-4">
+          <div className="flex items-center justify-center min-h-[400px]">
+            <div className="text-center">
+              <Activity className="h-8 w-8 animate-pulse mx-auto mb-4 text-primary" />
+              <p className="text-lg font-medium mb-2">Loading stats...</p>
+              <p className="text-muted-foreground">Please wait</p>
+            </div>
+          </div>
+        </div>
+        
+        <PhantomBottomNav />
+      </div>
+    }>
+      <StatsContent />
+    </Suspense>
   );
 }

@@ -9,34 +9,121 @@ export type Json =
 export interface Database {
   public: {
     Tables: {
-      lopi_knowledge: {
+      mulvi_conversations: {
         Row: {
           id: string
-          topic: string
+          user_id: string
+          title?: string
+          created_at: string
+          updated_at: string
+          context?: any
+          is_archived: boolean
+          category?: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          title?: string
+          created_at?: string
+          updated_at?: string
+          context?: any
+          is_archived?: boolean
+          category?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          title?: string
+          created_at?: string
+          updated_at?: string
+          context?: any
+          is_archived?: boolean
+          category?: string
+        }
+      }
+      mulvi_messages: {
+        Row: {
+          id: string
+          conversation_id: string
+          role: 'user' | 'assistant' | 'system'
           content: string
-          source: string | null
-          tags: string[] | null
-          embedding: number[] | null
+          created_at: string
+          metadata?: any
+          tokens_used?: number
+          model_used?: string
+        }
+        Insert: {
+          id?: string
+          conversation_id: string
+          role: 'user' | 'assistant' | 'system'
+          content: string
+          created_at?: string
+          metadata?: any
+          tokens_used?: number
+          model_used?: string
+        }
+        Update: {
+          id?: string
+          conversation_id?: string
+          role?: 'user' | 'assistant' | 'system'
+          content?: string
+          created_at?: string
+          metadata?: any
+          tokens_used?: number
+          model_used?: string
+        }
+      }
+      mulvi_knowledge: {
+        Row: {
+          id: string
+          title: string
+          content: string
+          category: string
+          tags?: string[]
           created_at: string
           updated_at: string
         }
         Insert: {
           id?: string
-          topic: string
+          title: string
           content: string
-          source?: string | null
-          tags?: string[] | null
-          embedding?: number[] | null
+          category: string
+          tags?: string[]
           created_at?: string
           updated_at?: string
         }
         Update: {
           id?: string
-          topic?: string
+          title?: string
           content?: string
-          source?: string | null
-          tags?: string[] | null
-          embedding?: number[] | null
+          category?: string
+          tags?: string[]
+          created_at?: string
+          updated_at?: string
+        }
+      }
+      mulvi_faqs: {
+        Row: {
+          id: string
+          question: string
+          answer: string
+          category: string
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          question: string
+          answer: string
+          category: string
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          question?: string
+          answer?: string
+          category?: string
           created_at?: string
           updated_at?: string
         }

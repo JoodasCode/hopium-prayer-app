@@ -167,7 +167,7 @@ export function IntentionStep({
               You've set your intention.
             </div>
             <div className="text-sm text-muted-foreground">
-              Hopium will help you hold it.
+              Mulvi will help you hold it.
             </div>
           </motion.div>
         </motion.div>

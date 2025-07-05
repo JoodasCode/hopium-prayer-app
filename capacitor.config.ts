@@ -1,8 +1,8 @@
-import type { CapacitorConfig } from '@capacitor/cli';
+import { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'com.yourname.lopi',
-  appName: 'lopi',
+  appId: 'com.mulvi.app',
+  appName: 'Mulvi',
   webDir: 'out',
   server: {
     androidScheme: 'https'

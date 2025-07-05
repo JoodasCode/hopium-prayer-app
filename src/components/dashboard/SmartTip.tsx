@@ -40,13 +40,13 @@ export function SmartTip() {
               <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
           </div>
-          <span className="font-semibold text-sm">LOPI</span>
+          <span className="font-semibold text-sm">MULVI</span>
         </div>
       </CardHeader>
       <CardContent className="px-5 pb-5">
         {showInsight ? (
           <div className="space-y-3">
-            <p className="text-sm">Lopi noticed your Asr prayer timing improved 2x this week 👀</p>
+            <p className="text-sm">Mulvi noticed your Asr prayer timing improved 2x this week 👀</p>
             
             {/* Actionable suggestion */}
             <div className="bg-secondary/30 rounded-lg p-2 text-xs flex items-center justify-between">

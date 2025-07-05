@@ -51,13 +51,13 @@ const StreakOverview = memo(function StreakOverview({
   }, [recentDays, currentStreak]);
   
   // Memoize streak tier calculation
-  const streakInfo = useMemo(() => {
-    if (currentStreak >= 100) return { tier: 'diamond', color: 'from-blue-300 to-blue-500' };
-    if (currentStreak >= 30) return { tier: 'platinum', color: 'from-purple-300 to-purple-600' };
-    if (currentStreak >= 14) return { tier: 'gold', color: 'from-yellow-300 to-yellow-600' };
-    if (currentStreak >= 7) return { tier: 'silver', color: 'from-amber-300 to-amber-600' };
-    return { tier: 'bronze', color: 'from-orange-300 to-orange-600' };
-  }, [currentStreak]);
+  const getStreakTier = (currentStreak: number) => {
+    if (currentStreak >= 100) return { tier: 'diamond', color: 'bg-chart-1 text-chart-1-foreground' };
+    if (currentStreak >= 30) return { tier: 'platinum', color: 'bg-chart-2 text-chart-2-foreground' };
+    if (currentStreak >= 14) return { tier: 'gold', color: 'bg-chart-3 text-chart-3-foreground' };
+    if (currentStreak >= 7) return { tier: 'silver', color: 'bg-chart-4 text-chart-4-foreground' };
+    return { tier: 'bronze', color: 'bg-chart-5 text-chart-5-foreground' };
+  };
   
   // Memoize milestone calculation
   const milestone = useMemo(() => {
@@ -121,13 +121,13 @@ const StreakOverview = memo(function StreakOverview({
   
   return (
     <Card className={cn(
-      "mb-4 overflow-hidden",
-      streakAtRisk ? "shadow-md border-amber-500/40" : "shadow-sm border-border"
+      "mb-4 overflow-hidden claymorph-card",
+      streakAtRisk ? "border-destructive/40" : ""
     )}>
       <div className="relative">
         {/* Streak status banner - only shows when streak is at risk */}
         {streakAtRisk && (
-          <div className="absolute top-0 left-0 right-0 w-full bg-gradient-to-r from-amber-500/90 to-red-500/90 py-1.5 px-4 text-white flex items-center justify-between text-xs font-medium z-10">
+          <div className="absolute top-0 left-0 right-0 w-full bg-destructive py-1.5 px-4 text-destructive-foreground flex items-center justify-between text-xs font-medium z-10">
             <div className="flex items-center">
               <Flame className="h-3.5 w-3.5 mr-1.5" />
               <span>Streak at risk!</span>
@@ -142,163 +142,101 @@ const StreakOverview = memo(function StreakOverview({
           streakAtRisk ? "pt-9" : "pt-4"
         )}>
           <div className="flex justify-between items-center">
-            <CardTitle className="text-sm font-medium text-foreground flex items-center">
-              <Calendar className="h-4 w-4 mr-1.5 opacity-70" />
-              Prayer Streak
-            </CardTitle>
-            <Dialog>
-              <DialogTrigger asChild>
-                <Button variant="ghost" size="sm" className="text-xs h-7 text-primary hover:text-primary/80">
-                  View History
-                </Button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>Prayer Streak History</DialogTitle>
-                  <DialogDescription>
-                    Your consistent prayer journey over time
-                  </DialogDescription>
-                </DialogHeader>
-                <div className="py-4">
-                  <h4 className="text-sm font-medium mb-2">Streak Milestones</h4>
-                  <div className="space-y-2">
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm">1 Week Streak</span>
-                      <Badge variant="outline" className={currentStreak >= 7 ? "bg-gradient-to-r from-orange-300 to-orange-600 text-white" : "bg-muted/50 text-muted-foreground"}>
-                        {currentStreak >= 7 ? "Achieved" : `${7 - currentStreak} days left`}
-                      </Badge>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm">2 Week Streak</span>
-                      <Badge variant="outline" className={currentStreak >= 14 ? "bg-gradient-to-r from-yellow-300 to-yellow-600 text-white" : "bg-muted/50 text-muted-foreground"}>
-                        {currentStreak >= 14 ? "Achieved" : `${14 - currentStreak} days left`}
-                      </Badge>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm">1 Month Streak</span>
-                      <Badge variant="outline" className={currentStreak >= 30 ? "bg-gradient-to-r from-purple-300 to-purple-600 text-white" : "bg-muted/50 text-muted-foreground"}>
-                        {currentStreak >= 30 ? "Achieved" : `${30 - currentStreak} days left`}
-                      </Badge>
-                    </div>
-                  </div>
-                </div>
-                <DialogFooter>
-                  <Button variant="outline" onClick={() => toast({
-                    title: "Calendar View",
-                    description: "Viewing your complete prayer history"
-                  })}>View Full Calendar</Button>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
+            <CardTitle className="text-sm font-semibold uppercase text-foreground">STREAK</CardTitle>
+            
+            {/* Streak badges */}
+            <div className="flex gap-1">
+              <Badge variant="outline" className={currentStreak >= 7 ? "bg-chart-4 text-chart-4-foreground border-chart-4" : "bg-muted/50 text-muted-foreground"}>
+                7d
+              </Badge>
+              
+              <Badge variant="outline" className={currentStreak >= 14 ? "bg-chart-3 text-chart-3-foreground border-chart-3" : "bg-muted/50 text-muted-foreground"}>
+                14d
+              </Badge>
+              
+              <Badge variant="outline" className={currentStreak >= 30 ? "bg-chart-2 text-chart-2-foreground border-chart-2" : "bg-muted/50 text-muted-foreground"}>
+                30d
+              </Badge>
+            </div>
           </div>
         </CardHeader>
         
-        <CardContent className="p-5 pt-0">
-          {/* Main streak display */}
-          <div className="flex justify-between items-center mb-4">
-            <div className="flex-1">
-              <div className="flex items-center">
-                <div className="relative mr-3.5">
-                  <div className={cn(
-                    "h-14 w-14 rounded-full flex items-center justify-center bg-gradient-to-br shadow-lg",
-                    streakInfo.color
-                  )}>
-                    <span className="text-xl font-bold text-white">{currentStreak}</span>
-                  </div>
-                </div>
-                <div>
-                  <div className="font-semibold text-lg flex items-center">
-                    Prayer Streak
-                    {currentStreak >= bestStreak && currentStreak > 0 && (
-                      <Star className="h-4 w-4 text-yellow-500 ml-1.5" />
-                    )}
-                  </div>
-                  <div className="text-sm text-muted-foreground">
-                    {currentStreak > 0 ? "Keep it going!" : "Start your streak today!"}
-                  </div>
-                </div>
+        {/* Card Content */}
+        <CardContent className="px-5 pb-5 pt-0">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              {/* Streak icon with tier-based styling */}
+              <div className={cn(
+                "h-14 w-14 rounded-full flex items-center justify-center claymorph-elevated",
+                getStreakTier(currentStreak).color
+              )}>
+                <Flame className="h-7 w-7" />
               </div>
               
-              {/* Progress to next milestone */}
-              <div className="mt-4 pr-4">
-                <div className="flex justify-between items-center mb-1.5 text-xs">
-                  <div className="text-muted-foreground">
-                    Next milestone: <span className="font-medium text-foreground">{milestone.next} days</span>
-                  </div>
-                  <div className="font-medium">
-                    {milestone.daysLeft} days left
-                  </div>
+              <div>
+                <div className="flex items-baseline gap-1">
+                  <span className="text-3xl font-bold text-foreground">{currentStreak}</span>
+                  <span className="text-sm text-muted-foreground">days</span>
                 </div>
-                <Progress value={milestone.percent} className="h-1.5" />
-              </div>
-            </div>
-            
-            {/* Streak shield section */}
-            <div className="ml-2 flex flex-col items-end">
-              <Dialog open={showShieldDialog} onOpenChange={setShowShieldDialog}>
-                <DialogTrigger asChild>
-                  <Button 
-                    variant={streakAtRisk ? "default" : "outline"} 
-                    size="sm"
+                <div className="flex items-center gap-2 mt-1">
+                  <Badge 
+                    variant="outline" 
                     className={cn(
-                      "rounded-lg flex items-center gap-1.5 mb-1",
-                      streakAtRisk && "bg-gradient-to-r from-amber-500 to-red-500 text-white border-none"
+                      "text-xs px-2 py-0.5",
+                      streakAtRisk && "bg-destructive text-destructive-foreground border-destructive"
                     )}
                   >
-                    <Shield className="h-3.5 w-3.5" />
-                    <span className="font-medium">{streakShields}</span>
-                  </Button>
-                </DialogTrigger>
-                <DialogContent>
-                  <DialogHeader>
-                    <DialogTitle>Streak Protection</DialogTitle>
-                    <DialogDescription>
-                      Use a Streak Shield to protect your prayer streak for 24 hours
-                    </DialogDescription>
-                  </DialogHeader>
-                  <div className="py-4 space-y-4">
-                    <div className="flex items-center gap-4 p-3 rounded-lg border bg-muted/30">
-                      <div className="h-12 w-12 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center">
-                        <Shield className="h-6 w-6 text-white" />
+                    {streakAtRisk ? "At Risk" : getStreakTier(currentStreak).tier}
+                  </Badge>
+                  
+                  {/* Streak Shield */}
+                  <Dialog>
+                    <DialogTrigger asChild>
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        className="p-1 h-auto text-xs"
+                      >
+                        <div className="h-12 w-12 rounded-full bg-primary text-primary-foreground flex items-center justify-center">
+                          <Shield className="h-4 w-4" />
+                        </div>
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className="max-w-sm">
+                      <DialogHeader>
+                        <DialogTitle className="flex items-center gap-2">
+                          <Shield className="h-5 w-5" />
+                          Streak Shield
+                        </DialogTitle>
+                        <DialogDescription>
+                          Protect your streak from being broken
+                        </DialogDescription>
+                      </DialogHeader>
+                      <div className="space-y-4">
+                        <div className="text-center">
+                          <div className="text-2xl font-bold text-foreground">{streakShields}</div>
+                          <div className="text-sm text-muted-foreground">shields remaining</div>
+                        </div>
+                        
+                        <Button 
+                          className={cn(
+                            "w-full",
+                            streakShields > 0 ? "bg-primary text-primary-foreground" : ""
+                          )}
+                          disabled={streakShields === 0}
+                        >
+                          {streakShields > 0 ? "Use Shield" : "No shields left"}
+                        </Button>
                       </div>
-                      <div>
-                        <h4 className="font-medium">Streak Shields</h4>
-                        <p className="text-sm text-muted-foreground">You have {streakShields} shields remaining</p>
-                      </div>
-                    </div>
-                    
-                    <div className="text-sm">
-                      {streakAtRisk ? (
-                        <p className="text-amber-600 dark:text-amber-400 font-medium">Your streak is at risk! Activate a shield to protect it.</p>
-                      ) : (
-                        <p>Shields protect your streak for 24 hours when you can't pray on time.</p>
-                      )}
-                    </div>
-                    
-                    {streakShields === 0 && (
-                      <div className="flex items-center gap-3 p-3 rounded-lg border bg-muted/30">
-                        <Lock className="h-5 w-5 text-muted-foreground" />
-                        <div className="text-sm">Complete 5 prayers in a row to earn another shield</div>
-                      </div>
-                    )}
-                  </div>
-                  <DialogFooter className="gap-2">
-                    <Button variant="ghost" onClick={() => setShowShieldDialog(false)}>Cancel</Button>
-                    <Button 
-                      onClick={handleActivateShield} 
-                      disabled={streakShields === 0}
-                      className={streakShields > 0 ? "bg-gradient-to-r from-blue-500 to-blue-700" : ""}
-                    >
-                      Activate Shield
-                    </Button>
-                  </DialogFooter>
-                </DialogContent>
-              </Dialog>
-              
-              <div className="flex items-baseline gap-0.5 mt-1">
-                <span className="text-xs text-muted-foreground mr-1">BEST:</span>
-                <span className="text-sm font-semibold">{bestStreak}</span>
-                <span className="text-xs text-muted-foreground">days</span>
+                    </DialogContent>
+                  </Dialog>
+                </div>
+                
+                <div className="flex items-baseline gap-0.5 mt-1">
+                  <span className="text-xs text-muted-foreground mr-1">BEST:</span>
+                  <span className="text-sm font-semibold text-foreground">{bestStreak}</span>
+                  <span className="text-xs text-muted-foreground">days</span>
+                </div>
               </div>
             </div>
           </div>
@@ -321,13 +259,13 @@ const StreakOverview = memo(function StreakOverview({
                   className={cn(
                     "h-8 rounded-md flex items-center justify-center",
                     completed 
-                      ? "bg-gradient-to-br from-primary/80 to-primary shadow-sm" 
+                      ? "bg-primary text-primary-foreground claymorph-inset" 
                       : "bg-secondary/30 dark:bg-secondary/20"
                   )}
                   title={`${completed ? 'Completed' : 'Missed'} prayers`}
                 >
                   {completed ? (
-                    <span className="text-xs text-primary-foreground">✓</span>
+                    <span className="text-xs">✓</span>
                   ) : (
                     <span className="text-xs text-muted-foreground">·</span>
                   )}
@@ -343,13 +281,13 @@ const StreakOverview = memo(function StreakOverview({
                   className={cn(
                     "h-8 rounded-md flex items-center justify-center",
                     completed 
-                      ? "bg-gradient-to-br from-primary/80 to-primary shadow-sm" 
+                      ? "bg-primary text-primary-foreground claymorph-inset" 
                       : "bg-secondary/30 dark:bg-secondary/20"
                   )}
                   title={`${completed ? 'Completed' : 'Missed'} prayers`}
                 >
                   {completed ? (
-                    <span className="text-xs text-primary-foreground">✓</span>
+                    <span className="text-xs">✓</span>
                   ) : (
                     <span className="text-xs text-muted-foreground">·</span>
                   )}

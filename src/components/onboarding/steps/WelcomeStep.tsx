@@ -1,6 +1,6 @@
 /**
  * Welcome step for the enhanced onboarding flow
- * First impression of the Hopium app experience
+ * First impression of the Mulvi app experience
  */
 
 'use client';
@@ -64,7 +64,9 @@ export function WelcomeStep({ onNext }: WelcomeStepProps) {
             transition={{ delay: 0.5, duration: 0.8 }}
             className="text-2xl font-semibold text-center"
           >
-            Welcome to Hopium
+            <h1 className="text-4xl font-bold text-center bg-gradient-to-r from-primary to-primary/80 bg-clip-text text-transparent">
+              Welcome to Mulvi
+            </h1>
           </motion.h2>
           
           <motion.p

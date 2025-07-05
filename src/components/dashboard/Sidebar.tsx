@@ -7,7 +7,7 @@ import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
-import { Home, Calendar, BarChart, Settings, Menu, BookOpen, MessageSquare } from 'lucide-react';
+import { Home, Calendar, BarChart, Settings, Menu, BookOpen, MessageCircle } from 'lucide-react';
 // Removed UserStateContext dependency
 
 interface SidebarProps extends React.HTMLAttributes<HTMLDivElement> {}
@@ -37,9 +37,9 @@ export function Sidebar({ className }: SidebarProps) {
       color: 'text-pink-500',
     },
     {
-      label: 'Lopi AI',
-      icon: MessageSquare,
-      href: '/dashboard/lopi',
+      label: 'Mulvi AI',
+      icon: MessageCircle,
+      href: '/dashboard/mulvi',
       color: 'text-emerald-500',
     },
     {
@@ -83,7 +83,7 @@ function MobileSidebar({ routes, pathname }: { routes: any[]; pathname: string }
     <div className="flex flex-col h-full bg-card">
       <div className="px-4 py-6 flex items-center border-b">
         <BookOpen className="h-6 w-6 text-primary mr-2" />
-        <h2 className="text-lg font-semibold">Hopium</h2>
+        <h2 className="text-lg font-semibold">Mulvi</h2>
       </div>
       <ScrollArea className="flex-1 p-3">
         <nav className="flex flex-col gap-1">
@@ -111,7 +111,7 @@ function DesktopSidebar({ routes, pathname }: { routes: any[]; pathname: string 
     <div className="flex flex-col h-full">
       <div className="px-6 py-6 flex items-center">
         <BookOpen className="h-6 w-6 text-primary mr-2" />
-        <h2 className="text-lg font-semibold">Hopium</h2>
+        <h2 className="text-lg font-semibold">Mulvi</h2>
       </div>
       <ScrollArea className="flex-1 px-3">
         <nav className="flex flex-col gap-1">

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
@@ -11,22 +11,39 @@ import {
 } from 'lucide-react';
 import PhantomBottomNav from '@/components/shared/PhantomBottomNav';
 import { lazy, Suspense } from 'react';
+import { useRouter } from 'next/navigation';
 
 // Lazy load heavy components
 const PrayerReflectionModal = lazy(() => import('@/components/modals/PrayerReflectionModal').then(module => ({ default: module.PrayerReflectionModal })));
+const InsightsModal = lazy(() => import('@/components/modals/InsightsModal').then(module => ({ default: module.InsightsModal })));
+const StreakMilestoneModal = lazy(() => import('@/components/modals/StreakMilestoneModal').then(module => ({ default: module.StreakMilestoneModal })));
+const QadaRecoveryModal = lazy(() => import('@/components/modals/QadaRecoveryModal').then(module => ({ default: module.QadaRecoveryModal })));
+const GoalSettingModal = lazy(() => import('@/components/modals/GoalSettingModal').then(module => ({ default: module.GoalSettingModal })));
+const StreakFreezeModal = lazy(() => import('@/components/modals/StreakFreezeModal').then(module => ({ default: module.StreakFreezeModal })));
 
 import { useAuth } from '@/hooks/useAuth';
 import { useUserStats } from '@/hooks/useUserStats';
 import { usePrayerWithRecords } from '@/hooks/usePrayerWithRecords';
 import { useNotifications } from '@/hooks/useNotifications';
 import { useCommunityStats } from '@/hooks/useCommunityStats';
+import { usePrayerInsights } from '@/hooks/usePrayerInsights';
+import { useGoals } from '@/hooks/useGoals';
 import { getTimeBasedGreeting, getDisplayName } from '@/lib/greetings';
+import { formatTime } from '@/lib/timeUtils';
 import type { Prayer } from '@/types';
 
 export default function DashboardPage() {
   // Modal states
   const [showReflectionModal, setShowReflectionModal] = useState(false);
+  const [showInsightsModal, setShowInsightsModal] = useState(false);
+  const [showStreakMilestoneModal, setShowStreakMilestoneModal] = useState(false);
+  const [showQadaRecoveryModal, setShowQadaRecoveryModal] = useState(false);
+  const [showGoalSettingModal, setShowGoalSettingModal] = useState(false);
+  const [showStreakFreezeModal, setShowStreakFreezeModal] = useState(false);
   const [selectedPrayer, setSelectedPrayer] = useState<Prayer | null>(null);
+  const [missedPrayerToRecover, setMissedPrayerToRecover] = useState<Prayer | null>(null);
+  const [manualQadaMode, setManualQadaMode] = useState(false);
+  const [selectedManualQadaPrayer, setSelectedManualQadaPrayer] = useState<Prayer | null>(null);
   
   // UI interaction states
   const [isMarkingComplete, setIsMarkingComplete] = useState(false);
@@ -50,6 +67,98 @@ export default function DashboardPage() {
   // Fetch user notifications and reminders
   const { setReminder } = useNotifications(userId);
   const { communityStats } = useCommunityStats();
+  
+  // Get AI-powered insights
+  const { insights } = usePrayerInsights(userId);
+  
+  // Get user goals
+  const { goals, createGoal, updateStreakGoalProgress, hasActiveGoalOfType } = useGoals(userId);
+
+  // Check for streak milestones
+  const checkStreakMilestone = (currentStreak: number) => {
+    const milestones = [7, 14, 30, 50, 100];
+    return milestones.includes(currentStreak);
+  };
+
+  // Check for missed prayers that can be recovered
+  const checkForMissedPrayers = () => {
+    const now = new Date();
+    const missedPrayers = prayers.filter(prayer => {
+      const prayerTime = new Date(prayer.time);
+      const timeSincePrayer = now.getTime() - prayerTime.getTime();
+      const hoursAgo = timeSincePrayer / (1000 * 60 * 60);
+      
+      // Consider a prayer "missed" if it's been more than 1 hour since its time
+      // and it's not marked as completed, but still within recovery window (24 hours)
+      // Show recovery modal between 1-2 hours after missed prayer for immediate action
+      return hoursAgo >= 1 && hoursAgo <= 2 && prayer.status !== 'completed';
+    });
+    
+    return missedPrayers[0] || null; // Return first missed prayer
+  };
+
+  // Handle prayer recovery
+  const handlePrayerRecovery = async (prayerId: string) => {
+    if (missedPrayerToRecover) {
+      try {
+        await completePrayerWithReflection({
+          prayerType: missedPrayerToRecover.name.toLowerCase(),
+          scheduledTime: missedPrayerToRecover.time.toISOString(),
+          completedTime: new Date().toISOString(),
+          emotion: 'grateful',
+          location: 'home',
+          quality: 4,
+          reflection: 'Made up missed prayer (Qada)'
+        });
+        
+        setShowQadaRecoveryModal(false);
+        setMissedPrayerToRecover(null);
+      } catch (error) {
+        console.error('Failed to recover prayer:', error);
+      }
+    }
+  };
+
+  // Handle setting reminder for missed prayer
+  const handleSetQadaReminder = async (prayerId: string, reminderTime: Date) => {
+    if (missedPrayerToRecover && userId) {
+      try {
+        await setReminder(`${missedPrayerToRecover.name.toLowerCase()}_qada`, 30);
+        setShowQadaRecoveryModal(false);
+        setMissedPrayerToRecover(null);
+      } catch (error) {
+        console.error('Failed to set Qada reminder:', error);
+      }
+    }
+  };
+
+  // Effect to show milestone modal when streak milestone is reached
+  useEffect(() => {
+    if (userStats?.current_streak && checkStreakMilestone(userStats.current_streak)) {
+      // Check if we've already shown this milestone (you might want to store this in localStorage)
+      const lastShownMilestone = localStorage.getItem('lastShownMilestone');
+      if (lastShownMilestone !== userStats.current_streak.toString()) {
+        setShowStreakMilestoneModal(true);
+        localStorage.setItem('lastShownMilestone', userStats.current_streak.toString());
+      }
+    }
+  }, [userStats?.current_streak]);
+
+  // Effect to check for missed prayers
+  useEffect(() => {
+    const missedPrayer = checkForMissedPrayers();
+    if (missedPrayer && !showQadaRecoveryModal) {
+      // Check if we've already shown recovery modal for this prayer
+      const lastShownQada = localStorage.getItem('lastShownQada');
+      const prayerKey = `${missedPrayer.name}_${missedPrayer.time.toISOString()}`;
+      
+      if (lastShownQada !== prayerKey) {
+        setMissedPrayerToRecover(missedPrayer);
+        setShowQadaRecoveryModal(true);
+        localStorage.setItem('lastShownQada', prayerKey);
+      }
+    }
+  }, [prayers, showQadaRecoveryModal]);
 
   // Get next prayer info from real data or fallback
   const getNextPrayerInfo = () => {
@@ -80,15 +189,6 @@ export default function DashboardPage() {
   };
 
   const nextAction = getNextPrayerInfo();
-  
-  // Helper function to format time
-  const formatTime = (date: Date) => {
-    return date.toLocaleTimeString('en-US', { 
-      hour: 'numeric', 
-      minute: '2-digit', 
-      hour12: true 
-    });
-  };
   
   // Handle prayer completion with reflection data
   const handlePrayerCompletion = async (reflectionData: {
@@ -160,10 +260,148 @@ export default function DashboardPage() {
     return <Moon className="h-5 w-5 text-chart-1" />;
   };
 
+  // Handle setting a new goal
+  const handleSetGoal = async (goalType: string, value: number) => {
+    if (!userId) return;
+    
+    try {
+      // Map goal types to proper titles and descriptions
+      const goalMappings = {
+        'consistent_7': {
+          title: '7-Day Consistency',
+          description: 'Complete all daily prayers for 7 consecutive days'
+        },
+        'consistent_30': {
+          title: 'Monthly Devotion', 
+          description: 'Complete all daily prayers for 30 consecutive days'
+        },
+        'streak_milestone': {
+          title: `${value}-Day Milestone`,
+          description: `Reach a ${value}-day prayer streak`
+        },
+        'custom_streak': {
+          title: 'Custom Prayer Goal',
+          description: `Maintain a ${value}-day prayer streak`
+        }
+      };
+
+      const goalData = goalMappings[goalType as keyof typeof goalMappings];
+      
+      if (!goalData) {
+        console.error('Unknown goal type:', goalType);
+        return;
+      }
+
+      // Create goal in database
+      const newGoal = await createGoal({
+        title: goalData.title,
+        description: goalData.description,
+        target_value: value,
+        goal_type: goalType,
+        end_date: goalType.includes('consistent') ? 
+          new Date(Date.now() + value * 24 * 60 * 60 * 1000).toISOString() : 
+          undefined
+      });
+      
+      if (newGoal) {
+        console.log('Goal created successfully:', newGoal);
+        // Show success feedback (you could add a toast here)
+      }
+    } catch (error) {
+      console.error('Failed to set goal:', error);
+    }
+  };
+
+  // Check if streak is at risk (low prayer completion today + late in day)
+  const checkStreakAtRisk = () => {
+    const now = new Date();
+    const currentHour = now.getHours();
+    const completionRate = (todaysPrayerCount / totalPrayersToday) * 100;
+    
+    // Consider streak at risk if:
+    // - It's after 6 PM and completion rate is below 60%
+    // - Or it's after 8 PM and completion rate is below 80%
+    return (
+      (currentHour >= 18 && completionRate < 60) ||
+      (currentHour >= 20 && completionRate < 80)
+    );
+  };
+
+  // Handle using a streak freeze
+  const handleUseStreakFreeze = async () => {
+    if (!userId) return;
+    
+    try {
+      // Here you would typically save the streak freeze usage to your database
+      // For now, we'll just store in localStorage
+      const freezeUsage = {
+        userId,
+        date: new Date().toDateString(),
+        reason: 'streak_protection',
+        usedAt: new Date().toISOString()
+      };
+      
+      localStorage.setItem('streakFreezeUsed', JSON.stringify(freezeUsage));
+      console.log('Streak freeze used:', freezeUsage);
+      
+      // You could also show a success toast here
+    } catch (error) {
+      console.error('Failed to use streak freeze:', error);
+    }
+  };
+
+  // Get remaining streak freezes (example: 3 per month)
+  const getStreakFreezesRemaining = () => {
+    // In a real app, you'd fetch this from your database
+    // For now, return a mock value
+    return 2;
+  };
+
+  // Effect to check for streak at risk
+  useEffect(() => {
+    if (userStats?.current_streak && userStats.current_streak > 3) { // Only for users with established streaks
+      const isAtRisk = checkStreakAtRisk();
+      
+      if (isAtRisk && !showStreakFreezeModal) {
+        // Check if we've already shown this today
+        const lastShownRisk = localStorage.getItem('lastShownStreakRisk');
+        const today = new Date().toDateString();
+        
+        if (lastShownRisk !== today) {
+          setShowStreakFreezeModal(true);
+          localStorage.setItem('lastShownStreakRisk', today);
+        }
+      }
+    }
+  }, [userStats?.current_streak, todaysPrayerCount, showStreakFreezeModal]);
+
+  // List of missed prayers in last 24 hours
+  const missedPrayersList = prayers.filter(prayer => {
+    const now = new Date();
+    const prayerTime = new Date(prayer.time);
+    const hoursAgo = (now.getTime() - prayerTime.getTime()) / (1000 * 60 * 60);
+    return hoursAgo >= 1 && hoursAgo < 24 && prayer.status !== 'completed';
+  });
+
+  useEffect(() => {
+    // Update goal progress when streak changes
+    if (userStats?.current_streak !== undefined) {
+      updateStreakGoalProgress(userStats.current_streak);
+    }
+  }, [userStats?.current_streak, updateStreakGoalProgress]);
+
+  const router = useRouter();
+
+  // Handle "View All Insights" navigation
+  const handleViewAllInsights = () => {
+    router.push('/stats?tab=insights');
+    setShowInsightsModal(false);
+  };
+
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
-      <header className="bg-gradient-to-b from-chart-1/8 to-transparent pt-safe-top pb-6 px-4">
+      <header className="header-gradient pt-safe-top pb-6 px-4">
         <div className="max-w-md mx-auto">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
@@ -293,15 +531,40 @@ export default function DashboardPage() {
                   value={progressPercentage} 
                   className="h-2"
                 />
-                <div className="text-center text-sm text-muted-foreground">
-                  {communityStats?.users_praying_now || 26} community members praying now
+                <div className="flex items-center justify-between text-sm">
+                  <div className="text-muted-foreground">
+                    {communityStats?.users_praying_now || 26} community members praying now
+                  </div>
+                  <div className="flex gap-2">
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      onClick={() => setShowGoalSettingModal(true)}
+                      className="text-xs h-6 px-2 text-chart-2 hover:bg-chart-2/10"
+                    >
+                      {hasActiveGoalOfType('consistent_7') || hasActiveGoalOfType('consistent_30') || hasActiveGoalOfType('streak_milestone') || hasActiveGoalOfType('custom_streak') ? 'Update Goal' : 'Set Goal'}
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="text-xs h-6 px-2 text-amber-600 border-amber-200 hover:bg-amber-100"
+                      disabled={missedPrayersList.length === 0}
+                      onClick={() => {
+                        setManualQadaMode(true);
+                        setShowQadaRecoveryModal(true);
+                      }}
+                      title={missedPrayersList.length === 0 ? 'No missed prayers to make up right now' : 'Make up a missed prayer (Qada)'}
+                    >
+                      <Clock className="h-4 w-4 mr-1" /> Qada
+                    </Button>
+                  </div>
                 </div>
               </div>
             </CardContent>
           </Card>
 
           {/* Smart Insight Card */}
-          <Card className="bg-card border-border shadow-sm">
+          <Card className="bg-card border-border shadow-sm cursor-pointer hover:shadow-md transition-shadow" onClick={() => setShowInsightsModal(true)}>
             <CardContent className="p-6">
               <div className="flex items-center gap-3 mb-4">
                  <div className="w-8 h-8 rounded-full bg-chart-4/20 flex items-center justify-center">
@@ -313,16 +576,16 @@ export default function DashboardPage() {
                 </div>
               </div>
               
-                             <div className="flex items-start gap-3 p-4 bg-destructive/10 rounded-lg">
-                 <div className="w-6 h-6 rounded-full bg-destructive/20 flex items-center justify-center flex-shrink-0 mt-0.5">
-                   <TrendingUp className="h-3 w-3 text-destructive" />
+              <div className="flex items-start gap-3 p-4 bg-chart-5/10 rounded-lg">
+                 <div className="w-6 h-6 rounded-full bg-chart-5/20 flex items-center justify-center flex-shrink-0 mt-0.5">
+                   <TrendingUp className="h-3 w-3 text-chart-5" />
                  </div>
                 <div>
                   <p className="font-medium text-foreground mb-1">
-                    You're 5 days away from your first milestone!
+                    {insights && insights.length > 0 ? insights[0].title : "You're 5 days away from your first milestone!"}
                   </p>
                   <p className="text-sm text-muted-foreground">
-                    Keep going to unlock the Bronze Badge.
+                    {insights && insights.length > 0 ? insights[0].description : "Keep going to unlock the Bronze Badge."}
                   </p>
                 </div>
               </div>
@@ -353,6 +616,127 @@ export default function DashboardPage() {
           />
         )}
       </Suspense>
+
+      {/* Insights Modal */}
+      <Suspense fallback={<div>Loading...</div>}>
+        {showInsightsModal && (
+          <InsightsModal
+            open={showInsightsModal}
+            onOpenChange={setShowInsightsModal}
+            insights={insights.map(insight => ({
+              title: insight.title,
+              description: insight.description,
+              icon: insight.icon === 'LineChart' ? <TrendingUp className="h-4 w-4" /> : <Sparkles className="h-4 w-4" />,
+              color: insight.priority === 'high' ? 'border-red-500' : 'border-primary'
+            }))}
+            onViewAllInsights={handleViewAllInsights}
+          />
+        )}
+      </Suspense>
+
+      {/* Streak Milestone Modal */}
+      <Suspense fallback={<div>Loading...</div>}>
+        {showStreakMilestoneModal && (
+          <StreakMilestoneModal
+            open={showStreakMilestoneModal}
+            onOpenChange={setShowStreakMilestoneModal}
+            streak={userStats?.current_streak || 0}
+            onContinue={() => {
+              setShowStreakMilestoneModal(false);
+              // Could add additional celebration logic here
+            }}
+          />
+        )}
+      </Suspense>
+
+      {/* Qada Recovery Modal */}
+      <Suspense fallback={<div>Loading...</div>}>
+        {showQadaRecoveryModal && ((manualQadaMode && selectedManualQadaPrayer) || (!manualQadaMode && missedPrayerToRecover)) && (
+          <QadaRecoveryModal
+            open={showQadaRecoveryModal}
+            onOpenChange={(open) => {
+              setShowQadaRecoveryModal(open);
+              if (!open) {
+                setManualQadaMode(false);
+                setSelectedManualQadaPrayer(null);
+              }
+            }}
+            prayer={{
+              id: manualQadaMode ? selectedManualQadaPrayer!.name : missedPrayerToRecover!.name,
+              name: manualQadaMode ? selectedManualQadaPrayer!.name : missedPrayerToRecover!.name,
+              time: manualQadaMode ? selectedManualQadaPrayer!.time : missedPrayerToRecover!.time,
+              expiresAt: new Date((manualQadaMode ? selectedManualQadaPrayer!.time : missedPrayerToRecover!.time).getTime() + 24 * 60 * 60 * 1000)
+            }}
+            onRecover={handlePrayerRecovery}
+            onSetReminder={handleSetQadaReminder}
+          />
+        )}
+      </Suspense>
+
+      {/* Goal Setting Modal */}
+      <Suspense fallback={<div>Loading...</div>}>
+        {showGoalSettingModal && (
+          <GoalSettingModal
+            open={showGoalSettingModal}
+            onOpenChange={setShowGoalSettingModal}
+            onSetGoal={handleSetGoal}
+            currentStreak={userStats?.current_streak || 0}
+            onDismiss={() => setShowGoalSettingModal(false)}
+            existingGoals={goals.map(goal => ({
+              id: goal.id,
+              title: goal.title,
+              goal_type: goal.goal_type,
+              target_value: goal.target_value,
+              current_value: goal.current_value,
+              completed: goal.completed
+            }))}
+          />
+        )}
+      </Suspense>
+
+      {/* Streak Freeze Modal */}
+      <Suspense fallback={<div>Loading...</div>}>
+        {showStreakFreezeModal && nextPrayer && (
+          <StreakFreezeModal
+            open={showStreakFreezeModal}
+            onOpenChange={setShowStreakFreezeModal}
+            currentStreak={userStats?.current_streak || 0}
+            freezesRemaining={getStreakFreezesRemaining()}
+            prayer={{
+              name: nextPrayer.name,
+              time: nextPrayer.time
+            }}
+            onUseFreeze={handleUseStreakFreeze}
+            onNavigateToSettings={() => {
+              setShowStreakFreezeModal(false);
+              // Navigate to settings page where streak shields can be managed
+            }}
+          />
+        )}
+      </Suspense>
+
+      {/* Manual Qada Mode Modal */}
+      {manualQadaMode && showQadaRecoveryModal && !selectedManualQadaPrayer && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30">
+          <div className="bg-white rounded-lg shadow-lg p-6 w-full max-w-xs">
+            <h3 className="font-medium mb-2">Select a missed prayer to make up</h3>
+            <ul className="space-y-2">
+              {missedPrayersList.map((prayer) => (
+                <li key={prayer.name + prayer.time.toISOString()}>
+                  <Button
+                    variant="outline"
+                    className="w-full justify-start"
+                    onClick={() => setSelectedManualQadaPrayer(prayer)}
+                  >
+                    {prayer.name} – {formatTime(prayer.time, { hour12: false })}
+                  </Button>
+                </li>
+              ))}
+            </ul>
+            <Button variant="ghost" className="mt-4 w-full" onClick={() => { setManualQadaMode(false); setShowQadaRecoveryModal(false); }}>Cancel</Button>
+          </div>
+        </div>
+      )}
 
       <PhantomBottomNav />
     </div>

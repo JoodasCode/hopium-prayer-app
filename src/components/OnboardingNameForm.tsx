@@ -81,7 +81,7 @@ export default function OnboardingNameForm({
       <CardHeader>
         <CardTitle>Personalize Your Experience</CardTitle>
         <CardDescription>
-          Let us know what name you prefer to be called. This will be used by the Lopi AI assistant 
+          Let us know what name you prefer to be called. This will be used by the Mulvi AI assistant 
           to personalize your experience.
         </CardDescription>
       </CardHeader>
@@ -99,7 +99,7 @@ export default function OnboardingNameForm({
                 disabled={isSubmitting}
               />
               <p className="text-sm text-muted-foreground">
-                This name will be used by the AI assistant to personalize responses.
+                Let us know what name you prefer to be called. This will be used by the Mulvi AI assistant
               </p>
             </div>
           </div>

@@ -43,7 +43,7 @@ export default function SignupPage() {
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
           <CardTitle className="text-2xl">Create an Account</CardTitle>
-          <CardDescription>Join Hopium to start your prayer journey</CardDescription>
+          <CardDescription>Join Mulvi to start your prayer journey</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSignup} className="space-y-4">

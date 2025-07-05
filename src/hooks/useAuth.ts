@@ -59,17 +59,15 @@ export function useAuth() {
           email: data.user.email || '',
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
-          onboarding_completed: false,
+          onboarding_completed: true,
           theme: 'light',
           calculation_method: 'mwl',
           notifications_enabled: true,
           hijri_offset: 0,
         });
         
-
-        
-        // Redirect to onboarding
-        router.push('/onboarding');
+        // Redirect to dashboard
+        router.push('/dashboard');
       }
       
       return data;
@@ -95,30 +93,12 @@ export function useAuth() {
       if (error) throw error;
       
       if (data?.user) {
-        // Check onboarding status and redirect properly
-        const { data: userRecord, error: userError } = await supabase
-          .from('users')
-          .select('onboarding_completed')
-          .eq('id', data.user.id)
-          .single();
-        
-        if (userError && userError.code !== 'PGRST116') {
-          throw new Error(`User lookup error: ${userError.message}`);
-        }
-        
-        // Use Next.js router for proper navigation
-        if (userRecord?.onboarding_completed) {
-          router.push('/dashboard');
-        } else {
-          router.push('/onboarding');
-        }
+        // Go directly to dashboard
+        router.push('/dashboard');
       }
       
       return data;
     } catch (err: any) {
-      if (process.env.NODE_ENV === 'development') {
-        console.error('SignIn error:', err);
-      }
       setError(err.message || 'An error occurred during sign in');
       return null;
     } finally {

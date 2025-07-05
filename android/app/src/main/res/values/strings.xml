@@ -1,7 +1,7 @@
 <?xml version='1.0' encoding='utf-8'?>
 <resources>
-    <string name="app_name">lopi</string>
-    <string name="title_activity_main">lopi</string>
-    <string name="package_name">com.yourname.lopi</string>
-    <string name="custom_url_scheme">com.yourname.lopi</string>
+    <string name="app_name">Mulvi</string>
+    <string name="title_activity_main">Mulvi</string>
+    <string name="package_name">com.mulvi.app</string>
+    <string name="custom_url_scheme">com.mulvi.app</string>
 </resources>

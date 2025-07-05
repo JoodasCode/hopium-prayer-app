@@ -86,7 +86,7 @@ export function MotivationStep({
           <h2 className="text-2xl font-semibold text-center">Why Are You Here?</h2>
           
           <p className="text-center text-muted-foreground mb-4">
-            Tap one or more reasons that brought you to Hopium
+            Tap one or more reasons that brought you to Mulvi
           </p>
           
           <div className="space-y-3">

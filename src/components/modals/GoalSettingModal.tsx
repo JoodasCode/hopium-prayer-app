@@ -30,6 +30,14 @@ interface GoalSettingModalProps {
   onSetGoal: (goalType: string, value: number) => void;
   currentStreak: number;
   onDismiss: () => void;
+  existingGoals?: Array<{
+    id: string;
+    title: string;
+    goal_type: string;
+    target_value: number;
+    current_value: number;
+    completed: boolean;
+  }>;
 }
 
 export function GoalSettingModal({
@@ -38,6 +46,7 @@ export function GoalSettingModal({
   onSetGoal,
   currentStreak,
   onDismiss,
+  existingGoals = [],
 }: GoalSettingModalProps) {
   const [selectedGoalId, setSelectedGoalId] = useState<string>("");
   const [customValue, setCustomValue] = useState(7);
@@ -75,6 +84,22 @@ export function GoalSettingModal({
     }
   ];
 
+  // Check if user has existing goal of a type
+  const hasExistingGoal = (goalType: string) => {
+    return existingGoals.some(goal => goal.goal_type === goalType && !goal.completed);
+  };
+
+  // Get existing goal progress
+  const getExistingGoalProgress = (goalType: string) => {
+    const goal = existingGoals.find(g => g.goal_type === goalType && !g.completed);
+    if (!goal) return null;
+    return {
+      current: goal.current_value,
+      target: goal.target_value,
+      progress: Math.min(100, (goal.current_value / goal.target_value) * 100)
+    };
+  };
+
   const handleSetGoal = async () => {
     if (!selectedGoalId) return;
     
@@ -107,8 +132,8 @@ export function GoalSettingModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[425px]">
-        <DialogHeader>
+      <DialogContent className="sm:max-w-[425px] max-h-[90vh] flex flex-col">
+        <DialogHeader className="flex-shrink-0">
           <DialogTitle className="flex items-center gap-2">
             <Target className="h-5 w-5 text-primary" />
             Set Prayer Goal
@@ -122,7 +147,7 @@ export function GoalSettingModal({
           </DialogClose>
         </DialogHeader>
 
-        <div className="py-4 space-y-6">
+        <div className="flex-1 overflow-y-auto py-4 space-y-6 min-h-0">
           {/* Current Streak */}
           <div className="flex items-center justify-between px-4 py-3 bg-muted/50 rounded-lg">
             <div className="flex items-center gap-3">
@@ -149,9 +174,9 @@ export function GoalSettingModal({
                   <Checkbox 
                     checked={selectedGoalId === goal.id}
                     onCheckedChange={() => setSelectedGoalId(goal.id)}
-                    className="mt-1"
+                    className="mt-1 flex-shrink-0"
                   />
-                  <div className="space-y-1.5">
+                  <div className="space-y-1.5 flex-1 min-w-0">
                     <div className="flex items-center">
                       {goal.icon}
                       <h5 className="ml-2 font-medium text-sm">{goal.title}</h5>
@@ -196,6 +221,33 @@ export function GoalSettingModal({
                         </div>
                       </div>
                     )}
+
+                    {/* Show existing goal status */}
+                    {hasExistingGoal(goal.id) && (
+                      <div className="pt-2 px-2 py-1 bg-green-50 border border-green-200 rounded-md">
+                        <div className="flex items-center gap-2">
+                          <CheckCircle2 className="h-3 w-3 text-green-600" />
+                          <span className="text-xs font-medium text-green-800">Active Goal</span>
+                        </div>
+                        {(() => {
+                          const progress = getExistingGoalProgress(goal.id);
+                          return progress ? (
+                            <div className="mt-1">
+                              <div className="flex justify-between text-xs text-green-700">
+                                <span>Progress: {Math.floor(progress.progress)}%</span>
+                                <span>{progress.current}/{progress.target} days</span>
+                              </div>
+                              <div className="w-full h-1 bg-green-200 rounded-full mt-1">
+                                <div 
+                                  className="h-full bg-green-500 rounded-full" 
+                                  style={{ width: `${progress.progress}%` }}
+                                ></div>
+                              </div>
+                            </div>
+                          ) : null;
+                        })()}
+                      </div>
+                    )}
                   </div>
                 </div>
               ))}
@@ -207,13 +259,13 @@ export function GoalSettingModal({
           </div>
         </div>
 
-        <DialogFooter className="flex-col sm:flex-col gap-2">
+        <DialogFooter className="flex-shrink-0 flex-col sm:flex-col gap-2 pt-4 border-t">
           <Button 
             onClick={handleSetGoal} 
             className="w-full" 
             disabled={!selectedGoalId || loading}
           >
-            Set This Goal
+            {hasExistingGoal(selectedGoalId) ? 'Update Goal' : 'Set This Goal'}
           </Button>
           <Button
             variant="ghost"

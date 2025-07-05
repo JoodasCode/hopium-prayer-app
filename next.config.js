@@ -11,8 +11,6 @@ const nextConfig = {
   experimental: {
     webpackBuildWorker: true,
   },
-  output: 'export',
-  trailingSlash: true,
   images: {
     unoptimized: true,
   },
