@@ -198,17 +198,18 @@ export default function StatsPage() {
   // Show loading state
   if (isLoading) {
     return (
-      <div className="bg-background min-h-screen pb-24">
-        <header className="w-full bg-background pt-safe-top">
-          <div className={cn("bg-gradient-to-b from-primary/5 to-transparent", SPACING.card.comfortable, "px-4")}>
-            <div className="max-w-md mx-auto">
-              <div className={cn("flex items-center", SPACING.gap.default)}>
-                <div className={ds.iconContainer('lg', 'primary')}>
-                  <BarChart3 className={cn(SIZING.icon.default, COLORS.text.primary)} />
+      <div className="bg-background min-h-screen">
+        {/* Loading Header - Updated to match dashboard design */}
+        <header className="bg-gradient-to-b from-chart-1/8 to-transparent pt-safe-top pb-6 px-4">
+          <div className="max-w-md mx-auto">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-chart-1/15 flex items-center justify-center">
+                  <BarChart3 className="h-5 w-5 text-chart-1" />
                 </div>
                 <div>
-                  <h1 className={TYPOGRAPHY.header.page}>Prayer Analytics</h1>
-                  <p className={TYPOGRAPHY.muted.default}>
+                  <h1 className="text-lg font-semibold text-foreground">Prayer Analytics</h1>
+                  <p className="text-sm text-muted-foreground">
                     {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
                   </p>
                 </div>
@@ -238,18 +239,18 @@ export default function StatsPage() {
   }
   
   return (
-    <div className="bg-background min-h-screen pb-24">
-      {/* Beautiful Header */}
-      <header className="w-full bg-background pt-safe-top">
-        <div className={cn("bg-gradient-to-b from-primary/5 to-transparent", SPACING.card.comfortable, "px-4")}>
-          <div className="max-w-md mx-auto">
-            <div className={cn("flex items-center", SPACING.gap.default)}>
-              <div className={ds.iconContainer('lg', 'primary')}>
-                <BarChart3 className={cn(SIZING.icon.default, COLORS.text.primary)} />
+    <div className="bg-background min-h-screen">
+      {/* Header - Updated to match dashboard design */}
+      <header className="bg-gradient-to-b from-chart-1/8 to-transparent pt-safe-top pb-6 px-4">
+        <div className="max-w-md mx-auto">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-chart-1/15 flex items-center justify-center">
+                <BarChart3 className="h-5 w-5 text-chart-1" />
               </div>
               <div>
-                <h1 className={TYPOGRAPHY.header.page}>Prayer Analytics</h1>
-                <p className={TYPOGRAPHY.muted.default}>
+                <h1 className="text-lg font-semibold text-foreground">Prayer Analytics</h1>
+                <p className="text-sm text-muted-foreground">
                   {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
                 </p>
               </div>
@@ -274,44 +275,29 @@ export default function StatsPage() {
 
           {/* OVERVIEW TAB */}
           <TabsContent value="overview" className="space-y-4">
-            {/* Hero Stats Grid */}
+            {/* Analytics Stats Grid - NO DUPLICATION */}
             <div className={cn("grid grid-cols-2", SPACING.gap.default)}>
-              {/* Current Streak */}
+              {/* Total Prayers */}
               <Card className={cn(COLORS.card.primary, "bg-gradient-to-br from-primary/5 to-transparent")}>
                 <CardContent className={cn(SPACING.card.compact, "text-center")}>
                   <div className={cn("flex items-center justify-center", SPACING.gap.sm, SPACING.margin.sm)}>
-                    <Flame className={cn(SIZING.icon.default, COLORS.text.primary)} />
-                    <span className={cn(TYPOGRAPHY.stats.large, COLORS.text.primary)}>{analytics.streak.current}</span>
+                    <BookOpen className={cn(SIZING.icon.default, COLORS.text.primary)} />
+                    <span className={cn(TYPOGRAPHY.stats.large, COLORS.text.primary)}>{analytics?.prayerStats?.reduce((total, prayer) => total + Math.round(prayer.completion * 30 / 100), 0) || 0}</span>
                   </div>
-                  <p className={cn(TYPOGRAPHY.header.card, SPACING.margin.xs)}>Day Streak</p>
-                  {analytics.streak.weekChange !== 0 && (
-                    <div className={cn("flex items-center justify-center", SPACING.gap.xs)}>
-                      {analytics.streak.weekChange > 0 ? (
-                        <ArrowUp className={cn(SIZING.icon.xs, "text-green-500")} />
-                      ) : (
-                        <ArrowDown className={cn(SIZING.icon.xs, "text-red-500")} />
-                      )}
-                      <span className={cn(
-                        TYPOGRAPHY.body.small, "font-medium",
-                        analytics.streak.weekChange > 0 ? "text-green-500" : "text-red-500"
-                      )}>
-                        {Math.abs(analytics.streak.weekChange)}%
-                      </span>
-                    </div>
-                  )}
+                  <p className={cn(TYPOGRAPHY.header.card, SPACING.margin.xs)}>Total Prayers</p>
+                  <p className="text-xs text-muted-foreground">Last 30 days</p>
                 </CardContent>
               </Card>
 
-              {/* Today's Progress */}
+              {/* This Month */}
               <Card className={COLORS.card.default}>
                 <CardContent className={cn(SPACING.card.compact, "text-center")}>
                   <div className={cn("flex items-center justify-center", SPACING.gap.sm, SPACING.margin.sm)}>
-                    <Target className={cn(SIZING.icon.default, COLORS.text.primary)} />
-                    <span className={TYPOGRAPHY.stats.large}>{analytics.todayProgress}</span>
-                    <span className={cn(TYPOGRAPHY.stats.medium, TYPOGRAPHY.muted.default)}>/5</span>
+                    <Calendar className={cn(SIZING.icon.default, COLORS.text.primary)} />
+                    <span className={TYPOGRAPHY.stats.large}>{analytics.monthlyPerfectDays || 0}</span>
                   </div>
-                  <p className={cn(TYPOGRAPHY.header.card, SPACING.margin.xs)}>Today</p>
-                  <Progress value={(analytics.todayProgress / 5) * 100} className={SIZING.progress.thin} />
+                  <p className={cn(TYPOGRAPHY.header.card, SPACING.margin.xs)}>Perfect Days</p>
+                  <p className="text-xs text-muted-foreground">This month</p>
                 </CardContent>
               </Card>
             </div>

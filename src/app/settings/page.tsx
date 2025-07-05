@@ -134,18 +134,18 @@ export default function SettingsPage() {
   
   if (isLoading) {
     return (
-      <div className="bg-background min-h-screen pb-24">
-        {/* Beautiful Loading Header */}
-        <header className="w-full bg-background pt-safe-top">
-          <div className={cn("bg-gradient-to-br from-primary/10 via-primary/5 to-transparent", SPACING.card.comfortable, "px-4")}>
-            <div className="max-w-md mx-auto">
-              <div className={cn("flex items-center", SPACING.gap.default)}>
-                <div className={ds.iconContainer('lg', 'primary')}>
-                  <Settings className={cn(SIZING.icon.default, COLORS.text.primary)} />
+      <div className="bg-background min-h-screen">
+        {/* Loading Header - Updated to match dashboard design */}
+        <header className="bg-gradient-to-b from-chart-1/8 to-transparent pt-safe-top pb-6 px-4">
+          <div className="max-w-md mx-auto">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-chart-1/15 flex items-center justify-center">
+                  <Settings className="h-5 w-5 text-chart-1" />
                 </div>
                 <div>
-                  <h1 className={TYPOGRAPHY.header.page}>Settings</h1>
-                  <p className={TYPOGRAPHY.muted.default}>Customize your experience</p>
+                  <h1 className="text-lg font-semibold text-foreground">Settings</h1>
+                  <p className="text-sm text-muted-foreground">Customize your experience</p>
                 </div>
               </div>
             </div>
@@ -176,18 +176,18 @@ export default function SettingsPage() {
   }
   
   return (
-    <div className="bg-background min-h-screen pb-24">
-      {/* Beautiful Header with Gradient */}
-      <header className="w-full bg-background pt-safe-top">
-        <div className={cn("bg-gradient-to-br from-primary/10 via-primary/5 to-transparent", SPACING.card.comfortable, "px-4")}>
-          <div className="max-w-md mx-auto">
-            <div className={cn("flex items-center", SPACING.gap.default)}>
-              <div className={ds.iconContainer('lg', 'primary')}>
-                <Settings className={cn(SIZING.icon.default, COLORS.text.primary)} />
+    <div className="bg-background min-h-screen">
+      {/* Header - Updated to match dashboard design */}
+      <header className="bg-gradient-to-b from-chart-1/8 to-transparent pt-safe-top pb-6 px-4">
+        <div className="max-w-md mx-auto">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-chart-1/15 flex items-center justify-center">
+                <Settings className="h-5 w-5 text-chart-1" />
               </div>
               <div>
-                <h1 className={TYPOGRAPHY.header.page}>Settings</h1>
-                <p className={TYPOGRAPHY.muted.default}>Customize your experience</p>
+                <h1 className="text-lg font-semibold text-foreground">Settings</h1>
+                <p className="text-sm text-muted-foreground">Customize your experience</p>
               </div>
             </div>
           </div>

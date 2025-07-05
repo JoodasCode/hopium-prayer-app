@@ -15,8 +15,8 @@ export default function PhantomBottomNav() {
   const pathname = usePathname();
   
   return (
-    <nav className="fixed bottom-0 left-0 right-0 bg-background/95 backdrop-blur-sm border-t border-border safe-area-bottom z-40">
-      <div className="max-w-md mx-auto flex items-center justify-between px-1">
+    <nav className="fixed bottom-0 left-0 right-0 bg-background/95 backdrop-blur-sm border-t border-border z-40">
+      <div className="flex items-center justify-center gap-8 px-6 py-2 pb-4">
         {NAV_ITEMS.map((item) => {
           const isActive = pathname === item.path || pathname?.startsWith(`${item.path}/`);
           
@@ -24,14 +24,15 @@ export default function PhantomBottomNav() {
             <Link
               key={item.name}
               href={item.path}
-              className={`flex flex-col items-center justify-center py-3 flex-1 transition-all relative
-                ${isActive ? 'text-primary' : 'text-muted-foreground hover:text-foreground active:text-primary/70'}`}
+              className={`flex flex-col items-center justify-center transition-all rounded-xl p-2 min-h-[48px] min-w-[48px]
+                ${isActive ? 'text-chart-1 bg-chart-1/10' : 'text-muted-foreground hover:text-foreground hover:bg-muted/30 active:bg-muted/50'}`}
             >
-              <div className={`p-2 rounded-full mb-1 transition-colors ${isActive ? 'bg-primary/10' : ''}`}>
-                <item.icon size={20} />
+              <div className={`transition-transform ${isActive ? 'scale-110' : 'scale-100'}`}>
+                <item.icon size={20} strokeWidth={isActive ? 2.5 : 2} />
               </div>
-              <span className="text-[0.65rem] font-medium">{item.name}</span>
-              {isActive && <span className="absolute bottom-0 left-1/2 transform -translate-x-1/2 h-1 w-6 rounded-t-full bg-primary" />}
+              <span className={`text-[0.6rem] font-medium mt-0.5 transition-opacity ${isActive ? 'opacity-100' : 'opacity-70'}`}>
+                {item.name}
+              </span>
             </Link>
           );
         })}

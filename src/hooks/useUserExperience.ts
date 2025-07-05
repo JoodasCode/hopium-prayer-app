@@ -8,28 +8,31 @@ type ExperienceType = 'new' | 'minimal' | 'returning';
 export function useUserExperience() {
   const { userState } = useUserState();
   
-  // Determine experience type based on data threshold
+  // Determine experience type based on authentication and onboarding status
   const experienceType: ExperienceType = 
-    !userState.isAuthenticated || userState.dataThreshold === 'none' ? 'new' :
-    userState.dataThreshold === 'minimal' ? 'minimal' : 'returning';
+    !userState.isAuthenticated ? 'new' :
+    !userState.isOnboardingCompleted ? 'minimal' : 'returning';
   
-  // Check if this is the user's first visit today
+  // Check if this is the user's first visit today (simplified)
   const isFirstVisitToday = (): boolean => {
-    if (!userState.lastVisited) return true;
+    // Since we don't have lastVisited, we'll use localStorage
+    const lastVisit = localStorage.getItem('lastVisit');
+    if (!lastVisit) return true;
     
-    const lastVisit = new Date(userState.lastVisited);
+    const lastVisitDate = new Date(lastVisit);
     const today = new Date();
     
-    return lastVisit.toDateString() !== today.toDateString();
+    return lastVisitDate.toDateString() !== today.toDateString();
   };
   
-  // Check if user is returning after an absence (more than 3 days)
+  // Check if user is returning after an absence (simplified)
   const isReturningAfterAbsence = (): boolean => {
-    if (!userState.lastVisited) return false;
+    const lastVisit = localStorage.getItem('lastVisit');
+    if (!lastVisit) return false;
     
-    const lastVisit = new Date(userState.lastVisited);
+    const lastVisitDate = new Date(lastVisit);
     const today = new Date();
-    const diffTime = Math.abs(today.getTime() - lastVisit.getTime());
+    const diffTime = Math.abs(today.getTime() - lastVisitDate.getTime());
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
     
     return diffDays > 3;
@@ -38,7 +41,7 @@ export function useUserExperience() {
   // Get welcome message based on user state
   const getWelcomeMessage = (): string => {
     if (!userState.isAuthenticated) {
-      return 'Welcome to Hopium Prayer App';
+      return 'Welcome to Lopi Prayer App';
     }
     
     if (isReturningAfterAbsence()) {
@@ -52,13 +55,19 @@ export function useUserExperience() {
     return `Hello again, ${userState.user?.user_metadata?.name || 'friend'}`;
   };
   
+  // Update last visit time
+  const updateLastVisit = () => {
+    localStorage.setItem('lastVisit', new Date().toISOString());
+  };
+  
   return {
     experienceType,
     isFirstVisitToday: isFirstVisitToday(),
     isReturningAfterAbsence: isReturningAfterAbsence(),
     welcomeMessage: getWelcomeMessage(),
     showOnboarding: !userState.isOnboardingCompleted && userState.isAuthenticated,
-    showEmptyState: userState.dataThreshold === 'none' && userState.isOnboardingCompleted,
-    showSampleData: userState.dataThreshold === 'none' || userState.dataThreshold === 'minimal',
+    showEmptyState: !userState.isOnboardingCompleted && userState.isAuthenticated,
+    showSampleData: !userState.isAuthenticated || !userState.isOnboardingCompleted,
+    updateLastVisit,
   };
 }

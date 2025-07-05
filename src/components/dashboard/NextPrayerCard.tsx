@@ -7,19 +7,27 @@ import { Prayer } from './data';
 import { cn } from '@/lib/utils';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
+import { Clock, CheckCircle, Bell, Sunrise, Sun, Sunset, Moon, Star } from 'lucide-react';
 
 interface NextPrayerCardProps {
   nextPrayer: Prayer | null;
   onPrayerComplete: (prayerId: string) => void;
 }
 
+// Prayer icons mapping
+const prayerIcons = {
+  fajr: Sunrise,
+  dhuhr: Sun,
+  asr: Sun,
+  maghrib: Sunset,
+  isha: Moon
+};
+
 // Emotional states for check-in
 type EmotionType = string;
 
 const beforePrayerEmotions: EmotionType[] = [
-  // Challenging emotions
   'Anxious', 'Distracted', 'Tired', 'Worried', 'Stressed',
-  // Positive emotions
   'Grateful', 'Hopeful', 'Joyful', 'Content', 'Inspired'
 ];
 
@@ -28,7 +36,6 @@ const afterPrayerEmotions: EmotionType[] = [
   'Present', 'Centered', 'Grateful', 'Blessed', 'Motivated'
 ];
 
-// Spiritual verses and feedback
 const spiritualFeedback = [
   {
     milestone: 5,
@@ -51,7 +58,7 @@ const spiritualFeedback = [
 export function NextPrayerCard({ nextPrayer, onPrayerComplete }: NextPrayerCardProps) {
   const [timeRemaining, setTimeRemaining] = useState<string>("--:--:--");
   const [showCelebration, setShowCelebration] = useState(false);
-  const [streakCount, setStreakCount] = useState(2); // Simulating a streak count
+  const [streakCount, setStreakCount] = useState(2);
   const [showVerse, setShowVerse] = useState(false);
   const [currentVerse, setCurrentVerse] = useState("");
   const [celebrationMessage, setCelebrationMessage] = useState("");
@@ -71,7 +78,6 @@ export function NextPrayerCard({ nextPrayer, onPrayerComplete }: NextPrayerCardP
     const container = confettiRef.current;
     container.innerHTML = '';
     
-    // Use Mocha Mousse theme colors from our chart palette
     const colors = ['var(--chart-1)', 'var(--chart-2)', 'var(--chart-3)', 'var(--chart-4)', 'var(--chart-5)'];
     
     for (let i = 0; i < 100; i++) {
@@ -113,25 +119,19 @@ export function NextPrayerCard({ nextPrayer, onPrayerComplete }: NextPrayerCardP
     }
   };
   
-  // Start the prayer completion process with emotional check-in
   const handlePrayerComplete = (prayerId: string) => {
-    // Show emotional check-in dialog first
     setPrayerToComplete(prayerId);
     setEmotionStep('before');
     setShowEmotionCheckIn(true);
   };
   
-  // Handle the emotional check-in completion
   const handleEmotionCheckInComplete = () => {
     if (emotionStep === 'before') {
-      // After selecting 'before' emotion, move to 'after' emotion
       setEmotionStep('after');
     } else {
-      // Both emotions selected, complete the prayer
       setShowEmotionCheckIn(false);
       
       if (prayerToComplete) {
-        // Save the emotional state data (in a real app, you'd send this to your backend)
         console.log('Emotional journey:', {
           prayer: prayerToComplete,
           before: selectedBeforeEmotion,
@@ -139,20 +139,16 @@ export function NextPrayerCard({ nextPrayer, onPrayerComplete }: NextPrayerCardP
           date: new Date().toISOString()
         });
         
-        // Show celebration animation
         setShowCelebration(true);
         setCelebrationMessage(`Alhamdulillah! That's ${streakCount + 1} in a row 💪`);
         setStreakCount(prev => prev + 1);
         createConfetti();
         
-        // Check if we've hit a milestone for spiritual feedback
         const hasMilestone = checkForMilestone(streakCount);
         
-        // Show verse after celebration if milestone reached
         setTimeout(() => {
           if (hasMilestone) {
             setShowVerse(true);
-            // Reset verse after a longer delay
             setTimeout(() => {
               setShowVerse(false);
               setShowCelebration(false);
@@ -162,11 +158,8 @@ export function NextPrayerCard({ nextPrayer, onPrayerComplete }: NextPrayerCardP
           }
         }, 3000);
         
-        // Hide celebration after a delay
         setTimeout(() => {
           onPrayerComplete(prayerToComplete);
-          
-          // Reset emotional state for next prayer
           setSelectedBeforeEmotion(null);
           setSelectedAfterEmotion(null);
           setPrayerToComplete(null);
@@ -175,7 +168,6 @@ export function NextPrayerCard({ nextPrayer, onPrayerComplete }: NextPrayerCardP
     }
   };
   
-  // Handle emotion selection
   const selectEmotion = (emotion: EmotionType) => {
     if (emotionStep === 'before') {
       setSelectedBeforeEmotion(emotion);
@@ -194,178 +186,176 @@ export function NextPrayerCard({ nextPrayer, onPrayerComplete }: NextPrayerCardP
   };
   
   useEffect(() => {
-    // Function to calculate time remaining until the prayer
     const calculateTimeRemaining = () => {
       if (!nextPrayer) return "--:--:--";
       
-      try {
-        // Parse the prayer time (assuming format like "5:30 AM" or "12:30 PM")
-        const timeParts = nextPrayer.time.split(' ');
-        const [hourMin, period] = [timeParts[0], timeParts[1] || ''];
-        const [hours, minutes] = hourMin.split(':').map(Number);
-        
-        if (isNaN(hours) || isNaN(minutes)) {
-          console.error("Invalid time format", nextPrayer.time);
-          return "--:--:--";
-        }
-        
-        const now = new Date();
-        const prayerTime = new Date();
-        
-        // Convert to 24-hour format if needed
-        let hour24 = hours;
-        if (period && period.toUpperCase() === 'PM' && hours < 12) {
-          hour24 = hours + 12;
-        } else if (period && period.toUpperCase() === 'AM' && hours === 12) {
-          hour24 = 0;
-        }
-        
-        prayerTime.setHours(hour24, minutes, 0, 0);
-        
-        // If prayer time has passed for today, set it for tomorrow
-        if (prayerTime < now) {
-          prayerTime.setDate(prayerTime.getDate() + 1);
-        }
-        
-        // Calculate difference in milliseconds
-        const diff = prayerTime.getTime() - now.getTime();
-        
-        // Convert to hours, minutes, seconds
-        const hrs = Math.floor(diff / (1000 * 60 * 60));
-        const mins = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-        const secs = Math.floor((diff % (1000 * 60)) / 1000);
-        
-        // Format as HH:MM:SS
-        return `${hrs.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-      } catch (error) {
-        console.error("Error calculating time remaining:", error);
-        return "--:--:--";
+      const now = new Date();
+      const prayerTime = new Date();
+      const [hours, minutes] = nextPrayer.time.split(':').map(Number);
+      
+      prayerTime.setHours(hours, minutes, 0, 0);
+      
+      if (prayerTime <= now) {
+        prayerTime.setDate(prayerTime.getDate() + 1);
       }
+      
+      const timeDiff = prayerTime.getTime() - now.getTime();
+      const hoursRemaining = Math.floor(timeDiff / (1000 * 60 * 60));
+      const minutesRemaining = Math.floor((timeDiff % (1000 * 60 * 60)) / (1000 * 60));
+      
+      return `${hoursRemaining}h ${minutesRemaining}m`;
     };
     
-    // Initial calculation
-    setTimeRemaining(calculateTimeRemaining());
-    
-    // Update every second
-    const interval = setInterval(() => {
+    const updateTimer = () => {
       setTimeRemaining(calculateTimeRemaining());
-    }, 1000);
+    };
+    
+    updateTimer();
+    const interval = setInterval(updateTimer, 60000);
     
     return () => clearInterval(interval);
   }, [nextPrayer]);
-  
+
   if (!nextPrayer) {
     return (
-      <Card className="mb-4 shadow-sm border-border overflow-hidden">
-        <CardContent className="p-6">
-          <div className="text-center">
-            <h3 className="text-lg font-semibold mb-2">All Prayers Completed!</h3>
-            <p className="text-muted-foreground mb-4">Great job! You've completed all prayers for today.</p>
-            <Button 
-              variant="outline" 
-              className="w-full py-2 mt-2"
-              onClick={() => {/* View prayer history */}}
-            >
-              View Prayer History
-            </Button>
+      <Card className="card-mobile bg-gradient-to-br from-background to-muted/20">
+        <CardContent className="p-8">
+          <div className="text-center space-y-4">
+            <Star className="h-12 w-12 mx-auto text-muted-foreground" />
+            <div>
+              <h3 className="text-mobile-xl font-medium text-muted-foreground">No upcoming prayer</h3>
+              <p className="text-sm text-muted-foreground mt-2">All prayers completed for today</p>
+            </div>
           </div>
         </CardContent>
       </Card>
     );
   }
-  
+
+  const PrayerIcon = prayerIcons[nextPrayer.name.toLowerCase() as keyof typeof prayerIcons] || Sun;
+
   return (
     <>
-      {/* Emotional Check-in Dialog */}
+      <Card className="card-mobile bg-gradient-to-br from-background via-background to-primary/5 border-primary/10 relative overflow-hidden">
+        {/* Background decoration */}
+        <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-primary/5 to-transparent rounded-full -translate-y-16 translate-x-16" />
+        
+        <CardContent className="p-8 relative">
+          {/* Header */}
+          <div className="text-center mb-8">
+            <p className="text-sm font-medium text-muted-foreground uppercase tracking-wider mb-2">Next Prayer</p>
+            <div className="flex items-center justify-center gap-3 mb-4">
+              <div className="p-3 rounded-2xl bg-primary/10">
+                <PrayerIcon className="h-8 w-8 text-primary" />
+              </div>
+              <h2 className="text-mobile-3xl font-bold text-foreground capitalize">
+                {nextPrayer.name}
+              </h2>
+            </div>
+          </div>
+
+          {/* Time Display */}
+          <div className="text-center mb-8">
+            <div className="flex items-center justify-center gap-2 mb-3">
+              <Clock className="h-5 w-5 text-muted-foreground" />
+              <span className="text-3xl font-bold text-foreground">{nextPrayer.time}</span>
+            </div>
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-muted/50">
+              <div className="w-2 h-2 bg-orange-500 rounded-full animate-pulse" />
+              <span className="text-sm font-medium text-muted-foreground">
+                {timeRemaining}
+              </span>
+            </div>
+          </div>
+
+          {/* Action Buttons */}
+          <div className="grid grid-cols-2 gap-4">
+            <Button
+              onClick={() => handlePrayerComplete(nextPrayer.id)}
+              className="touch-target h-14 bg-primary hover:bg-primary/90 text-primary-foreground font-medium rounded-2xl shadow-sm"
+            >
+              <CheckCircle className="h-5 w-5 mr-2" />
+              Mark Complete
+            </Button>
+            <Button
+              variant="outline"
+              className="touch-target h-14 border-2 border-border hover:bg-muted/50 font-medium rounded-2xl"
+            >
+              <Bell className="h-5 w-5 mr-2" />
+              Remind Me
+            </Button>
+          </div>
+        </CardContent>
+
+        {/* Confetti container */}
+        <div ref={confettiRef} className="absolute inset-0 pointer-events-none" />
+      </Card>
+
+      {/* Celebration Overlay */}
+      {showCelebration && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <Card className="w-full max-w-sm">
+            <CardContent className="p-8 text-center">
+              <div className="mb-6">
+                <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <CheckCircle className="h-8 w-8 text-green-600" />
+                </div>
+                <h3 className="text-xl font-bold text-green-600 mb-2">Prayer Completed!</h3>
+                <p className="text-muted-foreground">{celebrationMessage}</p>
+              </div>
+              {showVerse && (
+                <div className="p-4 bg-muted/50 rounded-lg">
+                  <p className="text-sm italic text-center">{currentVerse}</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {/* Emotion Check-in Dialog */}
       <Dialog open={showEmotionCheckIn} onOpenChange={setShowEmotionCheckIn}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="w-[90vw] max-w-md">
           <DialogHeader>
-            <DialogTitle className="text-center text-xl">
-              {emotionStep === 'before' ? 'How are you feeling before prayer?' : 'How do you feel after prayer?'}
+            <DialogTitle>
+              {emotionStep === 'before' 
+                ? 'How are you feeling before prayer?' 
+                : 'How do you feel after prayer?'
+              }
             </DialogTitle>
           </DialogHeader>
           
-          <div className="grid grid-cols-2 gap-3 py-4 max-h-[300px] overflow-y-auto">
+          <div className="grid grid-cols-2 gap-3 py-4">
             {(emotionStep === 'before' ? beforePrayerEmotions : afterPrayerEmotions).map((emotion) => (
               <Button
                 key={emotion}
-                variant={emotionStep === 'before' ? 
-                  (selectedBeforeEmotion === emotion ? 'default' : 'outline') : 
-                  (selectedAfterEmotion === emotion ? 'default' : 'outline')
+                variant={
+                  (emotionStep === 'before' ? selectedBeforeEmotion : selectedAfterEmotion) === emotion 
+                    ? "default" 
+                    : "outline"
                 }
-                className={cn(
-                  "h-auto py-3 transition-all",
-                  emotionStep === 'before' ? 
-                    (selectedBeforeEmotion === emotion ? 'bg-primary text-primary-foreground' : '') : 
-                    (selectedAfterEmotion === emotion ? 'bg-primary text-primary-foreground' : '')
-                )}
                 onClick={() => selectEmotion(emotion)}
+                className="h-12 text-sm"
               >
                 {emotion}
               </Button>
             ))}
           </div>
           
-          <DialogFooter className="sm:justify-center">
+          <DialogFooter>
             <Button 
-              type="button" 
-              disabled={emotionStep === 'before' ? !selectedBeforeEmotion : !selectedAfterEmotion}
               onClick={handleEmotionCheckInComplete}
-              className="w-full sm:w-auto"
+              disabled={
+                (emotionStep === 'before' && !selectedBeforeEmotion) ||
+                (emotionStep === 'after' && !selectedAfterEmotion)
+              }
+              className="w-full"
             >
-              {emotionStep === 'before' ? 'Next' : 'Complete'}
+              {emotionStep === 'before' ? 'Continue' : 'Complete Prayer'}
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
-      
-      <Card className="mb-4 shadow-sm border-border overflow-hidden relative">
-        {/* Confetti container */}
-        <div 
-          ref={confettiRef} 
-          className="absolute inset-0 overflow-hidden pointer-events-none z-10"
-        />
-        
-        {/* Celebration overlay */}
-        <div 
-          className={cn(
-            "absolute inset-0 bg-gradient-to-b from-primary/20 to-primary/5 flex flex-col items-center justify-center z-20 transition-opacity duration-300",
-            showCelebration ? "opacity-100" : "opacity-0 pointer-events-none"
-          )}
-        >
-          <div className="bg-background/90 p-5 rounded-xl shadow-lg text-center max-w-xs animate-bounce-slow">
-            <div className="text-4xl mb-3">🎉</div>
-            <h3 className="text-xl font-bold text-primary mb-1">Prayer Completed!</h3>
-            <p className="text-sm">{celebrationMessage}</p>
-          </div>
-        </div>
-        
-        <CardContent className="p-6">
-          <div className="text-center">
-            <h3 className="text-lg font-semibold uppercase mb-2">NEXT PRAYER: <span className="text-primary">{nextPrayer.name}</span></h3>
-            <div className="text-5xl font-bold text-primary my-6 tracking-wider">
-              {timeRemaining}
-            </div>
-            <div className="grid grid-cols-2 gap-3 mt-4">
-              <Button 
-                className="py-6 text-base font-semibold bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary shadow-md transition-all hover:scale-105 active:scale-95 h-[60px]" 
-                onClick={() => handlePrayerComplete(nextPrayer.id)}
-                disabled={showCelebration}
-              >
-                <span className="mr-2">✓</span> I PRAYED
-              </Button>
-              <Button 
-                variant="outline" 
-                className="py-6 text-base font-semibold border-2 hover:bg-secondary/30 transition-all hover:scale-105 active:scale-95 h-[60px]"
-                onClick={() => alert(`We'll remind you before ${nextPrayer.name}`)}
-                disabled={showCelebration}
-              >
-                REMIND ME <span className="ml-2">⏰</span>
-              </Button>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
     </>
   );
 }

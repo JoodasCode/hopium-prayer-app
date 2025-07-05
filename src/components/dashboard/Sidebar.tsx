@@ -64,14 +64,14 @@ export function Sidebar({ className }: SidebarProps) {
           </Button>
         </SheetTrigger>
         <SheetContent side="left" className="p-0">
-          <MobileSidebar routes={routes} pathname={pathname} />
+          <MobileSidebar routes={routes} pathname={pathname || ''} />
         </SheetContent>
       </Sheet>
 
       {/* Desktop Sidebar */}
       <div className={cn("hidden md:flex md:w-64 md:flex-col md:fixed md:inset-y-0", className)}>
         <div className="flex-1 flex flex-col min-h-0 border-r border-border bg-card">
-          <DesktopSidebar routes={routes} pathname={pathname} />
+          <DesktopSidebar routes={routes} pathname={pathname || ''} />
         </div>
       </div>
     </>

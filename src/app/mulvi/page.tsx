@@ -159,42 +159,38 @@ export default function MulviPage() {
 
   return (
     <div className="h-screen bg-background flex flex-col">
-      {/* Header */}
-      <header className="flex items-center gap-4 p-4 border-b bg-card/50 backdrop-blur-sm">
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => router.push('/dashboard')}
-          className="shrink-0"
-        >
-          <ArrowLeft className="h-5 w-5" />
-        </Button>
-        
-        <div className="flex items-center gap-3 flex-1 min-w-0">
-          <Avatar className="h-10 w-10 shrink-0">
-            <AvatarImage src="/mulvi-avatar.png" alt="Mulvi" />
-            <AvatarFallback className="bg-primary text-primary-foreground">
-              <Bot className="h-5 w-5" />
-            </AvatarFallback>
-          </Avatar>
-          
-          <div className="flex-1 min-w-0">
-            <h1 className="font-semibold text-lg leading-none">Mulvi</h1>
-            <p className="text-sm text-muted-foreground truncate">
-              Your AI spiritual companion
-            </p>
+      {/* Fixed Header - Updated to match dashboard design */}
+      <header className="sticky top-0 z-50 bg-gradient-to-b from-chart-1/8 to-transparent pt-safe-top pb-6 px-4 backdrop-blur-sm border-b border-border/20">
+        <div className="max-w-md mx-auto">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => router.push('/dashboard')}
+                className="touch-target"
+              >
+                <ArrowLeft className="h-5 w-5 text-muted-foreground" />
+              </Button>
+              <div className="w-10 h-10 rounded-full bg-chart-1/15 flex items-center justify-center">
+                <Bot className="h-5 w-5 text-chart-1" />
+              </div>
+              <div>
+                <h1 className="text-lg font-semibold text-foreground">Mulvi</h1>
+                <p className="text-sm text-muted-foreground">Your AI spiritual companion</p>
+              </div>
+            </div>
+            <Badge variant="secondary" className="shrink-0">
+              <Sparkles className="h-3 w-3 mr-1" />
+              AI
+            </Badge>
           </div>
-          
-          <Badge variant="secondary" className="shrink-0">
-            <Sparkles className="h-3 w-3 mr-1" />
-            AI
-          </Badge>
         </div>
       </header>
 
       {/* Chat Messages */}
-      <ScrollArea className="flex-1 p-4 sm:p-6">
-        <div className="space-y-6 max-w-3xl mx-auto w-full">
+      <ScrollArea className="flex-1 px-4 py-2">
+        <div className="space-y-4 max-w-3xl mx-auto w-full">
           {/* Insights as chat messages - Only show if we have insights */}
           {insights && insights.length > 0 && (
             <div className="space-y-4">
@@ -331,28 +327,32 @@ export default function MulviPage() {
         </div>
       </ScrollArea>
       
-      {/* Input Area */}
-      <div className="p-4 sm:p-6 border-t bg-card/50 backdrop-blur-sm safe-area-bottom">
-        <div className="max-w-3xl mx-auto w-full">
+      {/* Input Area - Fixed mobile layout */}
+      <div className="border-t bg-card/50 backdrop-blur-sm">
+        <div className="p-3 max-w-3xl mx-auto w-full">
           <form 
             onSubmit={(e) => {
               e.preventDefault();
               handleSendMessage();
             }}
-            className="flex gap-3 items-center"
+            className="flex gap-3 items-end"
           >
             <div className="flex-1 relative">
               <Textarea
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyPress={handleKeyPress}
-                placeholder="Ask Mulvi about prayers, Islamic guidance, or spiritual questions..."
-                className="min-h-[56px] max-h-32 resize-none rounded-2xl border-2 px-4 sm:px-5 py-4 pr-14 sm:pr-16 text-base leading-normal transition-all duration-200 focus:border-primary/50 focus:ring-0 placeholder:text-muted-foreground/60 w-full"
+                placeholder="Ask Mulvi anything..."
+                className="min-h-[48px] max-h-32 resize-none rounded-2xl border-2 border-border px-4 py-3 pr-14 text-sm font-normal leading-relaxed transition-all duration-200 focus:border-primary focus:ring-0 placeholder:text-muted-foreground/60 w-full overflow-hidden bg-background text-foreground shadow-sm text-center"
                 rows={1}
                 style={{
-                  lineHeight: '1.5',
-                  paddingTop: '16px',
-                  paddingBottom: '16px'
+                  fontFamily: 'var(--font-sans)',
+                  WebkitFontSmoothing: 'antialiased',
+                  MozOsxFontSmoothing: 'grayscale',
+                  textAlign: 'center',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
                 }}
               />
               <Button
@@ -360,7 +360,7 @@ export default function MulviPage() {
                 disabled={!input.trim() || isTyping || isCreatingConversation}
                 size="icon"
                 className={cn(
-                  "absolute right-3 top-1/2 -translate-y-1/2 h-10 w-10 rounded-xl transition-all duration-200 shadow-sm",
+                  "absolute right-2 top-1/2 -translate-y-1/2 h-9 w-9 rounded-xl transition-all duration-200 shadow-sm",
                   input.trim() && !isTyping && !isCreatingConversation
                     ? "bg-primary hover:bg-primary/90 scale-100 shadow-primary/20" 
                     : "bg-muted-foreground/30 scale-90 shadow-none"
