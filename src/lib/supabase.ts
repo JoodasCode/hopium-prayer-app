@@ -1,13 +1,54 @@
-import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import { createClient } from '@supabase/supabase-js';
 import type { Database } from '@/types/supabase';
 import type { User, UserSettings } from '@/types';
 
-// These environment variables will need to be set in .env.local
+// Environment validation
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL as string;
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY as string;
 
+// Validate required environment variables
+if (!supabaseUrl) {
+  throw new Error('Missing NEXT_PUBLIC_SUPABASE_URL environment variable');
+}
+
+if (!supabaseAnonKey) {
+  throw new Error('Missing NEXT_PUBLIC_SUPABASE_ANON_KEY environment variable');
+}
+
+// Validate URL format
+if (!supabaseUrl.startsWith('https://') || !supabaseUrl.includes('.supabase.co')) {
+  throw new Error('Invalid Supabase URL format');
+}
+
+// Security configuration
+const supabaseConfig = {
+  auth: {
+    persistSession: true,
+    autoRefreshToken: true,
+    detectSessionInUrl: true,
+    // Security settings
+    flowType: 'pkce' as const,
+    storage: typeof window !== 'undefined' ? window.localStorage : undefined,
+  },
+  // Additional security options
+  realtime: {
+    params: {
+      eventsPerSecond: 10, // Rate limiting for realtime
+    },
+  },
+  global: {
+    headers: {
+      'X-Client-Info': 'lopi-app',
+    },
+  },
+};
+
 // Create Supabase client
-export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey);
+export const supabase = createClient<Database>(
+  supabaseUrl,
+  supabaseAnonKey,
+  supabaseConfig
+);
 
 // Authentication helper functions
 export const signUp = async (email: string, password: string) => {
