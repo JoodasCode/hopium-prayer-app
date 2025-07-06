@@ -5,7 +5,8 @@ const config: CapacitorConfig = {
   appName: 'Mulvi',
   webDir: 'out',
   server: {
-    androidScheme: 'https'
+    url: 'http://192.168.1.165:3000',
+    cleartext: true
   }
 };
 

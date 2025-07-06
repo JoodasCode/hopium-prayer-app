@@ -36,22 +36,40 @@ export type Tip = {
 
 export const tips: Tip[] = [
   {
-    id: 'consistency',
-    title: "Prayer Consistency",
-    content: "Set specific times for prayer to build a stronger habit.",
+    id: 'timing_improvement',
+    title: "Perfect Timing Streak! 🎯",
+    content: "You've been consistently praying Asr on time this week. Your punctuality has improved 2x!",
     icon: "⏰"
   },
   {
-    id: 'mindfulness',
-    title: "Mindful Prayer",
-    content: "Focus on being present during prayer for a deeper connection.",
-    icon: "🧘"
+    id: 'mindfulness_growth',
+    title: "Mindfulness Milestone 🧘",
+    content: "Your reflection quality scores show 40% deeper engagement compared to last month.",
+    icon: "🌟"
   },
   {
-    id: 'community',
-    title: "Prayer Community",
-    content: "Praying with others can strengthen your commitment and faith.",
-    icon: "👥"
+    id: 'community_impact',
+    title: "Community Leader 👥",
+    content: "You're in the top 15% of consistent prayers in your area. Others are inspired by your dedication!",
+    icon: "🏆"
+  },
+  {
+    id: 'streak_protection',
+    title: "Streak Guardian 🛡️",
+    content: "Your 12-day streak is strong! Consider setting a reminder for tomorrow's Fajr to maintain momentum.",
+    icon: "🔥"
+  },
+  {
+    id: 'emotional_pattern',
+    title: "Emotional Insight 💝",
+    content: "You feel most peaceful during Maghrib prayers. This timing aligns perfectly with your natural rhythm.",
+    icon: "😌"
+  },
+  {
+    id: 'milestone_approaching',
+    title: "Badge Incoming! 🎖️",
+    content: "Just 3 more consistent days to unlock your 'Two Weeks Strong' achievement badge.",
+    icon: "🎯"
   }
 ];
 

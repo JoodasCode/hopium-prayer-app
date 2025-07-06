@@ -1,4 +1,4 @@
-package com.yourname.lopi;
+package com.mulvi.app;
 
 import com.getcapacitor.BridgeActivity;
 

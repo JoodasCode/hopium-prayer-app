@@ -25,18 +25,10 @@ import { usePrayerWithRecords } from '@/hooks/usePrayerWithRecords';
 import { MulviSkeleton } from '@/components/skeletons/MulviSkeleton';
 
 export default function MulviPage() {
+  // ALL HOOKS MUST BE AT THE TOP - NO EXCEPTIONS
   const router = useRouter();
   const { user, isLoading: authLoading } = useAuth();
   const userId = user?.id;
-  
-  // Get real user data
-  const { userStats, isLoading: statsLoading } = useUserStats(userId);
-  const { todaysProgress, nextPrayer, isLoading: prayerLoading } = usePrayerWithRecords({ userId });
-  
-  // Show loading state while data is loading
-  if (authLoading || statsLoading || prayerLoading) {
-    return <MulviSkeleton />;
-  }
   
   const [input, setInput] = useState('');
   const [messages, setMessages] = useState<Array<{id: string, content: string, role: 'user' | 'assistant', created_at: string}>>([
@@ -48,16 +40,27 @@ export default function MulviPage() {
     }
   ]);
   const [isTyping, setIsTyping] = useState(false);
-
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  
+  // Custom hooks - these MUST be called unconditionally
+  const { userStats, isLoading: statsLoading } = useUserStats(userId);
+  const { todaysProgress, nextPrayer, isLoading: prayerLoading } = usePrayerWithRecords({ userId });
+  
+  // useEffect MUST be called unconditionally
+  useEffect(() => {
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
+    }
+  }, [messages, isTyping]);
+
+  // NOW we can do conditional rendering
+  if (authLoading || statsLoading || prayerLoading) {
+    return <MulviSkeleton />;
+  }
   
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
-
-  useEffect(() => {
-    scrollToBottom();
-  }, [messages, isTyping]);
 
   const handleSendMessage = async () => {
     if (!input.trim() || isTyping) return;

@@ -57,3 +57,6 @@ trace
 
 # Package files that shouldn't be tracked
 package-lock.json
+
+# Local Netlify folder
+.netlify

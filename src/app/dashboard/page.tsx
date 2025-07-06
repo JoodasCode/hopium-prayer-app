@@ -157,8 +157,8 @@ export default function DashboardPage() {
   };
 
   // Enhanced manual Qada prayer selection
-  const handleManualQadaPrayerSelect = (prayer: Prayer) => {
-    setSelectedManualQadaPrayer(prayer);
+  const handleManualQadaPrayerSelect = (prayer: Prayer | any) => {
+    setSelectedManualQadaPrayer(prayer as Prayer);
   };
 
   // Enhanced prayer recovery function
@@ -758,129 +758,134 @@ export default function DashboardPage() {
           {/* Progress Card */}
           <Card className="bg-card border-border shadow-sm">
             <CardContent className="p-6">
-              <div className="flex items-center justify-between mb-4">
+              {/* Header with Period Exemption */}
+              <div className="flex items-center justify-between mb-6">
                 <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-full bg-chart-2/20 flex items-center justify-center">
-                    <Target className="h-4 w-4 text-chart-2" />
+                  <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
+                    <Target className="h-4 w-4 text-primary" />
                   </div>
                   <h3 className="font-medium text-foreground">Today's Progress</h3>
                 </div>
-                <div className="flex items-center gap-4">
-                  <div className="text-right relative">
-                    {/* Period Exemption Banner */}
-                    {settings?.period_exemption && isCurrentlyExempt() && (
-                      <div className="absolute -top-2 -right-2 bg-purple-100 text-purple-700 text-xs px-2 py-1 rounded-full border border-purple-200 z-10">
-                        Exempted
-                      </div>
-                    )}
-                    
-                    <div className="text-2xl font-bold text-chart-2">
-                      {userStats?.current_streak || 0}
-                    </div>
-                    <div className="text-sm text-muted-foreground">day streak</div>
+                
+                {settings?.period_exemption && isCurrentlyExempt() && (
+                  <div className="bg-purple-100 text-purple-700 text-xs px-3 py-1.5 rounded-full border border-purple-200">
+                    🌙 Exempted
                   </div>
-                  
-                  <div className="flex items-center gap-2">
-                    <div className="w-8 h-8 rounded-full bg-chart-3/20 flex items-center justify-center">
-                      <Flame className="h-4 w-4 text-chart-3" />
-                    </div>
-                    
-                    {/* Streak Protection Shield */}
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={handleStreakProtectionClick}
-                      className={cn(
-                        "w-8 h-8 p-0 rounded-full transition-all duration-200",
-                        streakAtRisk 
-                          ? "bg-amber-100 hover:bg-amber-200 text-amber-600" 
-                          : "bg-primary/10 hover:bg-primary/20 text-primary"
-                      )}
-                      title={streakAtRisk ? "Your streak is at risk! Click to protect it." : "Streak Protection"}
-                    >
-                      <Shield className={cn(
-                        "h-4 w-4 transition-all duration-200",
-                        streakAtRisk && "animate-pulse"
-                      )} />
-                    </Button>
+                )}
+              </div>
+
+              {/* Hero Metric - Daily Progress */}
+              <div className="text-center mb-5">
+                <div className="text-4xl font-bold text-primary mb-2 tracking-tight">
+                  {todaysPrayerCount}<span className="text-xl text-muted-foreground font-semibold">/{totalPrayersToday}</span>
+                </div>
+                <div className="text-base text-muted-foreground mb-3 font-medium">prayers completed today</div>
+                
+                {/* Prominent Progress Bar */}
+                <div className="relative max-w-xs mx-auto">
+                  <Progress 
+                    value={progressPercentage} 
+                    className="h-3 mb-2 shadow-sm"
+                  />
+                  <div className="text-sm font-medium text-primary">
+                    {totalPrayersToday - todaysPrayerCount > 0 
+                      ? `${totalPrayersToday - todaysPrayerCount} more to complete today` 
+                      : "🎉 All prayers completed!"}
                   </div>
                 </div>
               </div>
-              
-              <div className="space-y-2">
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-muted-foreground">
-                    {todaysPrayerCount} of {totalPrayersToday} completed
-                  </span>
+
+              {/* Secondary Stats Row */}
+              <div className="flex items-center justify-between mb-5 p-3 bg-gradient-to-r from-muted/40 to-muted/20 rounded-lg border border-border/50">
+                <div className="flex items-center gap-4">
+                  {/* Streak - Secondary Position */}
+                  <div className="flex items-center gap-2">
+                    <div className="w-8 h-8 rounded-full bg-orange-100 flex items-center justify-center">
+                      <span className="text-base">🔥</span>
+                    </div>
+                    <div>
+                      <div className="text-base font-bold text-foreground">{userStats?.current_streak || 0}</div>
+                      <div className="text-xs text-muted-foreground font-medium">day streak</div>
+                    </div>
+                  </div>
+                  
+                  {/* Community Stats */}
+                  <div className="flex items-center gap-2">
+                    <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center">
+                      <span className="text-base">🕌</span>
+                    </div>
+                    <div>
+                      <div className="text-base font-bold text-foreground">{communityStats?.users_praying_now || 26}</div>
+                      <div className="text-xs text-muted-foreground font-medium">praying now</div>
+                    </div>
+                  </div>
                 </div>
-                <Progress 
-                  value={progressPercentage} 
-                  className="h-2"
-                />
-                <div className="flex items-center justify-between text-sm">
-                  <div className="text-muted-foreground">
-                    {communityStats?.users_praying_now || 26} community members praying now
-                  </div>
-                  <div className="flex gap-2">
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
-                      onClick={() => setShowGoalSettingModal(true)}
-                      className="text-xs h-6 px-2 text-chart-2 hover:bg-chart-2/10"
-                    >
-                      {hasActiveGoalOfType('consistent_7') || hasActiveGoalOfType('consistent_30') || hasActiveGoalOfType('streak_milestone') || hasActiveGoalOfType('custom_streak') ? 'Update Goal' : 'Set Goal'}
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="text-xs h-6 px-2 text-amber-600 border-amber-200 hover:bg-amber-100"
-                      onClick={handleQadaClick}
-                      title="Make up a missed prayer (Qada)"
-                    >
-                      <Clock className="h-4 w-4 mr-1" /> Qada
-                    </Button>
-                  </div>
+                
+                {/* Streak Protection - Integrated */}
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleStreakProtectionClick}
+                  className={cn(
+                    "h-9 px-3 rounded-lg transition-all duration-300 shadow-sm",
+                    streakAtRisk 
+                      ? "bg-gradient-to-r from-amber-100 to-amber-50 hover:from-amber-200 hover:to-amber-100 text-amber-700 border border-amber-300" 
+                      : "bg-gradient-to-r from-primary/10 to-primary/5 hover:from-primary/20 hover:to-primary/10 text-primary border border-primary/20"
+                  )}
+                  title={streakAtRisk ? "Your streak is at risk! Click to protect it." : "Streak Protection"}
+                >
+                  <span className={cn(
+                    "text-base mr-1.5 transition-all duration-200",
+                    streakAtRisk && "animate-pulse"
+                  )}>
+                    🛡️
+                  </span>
+                  <span className="text-xs font-semibold">
+                    {streakAtRisk ? "Protect" : "Shield"}
+                  </span>
+                </Button>
+              </div>
+
+              {/* Unified Action Section */}
+              <div className="space-y-3">
+                <div className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide">Quick Actions</div>
+                
+                <div className="grid grid-cols-2 gap-3">
+                  <Button 
+                    variant="outline" 
+                    onClick={() => setShowGoalSettingModal(true)}
+                    className="h-12 text-xs font-medium border-primary/30 hover:bg-primary/5 hover:border-primary/50 transition-all duration-200 rounded-lg shadow-sm hover:shadow-md"
+                  >
+                    <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center mr-2">
+                      <span className="text-sm">🎯</span>
+                    </div>
+                    <div className="text-left">
+                      <div className="text-xs text-muted-foreground font-medium uppercase tracking-wide">Goals</div>
+                      <div className="text-sm font-semibold">{hasActiveGoalOfType('consistent_7') || hasActiveGoalOfType('consistent_30') || hasActiveGoalOfType('streak_milestone') || hasActiveGoalOfType('custom_streak') ? 'Update' : 'Set Goal'}</div>
+                    </div>
+                  </Button>
+                  
+                  <Button
+                    variant="outline"
+                    onClick={handleQadaClick}
+                    className="h-12 text-xs font-medium border-amber-300 hover:bg-amber-50 hover:border-amber-400 transition-all duration-200 rounded-lg shadow-sm hover:shadow-md"
+                    title="Make up a missed prayer (Qada)"
+                  >
+                    <div className="w-6 h-6 rounded-full bg-amber-100 flex items-center justify-center mr-2">
+                      <span className="text-sm">⏰</span>
+                    </div>
+                    <div className="text-left">
+                      <div className="text-xs text-muted-foreground font-medium uppercase tracking-wide">Missed Prayer</div>
+                      <div className="text-sm font-semibold">Make up (Qada)</div>
+                    </div>
+                  </Button>
                 </div>
               </div>
             </CardContent>
           </Card>
 
-          {/* Smart Insight Card */}
-          <Card className="bg-card border-border shadow-sm cursor-pointer hover:shadow-md transition-shadow" onClick={() => setShowInsightsModal(true)}>
-            <CardContent className="p-6">
-              <div className="flex items-center gap-3 mb-4">
-                 <div className="w-8 h-8 rounded-full bg-chart-4/20 flex items-center justify-center">
-                   <Sparkles className="h-4 w-4 text-chart-4" />
-                 </div>
-                <div>
-                  <h3 className="font-medium text-foreground">Smart Insight</h3>
-                  <p className="text-sm text-muted-foreground">Personalized for you</p>
-                </div>
-              </div>
-              
-              <div className="flex items-start gap-3 p-4 bg-chart-5/10 rounded-lg">
-                 <div className="w-6 h-6 rounded-full bg-chart-5/20 flex items-center justify-center flex-shrink-0 mt-0.5">
-                   <TrendingUp className="h-3 w-3 text-chart-5" />
-                 </div>
-                <div>
-                  <p className="font-medium text-foreground mb-1">
-                    {insights && insights.length > 0 ? insights[0].title : "You're 5 days away from your first milestone!"}
-                  </p>
-                  <p className="text-sm text-muted-foreground">
-                    {insights && insights.length > 0 ? insights[0].description : "Keep going to unlock the Bronze Badge."}
-                  </p>
-                </div>
-              </div>
-              
-              <div className="flex justify-center mt-4 gap-1">
-                <div className="w-2 h-2 rounded-full bg-chart-1"></div>
-                <div className="w-2 h-2 rounded-full bg-muted"></div>
-                <div className="w-2 h-2 rounded-full bg-muted"></div>
-                <div className="w-2 h-2 rounded-full bg-muted"></div>
-                <div className="w-2 h-2 rounded-full bg-muted"></div>
-              </div>
-            </CardContent>
-          </Card>
+          {/* Smart Insight Card - Now with Claymorphism & Sliding */}
+          <SmartTip />
         </div>
       </main>
 
@@ -1028,7 +1033,7 @@ export default function DashboardPage() {
             <h3 className="font-medium mb-4 text-foreground">Select a missed prayer to make up</h3>
             <div className="space-y-2 max-h-64 overflow-y-auto">
               {safePrayers.length > 0 ? (
-                safePrayers.map((prayer) => (
+                safePrayers.map((prayer: any) => (
                   <Button
                     key={prayer.name + (typeof prayer.time === 'string' ? prayer.time : prayer.time.toISOString())}
                     variant="outline"

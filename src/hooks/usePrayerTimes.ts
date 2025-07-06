@@ -27,7 +27,7 @@ export interface UsePrayerTimesReturn {
   location: LocationData | null;
   isLoading: boolean;
   error: string | null;
-  refetch: () => void;
+  refreshPrayerTimes: () => void;
 }
 
 export function usePrayerTimes({ 
@@ -212,7 +212,7 @@ export function usePrayerTimes({
     location: userLocation || null,
     isLoading,
     error,
-    refetch: refetchPrayerData,
+    refreshPrayerTimes: refetchPrayerData,
   };
 }
 
