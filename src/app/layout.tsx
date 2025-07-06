@@ -55,7 +55,7 @@ export default function RootLayout({
         <meta name="mobile-web-app-capable" content="yes" />
         <link rel="manifest" href="/manifest.json" />
       </head>
-      <body className={`${inter.variable} font-sans`}>
+      <body className={`${inter.variable} font-sans`} suppressHydrationWarning>
         <ErrorBoundary>
           <Providers>
             {children}

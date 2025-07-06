@@ -48,7 +48,7 @@ export function usePrayerInsights(userId?: string): UsePrayerInsightsReturn {
         .from('prayer_records')
         .select('*')
         .eq('user_id', userId)
-        .gte('scheduled_time', sevenDaysAgo.toISOString());
+        .gte('created_at', sevenDaysAgo.toISOString());
 
       // Get today's prayer records
       const todayStart = new Date();
@@ -60,8 +60,8 @@ export function usePrayerInsights(userId?: string): UsePrayerInsightsReturn {
         .from('prayer_records')
         .select('*')
         .eq('user_id', userId)
-        .gte('scheduled_time', todayStart.toISOString())
-        .lt('scheduled_time', todayEnd.toISOString());
+        .gte('created_at', todayStart.toISOString())
+        .lt('created_at', todayEnd.toISOString());
 
       // Get last 30 days for deeper analysis
       const thirtyDaysAgo = new Date();
@@ -71,7 +71,7 @@ export function usePrayerInsights(userId?: string): UsePrayerInsightsReturn {
         .from('prayer_records')
         .select('*')
         .eq('user_id', userId)
-        .gte('scheduled_time', thirtyDaysAgo.toISOString());
+        .gte('created_at', thirtyDaysAgo.toISOString());
 
       // INSIGHT GENERATION LOGIC - Aim for 3-5 quality insights
 

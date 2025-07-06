@@ -6,117 +6,126 @@
 'use client';
 
 import { useEffect } from 'react';
-import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { CheckCircle, Home } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { Card, CardContent } from '@/components/ui/card';
+import { CheckCircle, Sparkles, TrendingUp, Trophy } from 'lucide-react';
+import confetti from 'canvas-confetti';
 
 interface CompletionStepProps {
-  onComplete: () => void;
-  userName: string;
+  onNext: () => void;
+  data?: any;
+  isLoading?: boolean;
 }
 
-export function CompletionStep({ 
-  onComplete,
-  userName = 'friend'
-}: CompletionStepProps) {
-  // Provide celebratory haptic feedback on mount
-  useEffect(() => {
-    if (navigator.vibrate) {
-      navigator.vibrate([100, 50, 100, 50, 100]);
-    }
-  }, []);
+export default function CompletionStep({ onNext, data, isLoading }: CompletionStepProps) {
   
+  useEffect(() => {
+    // Trigger celebration animation
+    const timer = setTimeout(() => {
+      confetti({
+        particleCount: 100,
+        spread: 70,
+        origin: { y: 0.6 }
+      });
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, []);
+
   return (
-    <Card className="mb-6">
-      <CardContent className="pt-6 pb-6 space-y-6">
-        <motion.div
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.5 }}
-          className="space-y-4 text-center"
-        >
-          <div className="flex justify-center mb-6">
-            <motion.div 
-              className="p-4 bg-primary/20 rounded-full"
-              initial={{ scale: 0.8 }}
-              animate={{ scale: 1.1 }}
-              transition={{ 
-                duration: 0.6, 
-                repeat: 1, 
-                repeatType: "reverse",
-                ease: "easeOut" 
-              }}
-            >
-              <CheckCircle className="h-12 w-12 text-primary" />
-            </motion.div>
+    <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4">
+      <div className="w-full max-w-md space-y-8">
+        {/* Success Animation */}
+        <div className="text-center space-y-6">
+          <div className="w-24 h-24 mx-auto bg-green-100 rounded-full flex items-center justify-center">
+            <CheckCircle className="h-12 w-12 text-green-600" />
           </div>
           
-          <motion.h2 
-            className="text-2xl font-semibold text-center"
-            initial={{ y: 20, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            transition={{ delay: 0.3, duration: 0.5 }}
-          >
-            Your Journey Begins
-          </motion.h2>
-          
-          <motion.p 
-            className="text-center text-muted-foreground"
-            initial={{ y: 20, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            transition={{ delay: 0.5, duration: 0.5 }}
-          >
-            Thank you, {userName}! Your spiritual path is set.
-          </motion.p>
-          
-          <motion.div
-            className="py-8 space-y-4"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.7, duration: 0.5 }}
-          >
-            <div className="flex items-center justify-center space-x-2 text-sm">
-              <div className="w-3 h-3 rounded-full bg-primary" />
-              <p>Your preferences have been saved</p>
-            </div>
+          <div className="space-y-3">
+            <h1 className="text-3xl font-bold text-foreground">
+              Welcome to Mulvi! 🎉
+            </h1>
+            <p className="text-lg text-muted-foreground">
+              Your spiritual journey starts now
+            </p>
+          </div>
+        </div>
+
+        {/* Achievement Summary */}
+        <Card className="border-primary/20 bg-gradient-to-br from-primary/5 to-transparent">
+          <CardContent className="p-6 space-y-4">
+            <h3 className="font-semibold text-foreground text-center mb-4">
+              You've already achieved so much:
+            </h3>
             
-            <div className="flex items-center justify-center space-x-2 text-sm">
-              <div className="w-3 h-3 rounded-full bg-primary" />
-              <p>Your intention has been set</p>
+            <div className="space-y-3">
+              <div className="flex items-center gap-3 p-3 bg-background/50 rounded-lg">
+                <CheckCircle className="h-5 w-5 text-green-600" />
+                <span className="text-sm font-medium">First prayer logged</span>
+                <span className="ml-auto text-xs text-primary">+25 XP</span>
+              </div>
+              
+              <div className="flex items-center gap-3 p-3 bg-background/50 rounded-lg">
+                <TrendingUp className="h-5 w-5 text-blue-600" />
+                <span className="text-sm font-medium">1-day streak started</span>
+                <span className="ml-auto text-xs text-primary">🔥</span>
+              </div>
+              
+              <div className="flex items-center gap-3 p-3 bg-background/50 rounded-lg">
+                <Trophy className="h-5 w-5 text-yellow-600" />
+                <span className="text-sm font-medium">"First Steps" badge earned</span>
+                <span className="ml-auto text-xs text-primary">🏆</span>
+              </div>
+              
+              <div className="flex items-center gap-3 p-3 bg-background/50 rounded-lg">
+                <Sparkles className="h-5 w-5 text-purple-600" />
+                <span className="text-sm font-medium">Onboarding completed</span>
+                <span className="ml-auto text-xs text-primary">+50 XP</span>
+              </div>
             </div>
-            
-            <div className="flex items-center justify-center space-x-2 text-sm">
-              <div className="w-3 h-3 rounded-full bg-primary" />
-              <p>Mulvi is ready to support you</p>
+          </CardContent>
+        </Card>
+
+        {/* Next Steps Preview */}
+        <Card>
+          <CardContent className="p-6 space-y-4">
+            <h3 className="font-semibold text-foreground">What's next?</h3>
+            <div className="space-y-2 text-sm text-muted-foreground">
+              <p>• Set up your next prayer reminder</p>
+              <p>• Explore your personalized dashboard</p>
+              <p>• Check out your analytics and insights</p>
+              <p>• Join the community leaderboard</p>
             </div>
-          </motion.div>
-          
-          <motion.div
-            initial={{ y: 20, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            transition={{ delay: 0.9, duration: 0.5 }}
-          >
-            <Button 
-              size="lg"
-              onClick={onComplete}
-              className="px-8"
-            >
-              <Home className="mr-2 h-4 w-4" />
-              Enter Mulvi
-            </Button>
-          </motion.div>
-          
-          <motion.p 
-            className="text-xs text-muted-foreground mt-4"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 0.7 }}
-            transition={{ delay: 1.2, duration: 0.5 }}
-          >
-            You can adjust all settings in your profile anytime
-          </motion.p>
-        </motion.div>
-      </CardContent>
-    </Card>
+          </CardContent>
+        </Card>
+
+        {/* CTA Button */}
+        <Button 
+          onClick={onNext}
+          disabled={isLoading}
+          size="lg"
+          className="w-full h-12 text-base font-medium"
+        >
+          {isLoading ? (
+            <div className="w-5 h-5 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin" />
+          ) : (
+            <>
+              Enter Dashboard
+              <Sparkles className="ml-2 h-4 w-4" />
+            </>
+          )}
+        </Button>
+
+        {/* Encouragement */}
+        <div className="text-center space-y-2">
+          <p className="text-sm text-muted-foreground">
+            Your spiritual journey is unique and personal
+          </p>
+          <p className="text-xs text-muted-foreground">
+            Take it one prayer at a time 🤲
+          </p>
+        </div>
+      </div>
+    </div>
   );
 }

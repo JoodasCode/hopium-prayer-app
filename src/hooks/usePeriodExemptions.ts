@@ -127,12 +127,18 @@ export const usePeriodExemptions = (userId: string | undefined) => {
     });
   };
 
+  const isCurrentlyExempt = (): boolean => {
+    const today = new Date().toISOString().split('T')[0];
+    return isDateExempt(today);
+  };
+
   return {
     exemptions,
     isLoading,
     addExemption,
     updateExemption,
     deleteExemption,
-    isDateExempt
+    isDateExempt,
+    isCurrentlyExempt
   };
 }; 

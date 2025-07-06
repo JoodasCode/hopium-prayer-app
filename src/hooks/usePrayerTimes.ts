@@ -2,120 +2,54 @@
 
 import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { useAuth } from './useAuth';
 import { 
   calculatePrayerTimes, 
+  generatePrayersForDate, 
   getNextPrayer, 
-  generatePrayersForDate,
   getCurrentLocation,
-  getLocationFromIP 
+  type CalculationMethodKey
 } from '@/lib/prayerTimes';
-import type { PrayerTimes, LocationData, Prayer, UsePrayerTimesReturn } from '@/types';
+import type { LocationData, PrayerTimes, Prayer } from '@/types';
 import { supabase } from '@/lib/supabase';
 
-interface UsePrayerTimesProps {
+export interface UsePrayerTimesProps {
   userId?: string;
   date?: Date;
   location?: LocationData;
+  calculationMethod?: CalculationMethodKey;
+}
+
+export interface UsePrayerTimesReturn {
+  prayerTimes: PrayerTimes | null;
+  prayers: Prayer[];
+  nextPrayer: Prayer | null;
+  location: LocationData | null;
+  isLoading: boolean;
+  error: string | null;
+  refetch: () => void;
 }
 
 export function usePrayerTimes({ 
   userId, 
   date = new Date(),
-  location 
+  location,
+  calculationMethod = 'MWL'
 }: UsePrayerTimesProps = {}): UsePrayerTimesReturn {
-  const [userLocation, setUserLocation] = useState<LocationData | null>(location || null);
-  const [locationError, setLocationError] = useState<string | null>(null);
+  const { user } = useAuth();
+  const effectiveUserId = userId || user?.id;
 
-  // Get user location if not provided
-  useEffect(() => {
-    if (!location && !userLocation) {
-      const getLocation = async () => {
-        try {
-          // Try GPS first with timeout
-          const gpsLocation = await Promise.race([
-            getCurrentLocation(),
-            new Promise((_, reject) => 
-              setTimeout(() => reject(new Error('GPS timeout')), 5000)
-            )
-          ]);
-          setUserLocation(gpsLocation as LocationData);
-          setLocationError(null);
-        } catch (gpsError) {
-          try {
-            // Fallback to IP location with timeout
-            const ipLocation = await Promise.race([
-              getLocationFromIP(),
-              new Promise((_, reject) => 
-                setTimeout(() => reject(new Error('IP location timeout')), 3000)
-              )
-            ]);
-            setUserLocation(ipLocation as LocationData);
-            setLocationError(null);
-          } catch (ipError) {
-            setLocationError('Unable to determine location. Using default location.');
-            // Use default location (London for testing)
-            setUserLocation({
-              latitude: 51.5074,
-              longitude: -0.1278,
-              city: 'London',
-              country: 'United Kingdom'
-            });
-          }
-        }
-      };
-
-      getLocation();
-    }
-  }, [location, userLocation]);
-
-  // Fetch prayer times
-  const {
-    data: prayerTimes,
-    isLoading: prayerTimesLoading,
-    error: prayerTimesError,
-    refetch: refetchPrayerTimes
-  } = useQuery({
-    queryKey: ['prayerTimes', userLocation, date.toDateString()],
-    queryFn: () => {
-      if (!userLocation) throw new Error('Location not available');
-      return calculatePrayerTimes(userLocation, date);
-    },
-    enabled: !!userLocation,
-    staleTime: 60 * 60 * 1000, // 1 hour
-    refetchOnWindowFocus: false,
-  });
-
-  // Fetch next prayer
-  const {
-    data: nextPrayerData,
-    isLoading: nextPrayerLoading,
-    error: nextPrayerError,
-  } = useQuery({
-    queryKey: ['nextPrayer', userLocation, new Date().toISOString()],
-    queryFn: () => {
-      if (!userLocation) throw new Error('Location not available');
-      return getNextPrayer(userLocation, new Date());
-    },
-    enabled: !!userLocation,
-    refetchInterval: 60 * 1000, // Update every minute
-    staleTime: 30 * 1000, // 30 seconds
-  });
-
-  // Fetch completed prayers for the user
-  const {
-    data: completedPrayers = [],
-    isLoading: completedPrayersLoading,
-  } = useQuery({
-    queryKey: ['completedPrayers', userId, date.toDateString()],
+  // Get user's completed prayers for the day
+  const { data: completedPrayers = [] } = useQuery({
+    queryKey: ['completedPrayers', effectiveUserId, date.toISOString().split('T')[0]],
     queryFn: async () => {
-      if (!userId) return [];
+      if (!effectiveUserId) return [];
       
-      // Fetch completed prayers from Supabase for the specific date
       const dateStr = date.toISOString().split('T')[0];
       const { data, error } = await supabase
         .from('prayer_records')
         .select('prayer_type, id')
-        .eq('user_id', userId)
+        .eq('user_id', effectiveUserId)
         .eq('completed', true)
         .gte('scheduled_time', `${dateStr}T00:00:00`)
         .lte('scheduled_time', `${dateStr}T23:59:59`);
@@ -125,51 +59,160 @@ export function usePrayerTimes({
         return [];
       }
       
-      // Return array of prayer IDs in the format expected by generatePrayersForDate
-      return (data || []).map(record => `${record.prayer_type}-${dateStr}`);
+      return (data || []).map(record => `${record.prayer_type.toLowerCase()}-${dateStr}`);
     },
-    enabled: !!userId,
+    enabled: !!effectiveUserId,
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
 
-  // Generate prayers for the date
+  // Get user location with caching and fallbacks
   const {
-    data: prayers,
-    isLoading: prayersLoading,
-    error: prayersError,
+    data: userLocation,
+    isLoading: locationLoading,
+    error: locationError
   } = useQuery({
-    queryKey: ['prayers', userLocation, date.toDateString(), completedPrayers],
-    queryFn: () => {
-      if (!userLocation) throw new Error('Location not available');
-      return generatePrayersForDate(userLocation, date, completedPrayers);
+    queryKey: ['userLocation', effectiveUserId],
+    queryFn: async () => {
+      try {
+        // Use provided location or get current location
+        const loc = location || await getCurrentLocation(effectiveUserId);
+        console.log(`📍 Location resolved:`, loc.city, loc.country);
+        return loc;
+      } catch (error) {
+        console.error('❌ Location detection failed:', error);
+        // Return fallback location instead of throwing
+        return {
+          latitude: 21.4225,
+          longitude: 39.8262,
+          city: 'Mecca',
+          country: 'Saudi Arabia',
+          source: 'manual' as const,
+        };
+      }
     },
-    enabled: !!userLocation,
-    staleTime: 60 * 1000, // 1 minute
+    staleTime: 30 * 60 * 1000, // 30 minutes - location doesn't change often
+    gcTime: 2 * 60 * 60 * 1000, // 2 hours garbage collection
+    refetchOnWindowFocus: false,
+    retry: (failureCount, error) => {
+      // Don't retry location errors, use fallback instead
+      console.warn(`Location query failed (attempt ${failureCount + 1}):`, error);
+      return false;
+    },
   });
 
-  // Create next prayer object
-  const nextPrayer: Prayer | null = nextPrayerData && prayers ? 
-    prayers.find(p => p.name === nextPrayerData.prayer && p.status !== 'completed') || null : null;
+  // Single unified query for all prayer data to avoid multiple API calls
+  const {
+    data: prayerData,
+    isLoading: prayerDataLoading,
+    error: prayerDataError,
+    refetch: refetchPrayerData
+  } = useQuery({
+    queryKey: [
+      'prayerData', 
+      userLocation?.latitude, 
+      userLocation?.longitude, 
+      date.toISOString().split('T')[0],
+      calculationMethod,
+      completedPrayers.length // Include completed prayers count to trigger refetch when prayers are marked complete
+    ],
+    queryFn: async () => {
+      if (!userLocation) {
+        throw new Error('Location not available for prayer times calculation');
+      }
+      
+      console.log(`🕌 Calculating prayer data for ${userLocation.city} on ${date.toISOString().split('T')[0]}`);
+      
+      try {
+        // Get prayer times once and derive everything else from it
+        const prayerTimes = await Promise.race([
+          calculatePrayerTimes(userLocation, date, calculationMethod),
+          new Promise((_, reject) => 
+            setTimeout(() => reject(new Error('Prayer times calculation timeout')), 15000)
+          )
+        ]) as PrayerTimes;
+        
+        // Generate prayers from the prayer times data (using correct parameters)
+        const prayers = await generatePrayersForDate(userLocation, date, completedPrayers, calculationMethod);
+        
+        // Find next prayer from the generated prayers
+        const now = new Date();
+        const nextPrayer = prayers.find(p => p.time > now && p.status !== 'completed') || null;
+        
+        console.log(`✅ Prayer data calculated successfully for ${userLocation.city}`);
+        
+        return {
+          prayerTimes,
+          prayers: prayers as Prayer[],
+          nextPrayer,
+          location: userLocation,
+        };
+      } catch (error) {
+        console.error('❌ Prayer data calculation failed:', error);
+        
+        // Return fallback data instead of throwing
+        const fallbackTime = new Date();
+        const fallbackPrayerTimes: PrayerTimes = {
+          fajr: new Date(fallbackTime.getFullYear(), fallbackTime.getMonth(), fallbackTime.getDate(), 5, 30),
+          dhuhr: new Date(fallbackTime.getFullYear(), fallbackTime.getMonth(), fallbackTime.getDate(), 12, 30),
+          asr: new Date(fallbackTime.getFullYear(), fallbackTime.getMonth(), fallbackTime.getDate(), 15, 45),
+          maghrib: new Date(fallbackTime.getFullYear(), fallbackTime.getMonth(), fallbackTime.getDate(), 18, 15),
+          isha: new Date(fallbackTime.getFullYear(), fallbackTime.getMonth(), fallbackTime.getDate(), 20, 0),
+          sunrise: new Date(fallbackTime.getFullYear(), fallbackTime.getMonth(), fallbackTime.getDate(), 6, 0),
+          sunset: new Date(fallbackTime.getFullYear(), fallbackTime.getMonth(), fallbackTime.getDate(), 18, 0),
+        };
+        
+        const fallbackPrayers: Prayer[] = [
+          { id: 'fajr', name: 'Fajr', time: fallbackPrayerTimes.fajr, scheduledTime: fallbackPrayerTimes.fajr.toISOString(), completed: false, status: 'upcoming' },
+          { id: 'dhuhr', name: 'Dhuhr', time: fallbackPrayerTimes.dhuhr, scheduledTime: fallbackPrayerTimes.dhuhr.toISOString(), completed: false, status: 'upcoming' },
+          { id: 'asr', name: 'Asr', time: fallbackPrayerTimes.asr, scheduledTime: fallbackPrayerTimes.asr.toISOString(), completed: false, status: 'upcoming' },
+          { id: 'maghrib', name: 'Maghrib', time: fallbackPrayerTimes.maghrib, scheduledTime: fallbackPrayerTimes.maghrib.toISOString(), completed: false, status: 'upcoming' },
+          { id: 'isha', name: 'Isha', time: fallbackPrayerTimes.isha, scheduledTime: fallbackPrayerTimes.isha.toISOString(), completed: false, status: 'upcoming' },
+        ];
+        
+        console.warn('🔄 Using fallback prayer data due to API issues');
+        
+        return {
+          prayerTimes: fallbackPrayerTimes,
+          prayers: fallbackPrayers,
+          nextPrayer: fallbackPrayers.find(p => p.name === 'Dhuhr') || null,
+          location: userLocation,
+        };
+      }
+    },
+    enabled: !!userLocation, // Only run when we have a location
+    staleTime: 30 * 60 * 1000, // 30 minutes - prayer times are stable
+    gcTime: 2 * 60 * 60 * 1000, // 2 hours garbage collection
+    refetchOnWindowFocus: false,
+    refetchInterval: 60 * 1000, // Refresh every minute for next prayer updates
+    retry: (failureCount, error) => {
+      // Retry up to 2 times, but not for location errors
+      if (error?.message?.includes('Location not available')) {
+        return false;
+      }
+      return failureCount < 2;
+    },
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000), // Exponential backoff
+  });
 
-  // Only consider essential queries for loading state
-  const isLoading = !userLocation || prayersLoading;
-  const error = locationError || 
-    (prayerTimesError instanceof Error ? prayerTimesError.message : null) ||
-    (nextPrayerError instanceof Error ? nextPrayerError.message : null) ||
-    (prayersError instanceof Error ? prayersError.message : null);
+  // Extract data with fallbacks
+  const prayerTimes = prayerData?.prayerTimes || null;
+  const prayers = prayerData?.prayers || [];
+  const nextPrayer = prayerData?.nextPrayer || null;
 
-  const refreshPrayerTimes = async () => {
-    await refetchPrayerTimes();
-  };
+  // Consolidated loading state
+  const isLoading = locationLoading || (!!userLocation && prayerDataLoading);
+  
+  // Consolidated error state
+  const error = locationError?.message || prayerDataError?.message || null;
 
   return {
-    prayerTimes: prayerTimes || null,
+    prayerTimes,
+    prayers,
     nextPrayer,
-    prayers: prayers || [],
-    location: userLocation,
+    location: userLocation || null,
     isLoading,
     error,
-    refreshPrayerTimes,
+    refetch: refetchPrayerData,
   };
 }
 
@@ -188,7 +231,7 @@ export function useLocation() {
         setError(null);
       } catch (gpsError) {
         try {
-          const ipLocation = await getLocationFromIP();
+          const ipLocation = await getCurrentLocation();
           setLocation(ipLocation);
           setError(null);
         } catch (ipError) {

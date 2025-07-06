@@ -14,17 +14,17 @@ interface ProtectedRouteProps {
  * No UserStateContext dependency
  */
 export default function ProtectedRoute({ children }: ProtectedRouteProps) {
-  const { session, authLoading } = useAuth();
+  const { user, authLoading } = useAuth();
   const router = useRouter();
   const [isRedirecting, setIsRedirecting] = useState(false);
 
   useEffect(() => {
-    // Only redirect if we're sure there's no session and auth loading is complete
-    if (!authLoading && !session) {
+    // Only redirect if we're sure there's no user and auth loading is complete
+    if (!authLoading && !user) {
       setIsRedirecting(true);
       router.push('/login');
     }
-  }, [session, authLoading, router]);
+  }, [user, authLoading, router]);
 
   if (authLoading) {
     return (
@@ -37,7 +37,7 @@ export default function ProtectedRoute({ children }: ProtectedRouteProps) {
     );
   }
 
-  if (isRedirecting || !session) {
+  if (isRedirecting || !user) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">

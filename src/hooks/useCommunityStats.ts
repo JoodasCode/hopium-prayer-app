@@ -53,11 +53,13 @@ export function useCommunityStats(userId?: string): UseCommunityStatsReturn {
         .gte('completed_at', today.toISOString());
 
       // Get user's current stats for percentile calculation
-      const { data: userStats } = await supabase
+      const { data: userStatsArray } = await supabase
         .from('user_stats')
         .select('current_streak, completion_rate')
         .eq('user_id', userId)
-        .single();
+        .limit(1);
+
+      const userStats = userStatsArray && userStatsArray.length > 0 ? userStatsArray[0] : null;
 
       // Calculate user percentile based on completion rate
       let userPercentile = null;

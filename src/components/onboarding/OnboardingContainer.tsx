@@ -7,332 +7,247 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Card, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Progress } from '@/components/ui/progress';
-import { useSupabaseClient } from '@/hooks/useSupabaseClient';
-import { toast } from '@/components/ui/use-toast';
-import { Database } from '@/types/supabase';
 import { useAuth } from '@/hooks/useAuth';
-import { useUserState } from '@/contexts/UserStateContext';
+import { useOnboarding } from '@/hooks/useOnboarding';
+import { OnboardingData, OnboardingProgress } from '@/types/onboarding';
 
-// Import types
-import { OnboardingState, ThemeOption } from './types';
+// Import all onboarding steps
+import WelcomeStep from './steps/WelcomeStep';
+import ValueDiscoveryStep from './steps/ValueDiscoveryStep';
+import PrayerDemoStep from './steps/PrayerDemoStep';
+import MotivationStep from './steps/MotivationStep';
+import AuthStep from './steps/AuthStep';
+import PrayerSetupStep from './steps/PrayerSetupStep';
+import FirstPrayerStep from './steps/FirstPrayerStep';
+import GoalSettingStep from './steps/GoalSettingStep';
+import GamificationIntroStep from './steps/GamificationIntroStep';
+import AIIntroStep from './steps/AIIntroStep';
+import CompletionStep from './steps/CompletionStep';
 
-// Step components
-import { WelcomeStep } from './steps/WelcomeStep';
-import { MotivationStep } from './steps/MotivationStep';
-import { PrayerStoryStep } from './steps/PrayerStoryStep';
-import { QiblaStep } from './steps/QiblaStep';
-import { PrayerBaselineStep } from './steps/PrayerBaselineStep';
-import { RemindersStep } from './steps/RemindersStep';
-import { IntentionStep } from './steps/IntentionStep';
-import { MulviIntroStep } from './steps/MulviIntroStep';
-import { CompletionStep } from './steps/CompletionStep';
+interface OnboardingContainerProps {
+  initialStep?: number;
+  onComplete?: () => void;
+}
 
-export default function OnboardingContainer() {
-  const [currentStep, setCurrentStep] = useState(0);
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [userId, setUserId] = useState<string | null>(null);
-  const [onboardingState, setOnboardingState] = useState<OnboardingState>({
-    motivations: [],
-    prayerStory: '',
-    theme: 'serene',
-    prayerBaseline: {
-      fajr: false,
-      dhuhr: false,
-      asr: false,
-      maghrib: false,
-      isha: false
-    },
-    intentions: [],
-    mulviEnabled: true
-  });
-  
-  const supabase = useSupabaseClient();
+export default function OnboardingContainer({ 
+  initialStep, 
+  onComplete 
+}: OnboardingContainerProps) {
   const router = useRouter();
-  const { updateProfile } = useAuth();
-  const { refreshUserState } = useUserState();
-  
-  // Fetch user ID and onboarding state on mount
+  const { user } = useAuth();
+  const { 
+    onboardingData, 
+    updateOnboardingData, 
+    logFirstPrayer,
+    completeOnboarding,
+    progress,
+    completeStep,
+    setCurrentStep,
+    isLoading,
+    error 
+  } = useOnboarding();
+
+  // Initialize current step from saved progress or initialStep prop
+  const [currentStep, setCurrentStepState] = useState(() => {
+    if (initialStep !== undefined) return Math.max(0, Math.min(initialStep, 10)); // Bound between 0-10
+    return Math.max(0, Math.min(progress.currentStep || 0, 10)); // Bound between 0-10
+  });
+  const [isTransitioning, setIsTransitioning] = useState(false);
+
+  // Sync currentStep with progress when progress changes (on mount/restoration)
   useEffect(() => {
-    async function getUserData() {
-      try {
-        setLoading(true);
-        
-        // Get current user
-        const { data: { user }, error: userError } = await supabase.auth.getUser();
-        
-        // Enforce authentication - redirect to login if no user
-        if (userError || !user) {
-          console.log('No authenticated user, redirecting to login');
-          router.push('/login');
-          return;
-        }
-        
-        setUserId(user.id);
-        
-        // Check if user has already completed onboarding
-        const { data: onboarding, error: onboardingError } = await supabase
-          .from('user_onboarding')
-          .select('*')
-          .eq('user_id', user.id)
-          .single();
-        
-        if (onboardingError && onboardingError.code !== 'PGRST116') {
-          console.error('Error fetching onboarding data:', onboardingError);
-        }
-        
-        if (onboarding) {
-          // If onboarding is completed, redirect to dashboard
-          if (onboarding.completed) {
-            router.push('/');
-            return;
-          }
-          
-          // Otherwise, resume from last step
-          setCurrentStep(onboarding.step || 0);
-          setOnboardingState({
-            motivations: onboarding.motivations || [],
-            prayerStory: onboarding.prayer_story || '',
-            theme: (onboarding.theme as ThemeOption) || 'serene',
-            prayerBaseline: onboarding.prayer_baseline || {
-              fajr: false,
-              dhuhr: false,
-              asr: false,
-              maghrib: false,
-              isha: false
-            },
-            intentions: onboarding.intentions || [],
-            mulviEnabled: onboarding.mulvi_enabled !== false
-          });
-        } else {
-          // Create initial onboarding record
-          const { error: insertError } = await supabase
-            .from('user_onboarding')
-            .insert({
-              user_id: user.id,
-              step: 0,
-              completed: false,
-              created_at: new Date().toISOString()
-            });
-          
-          if (insertError) {
-            console.error('Error creating onboarding record:', insertError);
-          }
-        }
-      } catch (error) {
-        console.error('Unexpected error in getUserData:', error);
-      } finally {
-        setLoading(false);
-      }
+    if (initialStep === undefined && progress.currentStep !== currentStep) {
+      const boundedStep = Math.max(0, Math.min(progress.currentStep, 10)); // Bound between 0-10
+      setCurrentStepState(boundedStep);
     }
+  }, [progress.currentStep, initialStep, currentStep]);
+
+  // Define the complete 11-step onboarding flow
+  const steps = [
+    // Phase 1: Pre-Auth Discovery
+    { component: WelcomeStep, phase: 1, name: 'welcome' },
+    { component: ValueDiscoveryStep, phase: 1, name: 'value_discovery' },
+    { component: PrayerDemoStep, phase: 1, name: 'prayer_demo' },
+    { component: MotivationStep, phase: 1, name: 'motivation' },
     
-    getUserData();
-  }, [supabase, router]);
-  
-  // Save progress to Supabase
-  const saveProgress = async (updates = {}, nextStep?: number) => {
-    if (!userId) return;
+    // Phase 2: Authentication
+    { component: AuthStep, phase: 2, name: 'authentication' },
     
-    try {
-      setSaving(true);
-      
-      // For demo user, just update local state and skip database operations
-      if (userId === 'demo-user') {
-        console.log('Demo mode: skipping database update');
-        return;
-      }
-      
-      // Prepare data for Supabase
-      const supabaseData: any = {};
-      
-      // Map state keys to database column names
-      if ('motivations' in updates) supabaseData.motivations = updates.motivations;
-      if ('prayerStory' in updates) supabaseData.prayer_story = updates.prayerStory;
-      if ('theme' in updates) supabaseData.theme = updates.theme;
-      if ('prayerBaseline' in updates) supabaseData.prayer_baseline = updates.prayerBaseline;
-      if ('intentions' in updates) supabaseData.intentions = updates.intentions;
-      if ('mulviEnabled' in updates) supabaseData.mulvi_enabled = updates.mulviEnabled;
-      
-      // Always update the step if provided
-      if (nextStep !== undefined) {
-        supabaseData.step = nextStep;
-      }
-      
-      // Update the database
-      const { error } = await supabase
-        .from('user_onboarding')
-        .update(supabaseData)
-        .eq('user_id', userId);
-      
-      if (error) {
-        console.error('Error saving progress:', error);
-        toast({
-          title: 'Error saving progress',
-          description: 'Please try again',
-          variant: 'destructive'
-        });
-      }
-    } catch (error) {
-      console.error('Unexpected error saving progress:', error);
-    } finally {
-      setSaving(false);
+    // Phase 3: Post-Auth Setup
+    { component: PrayerSetupStep, phase: 3, name: 'prayer_setup' },
+    { component: FirstPrayerStep, phase: 3, name: 'first_prayer' }, // Zero State Killer!
+    { component: GoalSettingStep, phase: 3, name: 'goal_setting' },
+    { component: GamificationIntroStep, phase: 3, name: 'gamification' },
+    { component: AIIntroStep, phase: 3, name: 'ai_introduction' },
+    
+    // Phase 4: Completion
+    { component: CompletionStep, phase: 4, name: 'completion' }
+  ];
+
+  // Ensure currentStep is always within valid bounds
+  const safeCurrentStep = Math.max(0, Math.min(currentStep, steps.length - 1));
+  const currentStepData = steps[safeCurrentStep];
+  const isLastStep = safeCurrentStep === steps.length - 1;
+
+  // Update currentStep if it was out of bounds
+  useEffect(() => {
+    if (currentStep !== safeCurrentStep) {
+      setCurrentStepState(safeCurrentStep);
     }
-  };
-  
-  // Handle step navigation
-  const nextStep = async (updates = {}) => {
-    const nextStepNumber = currentStep + 1;
-    await saveProgress(updates, nextStepNumber);
-    setOnboardingState(prev => ({ ...prev, ...updates }));
-    setCurrentStep(nextStepNumber);
-  };
-  
-  const prevStep = () => {
-    setCurrentStep(Math.max(0, currentStep - 1));
-  };
-  
-  // Complete onboarding
-  const completeOnboarding = async () => {
-    if (!userId) return;
-    
-    try {
-      setSaving(true);
-      
-      // Mark onboarding as completed
-      const success = await updateProfile({
-        onboarding_completed: true
-      });
-      
-      if (!success) {
-        toast({
-          title: 'Error completing onboarding',
-          description: 'Please try again',
-          variant: 'destructive'
-        });
-        return;
-      }
-      
-      // Refresh user state to reflect completed onboarding
-      await refreshUserState();
-      
-      // Show success message
-      toast({
-        title: 'Welcome to Mulvi!',
-        description: 'Your journey begins now',
-        variant: 'default'
-      });
-      
-      // Redirect to dashboard
-      router.push('/');
-    } catch (error) {
-      console.error('Unexpected error completing onboarding:', error);
-    } finally {
-      setSaving(false);
-    }
-  };
-  
-  // Show loading state
-  if (loading) {
+  }, [currentStep, safeCurrentStep]);
+
+  // Show loading state while data is being initialized
+  if (isLoading && !currentStepData) {
     return (
       <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4">
-        <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
-        <p className="mt-4 text-muted-foreground">Setting up your journey...</p>
+        <div className="text-center space-y-4">
+          <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto" />
+          <p className="text-muted-foreground">Loading onboarding...</p>
+        </div>
       </div>
     );
   }
-  
-  // Render current step
-  const renderStep = () => {
-    switch(currentStep) {
-      case 0:
-        return <WelcomeStep onNext={() => nextStep()} />;
-      case 1:
-        return <MotivationStep 
-          onNext={(motivations: string[]) => nextStep({ motivations })} 
-          onBack={prevStep} 
-          selectedMotivations={onboardingState.motivations} 
-        />;
-      case 2:
-        return <PrayerStoryStep 
-          onNext={(prayerStory: string) => nextStep({ prayerStory })} 
-          onBack={prevStep} 
-          selectedStory={onboardingState.prayerStory} 
-        />;
-      case 3:
-        return <QiblaStep 
-          onNext={() => nextStep()} 
-          onBack={prevStep} 
-        />;
-      case 4:
-        return <PrayerBaselineStep 
-          onNext={(prayerBaseline: Record<string, boolean>) => nextStep({ prayerBaseline })} 
-          onBack={prevStep} 
-          selectedBaseline={onboardingState.prayerBaseline} 
-        />;
-      case 5:
-        return <RemindersStep 
-          onNext={() => nextStep()} 
-          onBack={prevStep} 
-        />;
-      case 6:
-        return <IntentionStep 
-          onNext={(intentions: string[]) => nextStep({ intentions })} 
-          onBack={prevStep} 
-          selectedIntentions={onboardingState.intentions || []} 
-        />;
-      case 7:
-        return <MulviIntroStep 
-          onNext={(mulviEnabled: boolean) => nextStep({ mulviEnabled })} 
-          onBack={prevStep} 
-          initialEnabled={onboardingState.mulviEnabled} 
-        />;
-      case 8:
-        return <CompletionStep 
-          onComplete={completeOnboarding} 
-          userName={getUserName()}
-        />;
-      default:
-        return <WelcomeStep onNext={() => nextStep()} />;
-    }
-  };
-  
-  // Helper to get user's name for completion step
-  const getUserName = () => {
-    try {
-      // Try to get name from local storage or session
-      const storedName = localStorage.getItem('userName') || sessionStorage.getItem('userName');
-      if (storedName) return storedName;
-      
-      // Default to 'friend' if no name found
-      return 'friend';
-    } catch (e) {
-      return 'friend';
-    }
-  };
 
-  // Calculate progress percentage
-  const progressPercentage = ((currentStep + 1) / 9) * 100;
-  
+  // Navigation handlers
+  const goToNextStep = useCallback(async () => {
+    if (isTransitioning || !currentStepData) return;
+    
+    setIsTransitioning(true);
+    
+    try {
+      // Mark current step as completed
+      await completeStep(currentStepData.name);
+      
+      if (isLastStep) {
+        // Complete onboarding
+        await completeOnboarding();
+        onComplete?.();
+        router.push('/dashboard');
+      } else {
+        // Move to next step
+        const nextStep = Math.min(currentStep + 1, steps.length - 1);
+        setCurrentStepState(nextStep);
+        setCurrentStep(nextStep); // Update the hook's progress state
+      }
+    } catch (err) {
+      console.error('Error progressing onboarding:', err);
+    } finally {
+      setIsTransitioning(false);
+    }
+  }, [currentStep, isLastStep, completeStep, completeOnboarding, onComplete, router, currentStepData, isTransitioning, setCurrentStep]);
+
+  const goToPreviousStep = useCallback(() => {
+    if (currentStep > 0 && !isTransitioning) {
+      const prevStep = Math.max(currentStep - 1, 0);
+      setCurrentStepState(prevStep);
+      setCurrentStep(prevStep); // Update the hook's progress state
+    }
+  }, [currentStep, isTransitioning, setCurrentStep]);
+
+  const skipStep = useCallback(() => {
+    if (!isTransitioning) {
+      goToNextStep();
+    }
+  }, [goToNextStep, isTransitioning]);
+
+  // Data update handler
+  const handleDataUpdate = useCallback((updates: Partial<OnboardingData>) => {
+    updateOnboardingData(updates);
+  }, [updateOnboardingData]);
+
+  // First prayer logging handler
+  const handleFirstPrayerLog = useCallback(async (prayerData: any) => {
+    try {
+      const result = await logFirstPrayer(prayerData);
+      return result;
+    } catch (err) {
+      console.error('Error logging first prayer:', err);
+      throw err;
+    }
+  }, [logFirstPrayer]);
+
+  // Render current step
+  const CurrentStepComponent = currentStepData.component;
+
+  // Safety check to ensure currentStepData exists
+  if (!currentStepData || !CurrentStepComponent) {
+    return (
+      <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4">
+        <div className="text-center">
+          <p className="text-destructive font-medium">Onboarding Error</p>
+          <p className="text-muted-foreground text-sm mt-2">
+            Invalid step configuration. Please restart the onboarding process.
+          </p>
+          <button 
+            onClick={() => router.push('/login')}
+            className="mt-4 px-4 py-2 bg-primary text-primary-foreground rounded-md text-sm"
+          >
+            Return to Login
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4">
-      <div className="w-full max-w-md">
-        {/* Progress indicator */}
-        <div className="mb-8 space-y-2">
-          <Progress value={progressPercentage} className="h-1" />
-          <div className="flex justify-between text-xs text-muted-foreground">
-            <span>Step {currentStep + 1} of 9</span>
-            <span>{Math.round(progressPercentage)}% Complete</span>
+    <div className="min-h-screen bg-background flex flex-col">
+      {/* Progress indicator */}
+      <div className="fixed top-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-sm border-b">
+        <div className="max-w-md mx-auto px-4 py-3">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-sm font-medium text-muted-foreground">
+              Step {safeCurrentStep + 1} of {steps.length}
+            </span>
+            <span className="text-sm font-medium text-primary">
+              Phase {currentStepData?.phase || 1}
+            </span>
+          </div>
+          <div className="w-full bg-muted rounded-full h-1.5">
+            <div 
+              className="bg-primary h-1.5 rounded-full transition-all duration-500 ease-out"
+              style={{ width: `${((safeCurrentStep + 1) / steps.length) * 100}%` }}
+            />
           </div>
         </div>
-        
-        {/* Current step */}
-        {renderStep()}
       </div>
+
+      {/* Main content - Fixed height, centered, no scrolling */}
+      <div className="flex-1 flex items-center justify-center pt-20 pb-4 px-4">
+        <div className="w-full max-w-md">
+          <div className="h-[calc(100vh-140px)] max-h-[600px] min-h-[500px] flex items-center justify-center overflow-hidden">
+            <div className="w-full max-h-full overflow-y-auto">
+              {currentStepData?.name === 'first_prayer' ? (
+                <FirstPrayerStep
+                  onNext={goToNextStep}
+                  onPrevious={safeCurrentStep > 0 ? goToPreviousStep : undefined}
+                  onFirstPrayerLog={handleFirstPrayerLog}
+                  isLoading={isLoading || isTransitioning}
+                />
+              ) : (
+                <CurrentStepComponent
+                  data={onboardingData}
+                  onDataUpdate={handleDataUpdate}
+                  onNext={goToNextStep}
+                  onPrevious={safeCurrentStep > 0 ? goToPreviousStep : undefined}
+                  isLoading={isLoading || isTransitioning}
+                />
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Error display */}
+      {error && (
+        <div className="fixed bottom-4 left-4 right-4 z-50">
+          <div className="max-w-md mx-auto bg-destructive text-destructive-foreground p-4 rounded-lg shadow-lg">
+            <p className="text-sm font-medium">Something went wrong</p>
+            <p className="text-sm opacity-90">{error}</p>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

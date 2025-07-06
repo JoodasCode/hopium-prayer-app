@@ -1,8 +1,9 @@
 'use client';
 
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Home, BarChart2, Bot, Settings } from 'lucide-react';
+import { motion } from 'framer-motion';
 
 const NAV_ITEMS = [
   { name: 'Home', icon: Home, path: '/dashboard' },
@@ -13,6 +14,12 @@ const NAV_ITEMS = [
 
 export default function PhantomBottomNav() {
   const pathname = usePathname();
+  const router = useRouter();
+  
+  const handleMouseEnter = (path: string) => {
+    // Prefetch the page on hover for instant navigation
+    router.prefetch(path);
+  };
   
   return (
     <nav className="fixed bottom-0 left-0 right-0 bg-background/95 backdrop-blur-sm border-t border-border z-40">
@@ -24,15 +31,33 @@ export default function PhantomBottomNav() {
             <Link
               key={item.name}
               href={item.path}
-              className={`flex flex-col items-center justify-center transition-all rounded-xl p-2 min-h-[48px] min-w-[48px]
-                ${isActive ? 'text-chart-1 bg-chart-1/10' : 'text-muted-foreground hover:text-foreground hover:bg-muted/30 active:bg-muted/50'}`}
+              onMouseEnter={() => handleMouseEnter(item.path)}
+              className="block"
             >
-              <div className={`transition-transform ${isActive ? 'scale-110' : 'scale-100'}`}>
-                <item.icon size={20} strokeWidth={isActive ? 2.5 : 2} />
-              </div>
-              <span className={`text-[0.6rem] font-medium mt-0.5 transition-opacity ${isActive ? 'opacity-100' : 'opacity-70'}`}>
-                {item.name}
-              </span>
+              <motion.div
+                className={`flex flex-col items-center justify-center transition-all rounded-xl p-2 min-h-[48px] min-w-[48px]
+                  ${isActive ? 'text-chart-1 bg-chart-1/10' : 'text-muted-foreground hover:text-foreground hover:bg-muted/30'}`}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                transition={{ duration: 0.15, ease: 'easeOut' }}
+              >
+                <motion.div 
+                  className={`transition-transform ${isActive ? 'scale-110' : 'scale-100'}`}
+                  animate={{ 
+                    scale: isActive ? 1.1 : 1,
+                    rotate: isActive ? [0, -5, 5, 0] : 0
+                  }}
+                  transition={{ 
+                    duration: isActive ? 0.4 : 0.2,
+                    ease: 'easeOut'
+                  }}
+                >
+                  <item.icon size={20} strokeWidth={isActive ? 2.5 : 2} />
+                </motion.div>
+                <span className={`text-[0.6rem] font-medium mt-0.5 transition-opacity ${isActive ? 'opacity-100' : 'opacity-70'}`}>
+                  {item.name}
+                </span>
+              </motion.div>
             </Link>
           );
         })}

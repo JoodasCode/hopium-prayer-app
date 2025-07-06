@@ -25,11 +25,12 @@ import { useUserStats } from '@/hooks/useUserStats';
 import { supabase } from '@/lib/supabase';
 import { cn } from '@/lib/utils';
 import { ds, SPACING, TYPOGRAPHY, SIZING, COLORS } from '@/lib/design-system';
+import { SettingsSkeleton } from '@/components/skeletons/SettingsSkeleton';
 
 export default function SettingsPage() {
-  const { session, signOut, authLoading } = useAuth();
+  const { user, signOut, authLoading } = useAuth();
   const { toast } = useToast();
-  const userId = session?.user?.id;
+  const userId = user?.id;
   
   // Backend hooks
   const { settings, isLoading: settingsLoading, updateSettings } = useUserSettings(userId);
@@ -40,15 +41,15 @@ export default function SettingsPage() {
   const [displayName, setDisplayName] = useState('');
   const [isSaving, setIsSaving] = useState(false);
 
-  // Initialize display name from session
+  // Initialize display name from user
   useEffect(() => {
-    if (session?.user?.user_metadata?.display_name) {
-      setDisplayName(session.user.user_metadata.display_name);
-    } else if (session?.user?.email) {
+    if (user?.user_metadata?.display_name) {
+      setDisplayName(user.user_metadata.display_name);
+    } else if (user?.email) {
       // Use email prefix as fallback
-      setDisplayName(session.user.email.split('@')[0]);
+      setDisplayName(user.email.split('@')[0]);
     }
-  }, [session]);
+  }, [user]);
 
   const handleSignOut = async () => {
     try {
@@ -68,7 +69,7 @@ export default function SettingsPage() {
   };
 
   const handleSaveProfile = async () => {
-    if (!session?.user?.id) return;
+    if (!user?.id) return;
     
     try {
       setIsSaving(true);
@@ -133,42 +134,11 @@ export default function SettingsPage() {
   const isLoading = authLoading || settingsLoading;
   
   if (isLoading) {
-    return (
-      <div className="bg-background min-h-screen">
-        {/* Loading Header - Updated to match dashboard design */}
-        <header className="header-gradient pt-safe-top pb-6 px-4">
-          <div className="max-w-md mx-auto">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-primary/15 flex items-center justify-center">
-                  <Settings className="h-5 w-5 text-primary" />
-                </div>
-                <div>
-                  <h1 className="text-lg font-semibold text-foreground">Settings</h1>
-                  <p className="text-sm text-muted-foreground">Customize your experience</p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </header>
-        
-        <div className="max-w-md mx-auto px-4">
-          <div className={cn("space-y-4", SPACING.margin.lg)}>
-            {[...Array(4)].map((_, i) => (
-              <Card key={i} className={cn("animate-pulse", COLORS.card.default)}>
-                <CardContent className={cn(SPACING.card.default)}>
-                  <div className="h-20 bg-muted rounded"></div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </div>
-      </div>
-    );
+    return <SettingsSkeleton />;
   }
 
   // If not authenticated after loading, redirect to login
-  if (!authLoading && !session) {
+  if (!authLoading && !user) {
     if (typeof window !== 'undefined') {
       window.location.href = '/login';
     }
@@ -228,7 +198,7 @@ export default function SettingsPage() {
                     <div className="flex items-center justify-between">
                       <div>
                         <h3 className={cn(TYPOGRAPHY.header.card, SPACING.margin.xs)}>{safeDisplayName}</h3>
-                        <p className={cn(TYPOGRAPHY.muted.small)}>{session?.user?.email}</p>
+                        <p className={cn(TYPOGRAPHY.muted.small)}>{user?.email}</p>
                         {stats && (
                           <div className={cn("flex items-center gap-2", SPACING.margin.sm)}>
                             <Badge variant="secondary" className="bg-primary/20 text-primary">
@@ -316,11 +286,17 @@ export default function SettingsPage() {
 
                   {/* Period Exemption */}
                   <div className="flex items-center justify-between">
-                    <div>
+                    <div className="flex-1 pr-4">
                       <Label className={TYPOGRAPHY.body.default}>Period Exemption</Label>
                       <p className={cn(TYPOGRAPHY.muted.small, SPACING.margin.xs)}>
-                        Automatically count exempt days for streaks
+                        Automatically count exempt days for streaks during menstruation, postpartum, or illness
                       </p>
+                      <div className="mt-2 p-3 bg-purple-50 border border-purple-200 rounded-lg">
+                        <p className="text-xs text-purple-700">
+                          <strong>How it works:</strong> When enabled, you'll see an "Exempted" banner on your streak. 
+                          These days won't break your streak and will count toward your prayer consistency goals.
+                        </p>
+                      </div>
                     </div>
                     <Switch
                       checked={settings?.period_exemption || false}
@@ -344,16 +320,22 @@ export default function SettingsPage() {
 
                   {/* Streak Protection */}
                   <div className="flex items-center justify-between">
-                    <div>
+                    <div className="flex-1 pr-4">
                       <Label className={TYPOGRAPHY.body.default}>Streak Protection</Label>
                       <p className={cn(TYPOGRAPHY.muted.small, SPACING.margin.xs)}>
-                        Protect your streak with freeze options
+                        Protect your streak with freeze options when you can't pray on time
                       </p>
+                      <div className="mt-2 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                        <p className="text-xs text-blue-700">
+                          <strong>How it works:</strong> Click the shield icon next to your streak to use a Streak Shield. 
+                          You earn shields through consistent prayer habits and can use them to protect your streak when needed.
+                        </p>
+                      </div>
                     </div>
-                                         <Switch
-                       checked={settings?.streak_protection || false}
-                       onCheckedChange={(checked) => handleSettingUpdate('streak_protection', checked)}
-                     />
+                    <Switch
+                      checked={settings?.streak_protection || false}
+                      onCheckedChange={(checked) => handleSettingUpdate('streak_protection', checked)}
+                    />
                   </div>
                 </CardContent>
               </Card>

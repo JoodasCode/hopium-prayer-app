@@ -74,9 +74,10 @@ export function useStatsAnalytics(userId?: string): UseStatsAnalyticsReturn {
 
     const { data: records } = await supabase
       .from('prayer_records')
-      .select('prayer_type, completed_at, scheduled_time')
+      .select('prayer_type, completed_time, scheduled_time, completed')
       .eq('user_id', userId)
-      .gte('completed_at', thirtyDaysAgo.toISOString());
+      .eq('completed', true)
+      .gte('completed_time', thirtyDaysAgo.toISOString());
 
     const prayers = ['fajr', 'dhuhr', 'asr', 'maghrib', 'isha'];
     const stats: PrayerStat[] = [];
@@ -89,14 +90,14 @@ export function useStatsAnalytics(userId?: string): UseStatsAnalyticsReturn {
 
       // Calculate weekly trend (last 7 days vs previous 7 days)
       const lastWeek = prayerRecords.filter(r => {
-        const recordDate = new Date(r.completed_at);
+        const recordDate = new Date(r.completed_time);
         const sevenDaysAgo = new Date();
         sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
         return recordDate >= sevenDaysAgo;
       }).length;
 
       const previousWeek = prayerRecords.filter(r => {
-        const recordDate = new Date(r.completed_at);
+        const recordDate = new Date(r.completed_time);
         const fourteenDaysAgo = new Date();
         fourteenDaysAgo.setDate(fourteenDaysAgo.getDate() - 14);
         const sevenDaysAgo = new Date();
@@ -140,8 +141,9 @@ export function useStatsAnalytics(userId?: string): UseStatsAnalyticsReturn {
         .from('prayer_records')
         .select('*', { count: 'exact', head: true })
         .eq('user_id', userId)
-        .gte('completed_at', dayStart.toISOString())
-        .lte('completed_at', dayEnd.toISOString());
+        .eq('completed', true)
+        .gte('completed_time', dayStart.toISOString())
+        .lte('completed_time', dayEnd.toISOString());
 
       weekData.push({
         day: date.toLocaleDateString('en-US', { weekday: 'short' }),
@@ -184,8 +186,9 @@ export function useStatsAnalytics(userId?: string): UseStatsAnalyticsReturn {
         .from('prayer_records')
         .select('*', { count: 'exact', head: true })
         .eq('user_id', userId)
-        .gte('completed_at', dayStart.toISOString())
-        .lte('completed_at', dayEnd.toISOString());
+        .eq('completed', true)
+        .gte('completed_time', dayStart.toISOString())
+        .lte('completed_time', dayEnd.toISOString());
 
       const completionRate = (count || 0) / 5;
       let status: 'completed' | 'partial' | 'missed' = 'missed';
@@ -228,10 +231,10 @@ export function useStatsAnalytics(userId?: string): UseStatsAnalyticsReturn {
   const calculateAchievements = async (): Promise<Achievement[]> => {
     if (!userId) return [];
 
-    // Get user achievements from database
+    // Get user achievements from database using the correct table
     const { data: userAchievements } = await supabase
-      .from('achievements')
-      .select('*')
+      .from('user_achievements')
+      .select('achievement_id, earned_at')
       .eq('user_id', userId);
 
     const allAchievements: Achievement[] = [
@@ -267,10 +270,10 @@ export function useStatsAnalytics(userId?: string): UseStatsAnalyticsReturn {
 
     // Mark achievements as unlocked based on user data
     userAchievements?.forEach(userAch => {
-      const achievement = allAchievements.find(a => a.id === userAch.achievement_type);
+      const achievement = allAchievements.find(a => a.id === userAch.achievement_id);
       if (achievement) {
         achievement.unlocked = true;
-        achievement.unlockedAt = userAch.unlocked_at;
+        achievement.unlockedAt = userAch.earned_at;
       }
     });
 
@@ -287,11 +290,13 @@ export function useStatsAnalytics(userId?: string): UseStatsAnalyticsReturn {
       setError(null);
 
       // Get user stats for streak data
-      const { data: userStats } = await supabase
+      const { data: userStatsArray } = await supabase
         .from('user_stats')
         .select('*')
         .eq('user_id', userId)
-        .single();
+        .limit(1);
+
+      const userStats = userStatsArray && userStatsArray.length > 0 ? userStatsArray[0] : null;
 
       // Calculate today's progress
       const today = new Date();
@@ -300,19 +305,21 @@ export function useStatsAnalytics(userId?: string): UseStatsAnalyticsReturn {
         .from('prayer_records')
         .select('*', { count: 'exact', head: true })
         .eq('user_id', userId)
-        .gte('completed_at', today.toISOString());
+        .eq('completed', true)
+        .gte('completed_time', today.toISOString());
 
       // Calculate previous week streak for comparison
       const sevenDaysAgo = new Date();
       sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-      const { data: lastWeekStats } = await supabase
+      const { data: lastWeekStatsArray } = await supabase
         .from('user_stats')
         .select('current_streak')
         .eq('user_id', userId)
-        .gte('updated_at', sevenDaysAgo.toISOString())
-        .order('updated_at', { ascending: false })
-        .limit(1)
-        .single();
+        .gte('last_calculated_at', sevenDaysAgo.toISOString())
+        .order('last_calculated_at', { ascending: false })
+        .limit(1);
+
+      const lastWeekStats = lastWeekStatsArray && lastWeekStatsArray.length > 0 ? lastWeekStatsArray[0] : null;
 
       const weekChange = lastWeekStats?.current_streak 
         ? ((userStats?.current_streak || 0) - lastWeekStats.current_streak) / lastWeekStats.current_streak * 100
@@ -325,13 +332,14 @@ export function useStatsAnalytics(userId?: string): UseStatsAnalyticsReturn {
       
       const { data: monthlyRecords } = await supabase
         .from('prayer_records')
-        .select('completed_at')
+        .select('completed_time')
         .eq('user_id', userId)
-        .gte('completed_at', monthStart.toISOString());
+        .eq('completed', true)
+        .gte('completed_time', monthStart.toISOString());
 
       // Group by day and count perfect days (5 prayers per day)
       const dailyCounts = monthlyRecords?.reduce((acc, record) => {
-        const day = new Date(record.completed_at).toDateString();
+        const day = new Date(record.completed_time).toDateString();
         acc[day] = (acc[day] || 0) + 1;
         return acc;
       }, {} as Record<string, number>) || {};

@@ -202,6 +202,20 @@ CREATE TABLE public.notifications (
   action_data JSONB
 );
 
+-- Prayer reminders table
+CREATE TABLE public.prayer_reminders (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  user_id UUID REFERENCES public.users(id) ON DELETE CASCADE,
+  prayer_name TEXT NOT NULL,
+  reminder_time TIMESTAMP WITH TIME ZONE NOT NULL,
+  is_active BOOLEAN DEFAULT TRUE,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Enable RLS for prayer_reminders
+ALTER TABLE public.prayer_reminders ENABLE ROW LEVEL SECURITY;
+
 -- ADDITIONAL INDEXES
 
 CREATE INDEX idx_lopi_faqs_embedding ON public.lopi_faqs USING ivfflat (embedding vector_cosine_ops);
@@ -209,6 +223,12 @@ CREATE INDEX idx_emotional_journey_user ON public.emotional_journey(user_id);
 CREATE INDEX idx_reflections_user ON public.reflections(user_id);
 CREATE INDEX idx_goals_user ON public.goals(user_id);
 CREATE INDEX idx_user_achievements_user ON public.user_achievements(user_id);
+
+-- Prayer reminders indexes
+CREATE INDEX idx_prayer_reminders_user_id ON public.prayer_reminders(user_id);
+CREATE INDEX idx_prayer_reminders_active ON public.prayer_reminders(is_active);
+CREATE INDEX idx_prayer_reminders_time ON public.prayer_reminders(reminder_time);
+CREATE INDEX idx_prayer_reminders_user_active ON public.prayer_reminders(user_id, is_active);
 
 -- ADDITIONAL RLS POLICIES
 

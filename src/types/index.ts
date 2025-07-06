@@ -57,6 +57,8 @@ export interface LocationData {
   city?: string;
   country?: string;
   timezone?: string;
+  accuracy?: number;
+  source?: 'gps' | 'ip' | 'manual';
 }
 
 export interface CalculationMethod {

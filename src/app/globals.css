@@ -163,6 +163,9 @@
     font-feature-settings: "rlig" 1, "calt" 1;
     /* Prevent horizontal overflow */
     overflow-x: hidden;
+    /* Prevent FOUC and improve rendering */
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
 }
 

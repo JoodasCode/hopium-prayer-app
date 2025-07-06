@@ -10,11 +10,13 @@ export function useUserStats(userId: string | undefined) {
     if (!userId) return null;
     
     // First, try to get existing user stats
-    const { data: existingStats, error: statsError } = await supabase
+    const { data: existingStatsArray, error: statsError } = await supabase
       .from('user_stats')
       .select('*')
       .eq('user_id', userId)
-      .single();
+      .limit(1);
+    
+    const existingStats = existingStatsArray && existingStatsArray.length > 0 ? existingStatsArray[0] : null;
     
     // If user stats exist, return them
     if (existingStats && !statsError) {

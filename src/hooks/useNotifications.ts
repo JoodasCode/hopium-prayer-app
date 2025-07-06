@@ -116,6 +116,40 @@ export function useNotifications(userId?: string): UseNotificationsReturn {
 
       if (insertError) throw insertError;
 
+      // Set up browser notification if permission is granted
+      if ('Notification' in window && Notification.permission === 'granted') {
+        const timeUntilReminder = reminderTime.getTime() - now.getTime();
+        
+        if (timeUntilReminder > 0) {
+          setTimeout(() => {
+            const notification = new Notification(`${prayerName} Prayer Reminder`, {
+              body: `It's time for ${prayerName} prayer`,
+              icon: '/icon-192x192.png',
+              badge: '/icon-192x192.png',
+              tag: `prayer-${prayerName}-${Date.now()}`,
+              requireInteraction: true,
+              silent: false
+            });
+
+            // Handle notification click
+            notification.onclick = () => {
+              window.focus();
+              notification.close();
+            };
+
+            // Auto-close after 30 seconds
+            setTimeout(() => {
+              notification.close();
+            }, 30000);
+
+            // Vibrate on mobile devices
+            if ('vibrate' in navigator) {
+              navigator.vibrate([200, 100, 200, 100, 200]);
+            }
+          }, timeUntilReminder);
+        }
+      }
+
       // Refresh reminders list
       await fetchReminders();
       

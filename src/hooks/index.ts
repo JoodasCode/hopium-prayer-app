@@ -1,6 +1,9 @@
 // Authentication hooks
 export { useAuth } from './useAuth';
 
+// Onboarding system
+export { useOnboarding } from './useOnboarding';
+
 // Prayer and stats hooks
 export { usePrayerRecords } from './usePrayerRecords';
 export { useUserStats } from './useUserStats';
@@ -10,6 +13,12 @@ export { usePrayerInsights } from './usePrayerInsights';
 
 // Enhanced notification system
 export { useNotifications } from './useNotifications';
+
+// Location persistence with Redis
+export { useLocationPersistence } from './useLocationPersistence';
+
+// Redis performance monitoring
+export { useRedisPerformance } from './useRedisPerformance';
 
 // Knowledge base and AI tips
 export { useKnowledgeBase } from './useKnowledgeBase';

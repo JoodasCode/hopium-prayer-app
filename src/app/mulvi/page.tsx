@@ -22,15 +22,21 @@ import { useAuth } from '@/hooks/useAuth';
 import { getDisplayName } from '@/lib/greetings';
 import { useUserStats } from '@/hooks/useUserStats';
 import { usePrayerWithRecords } from '@/hooks/usePrayerWithRecords';
+import { MulviSkeleton } from '@/components/skeletons/MulviSkeleton';
 
 export default function MulviPage() {
   const router = useRouter();
-  const { session } = useAuth();
-  const userId = session?.user?.id;
+  const { user, isLoading: authLoading } = useAuth();
+  const userId = user?.id;
   
   // Get real user data
-  const { userStats } = useUserStats(userId);
-  const { todaysProgress, nextPrayer } = usePrayerWithRecords({ userId });
+  const { userStats, isLoading: statsLoading } = useUserStats(userId);
+  const { todaysProgress, nextPrayer, isLoading: prayerLoading } = usePrayerWithRecords({ userId });
+  
+  // Show loading state while data is loading
+  if (authLoading || statsLoading || prayerLoading) {
+    return <MulviSkeleton />;
+  }
   
   const [input, setInput] = useState('');
   const [messages, setMessages] = useState<Array<{id: string, content: string, role: 'user' | 'assistant', created_at: string}>>([
@@ -75,8 +81,8 @@ export default function MulviPage() {
       }));
 
       // Get user's actual name and data
-      const userName = getDisplayName(session?.user) || 'friend';
-      const userEmail = session?.user?.email || '';
+      const userName = getDisplayName(user) || 'friend';
+      const userEmail = user?.email || '';
       
       // Determine current prayer period based on time
       const currentHour = new Date().getHours();
@@ -115,10 +121,10 @@ export default function MulviPage() {
             nextPrayerInfo: nextPrayer ? `${nextPrayer.name} at ${nextPrayer.time.toLocaleTimeString()}` : 'upcoming prayer',
             
             // Account info
-            accountAge: session?.user?.created_at ? Math.floor((new Date().getTime() - new Date(session.user.created_at).getTime()) / (1000 * 60 * 60 * 24)) : 0,
+            accountAge: user?.created_at ? Math.floor((new Date().getTime() - new Date(user.created_at).getTime()) / (1000 * 60 * 60 * 24)) : 0,
             
             // User metadata from auth
-            userMetadata: session?.user?.user_metadata || {}
+            userMetadata: user?.user_metadata || {}
           }
         }),
       });

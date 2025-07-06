@@ -5,10 +5,11 @@ import { useRouter } from 'next/navigation';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { ThemeToggle } from '@/components/ui/theme-toggle';
-import { Bell, LogOut } from 'lucide-react';
+import { Bell, LogOut, Settings } from 'lucide-react';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { useAuth } from '@/hooks/useAuth';
+import { motion } from 'framer-motion';
 // Removed UserStateContext dependency
 
 export function Header() {
@@ -19,6 +20,19 @@ export function Header() {
   
   const handleSignOut = async () => {
     await signOut();
+  };
+
+  // Smart prefetching on hover
+  const handleSettingsHover = () => {
+    router.prefetch('/settings');
+  };
+
+  const handleStatsHover = () => {
+    router.prefetch('/stats');
+  };
+
+  const handleMulviHover = () => {
+    router.prefetch('/mulvi');
   };
   
   return (
@@ -35,10 +49,15 @@ export function Header() {
         <div className="flex items-center gap-2">
           <Sheet open={notificationsOpen} onOpenChange={setNotificationsOpen}>
             <SheetTrigger asChild>
-              <Button variant="ghost" size="icon" className="rounded-full relative">
-                <Bell className="h-5 w-5" />
-                {/* Notifications disabled for now */}
-              </Button>
+              <motion.div
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+              >
+                <Button variant="ghost" size="icon" className="rounded-full relative">
+                  <Bell className="h-5 w-5" />
+                  {/* Notifications disabled for now */}
+                </Button>
+              </motion.div>
             </SheetTrigger>
             <SheetContent>
               <SheetHeader>
@@ -58,12 +77,17 @@ export function Header() {
           
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" className="rounded-full">
-                <Avatar>
-                  <AvatarImage src="/avatar.png" alt="User" />
-                  <AvatarFallback>U</AvatarFallback>
-                </Avatar>
-              </Button>
+              <motion.div
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+              >
+                <Button variant="ghost" size="icon" className="rounded-full">
+                  <Avatar>
+                    <AvatarImage src="/avatar.png" alt="User" />
+                    <AvatarFallback>U</AvatarFallback>
+                  </Avatar>
+                </Button>
+              </motion.div>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               <DropdownMenuLabel>
@@ -71,17 +95,27 @@ export function Header() {
                 <p className="text-xs text-muted-foreground">user@example.com</p>
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={() => router.push('/dashboard/settings')}>
+              <DropdownMenuItem 
+                onClick={() => router.push('/settings')}
+                onMouseEnter={handleSettingsHover}
+                className="cursor-pointer"
+              >
+                <Settings className="mr-2 h-4 w-4" />
                 Settings
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={handleSignOut}>
+              <DropdownMenuItem onClick={handleSignOut} className="cursor-pointer">
                 <LogOut className="mr-2 h-4 w-4" />
                 Sign out
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
           
-          <ThemeToggle />
+          <motion.div
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+          >
+            <ThemeToggle />
+          </motion.div>
         </div>
       </div>
     </header>

@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/dialog";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
-import { Clock, Calendar, CheckCircle, AlertCircle, Timer } from "lucide-react";
+import { Clock, Calendar, CheckCircle, AlertCircle, Timer, Heart, Sparkles } from "lucide-react";
 
 interface PrayerToRecover {
   id: string;
@@ -58,7 +58,7 @@ export function QadaRecoveryModal({
     const diffMs = expiryTime - now.getTime();
     
     if (diffMs <= 0) {
-      return "Time expired";
+      return "Recovery window closed";
     }
     
     const hours = Math.floor(diffMs / (1000 * 60 * 60));
@@ -94,82 +94,113 @@ export function QadaRecoveryModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[425px]">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <AlertCircle className="h-5 w-5 text-amber-500" />
-            Recover Missed Prayer
+      <DialogContent className="max-w-md mx-auto border-primary/20 bg-gradient-to-br from-background to-primary/5">
+        <DialogHeader className="text-center pb-2">
+          <DialogTitle className="flex items-center justify-center gap-2 text-lg">
+            <div className="w-10 h-10 rounded-full bg-primary/15 flex items-center justify-center">
+              <Heart className="h-5 w-5 text-primary" />
+            </div>
+            <span>Make Up Prayer</span>
           </DialogTitle>
-          <DialogDescription>
-            You missed {prayer.name}, but you can still make it up.
+          <DialogDescription className="text-center text-muted-foreground">
+            You can still complete your {prayer.name} prayer
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-6 py-4">
-          {/* Prayer Details */}
-          <div className="bg-muted/50 rounded-lg p-4 space-y-4">
-            <div className="flex justify-between items-center">
+        <div className="space-y-4 py-2">
+          {/* Prayer Details Card */}
+          <div className="bg-primary/5 border border-primary/20 rounded-xl p-4 space-y-3">
+            <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <Calendar className="h-4 w-4 text-muted-foreground" />
-                <span className="text-sm text-muted-foreground">
-                  {prayer.time.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
+                <Calendar className="h-4 w-4 text-primary" />
+                <span className="text-sm font-medium">
+                  {prayer.time.toLocaleDateString('en-US', { 
+                    weekday: 'long', 
+                    month: 'short', 
+                    day: 'numeric' 
+                  })}
                 </span>
               </div>
               
               <div className="flex items-center gap-2">
-                <Clock className="h-4 w-4 text-muted-foreground" />
-                <span className="text-sm text-muted-foreground">
-                  {prayer.time.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}
+                <Clock className="h-4 w-4 text-primary" />
+                <span className="text-sm font-medium">
+                  {prayer.time.toLocaleTimeString('en-US', { 
+                    hour: 'numeric', 
+                    minute: '2-digit' 
+                  })}
                 </span>
               </div>
             </div>
             
-            <div>
-              <h4 className="text-sm font-medium mb-1.5">Recovery window</h4>
-              <div className="space-y-1.5">
-                <Progress value={timeRemaining} className="h-2 bg-muted" />
-                <div className="flex justify-between items-center">
-                  <Badge variant="outline" className="bg-amber-500/10 text-amber-600 border-amber-200 text-xs font-normal">
-                    <Timer className="h-3 w-3 mr-1" />
-                    {formatTimeRemaining()}
-                  </Badge>
-                  <span className="text-xs text-muted-foreground">{timeRemaining}% window remaining</span>
-                </div>
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium">Recovery Window</span>
+                <Badge variant="outline" className="bg-primary/10 text-primary border-primary/30">
+                  <Timer className="h-3 w-3 mr-1" />
+                  {formatTimeRemaining()}
+                </Badge>
+              </div>
+              
+              <Progress 
+                value={timeRemaining} 
+                className="h-2 bg-muted/50" 
+              />
+              
+              <div className="flex justify-between items-center text-xs text-muted-foreground">
+                <span>Recovery available</span>
+                <span>{timeRemaining}% window remaining</span>
               </div>
             </div>
           </div>
 
-          {/* Qada Information */}
-          <div className="space-y-3">
-            <h4 className="text-sm font-medium">About Qada prayers</h4>
-            <p className="text-sm text-muted-foreground">
-              In Islam, if you miss a prayer, you can make it up later as a Qada prayer. 
-              It's recommended to make up missed prayers as soon as possible.
+          {/* Spiritual Encouragement */}
+          <div className="bg-gradient-to-r from-primary/5 to-primary/10 border border-primary/20 rounded-xl p-4">
+            <div className="flex items-center gap-2 mb-2">
+              <Sparkles className="h-4 w-4 text-primary" />
+              <h4 className="text-sm font-semibold">Spiritual Reminder</h4>
+            </div>
+            <p className="text-sm text-muted-foreground leading-relaxed">
+              "Whoever forgets a prayer should pray it when they remember it. 
+              There is no other expiation than this."
             </p>
-            <div className="bg-primary/5 rounded-lg p-3 text-sm">
-              <p>"Whoever forgets a prayer should pray it when they remember it. 
-              There is no other expiation than this."</p>
-              <p className="mt-1 text-xs text-muted-foreground">— Hadith, Sahih Muslim</p>
+            <p className="text-xs text-muted-foreground mt-2 opacity-75">
+              — Hadith, Sahih Muslim
+            </p>
+          </div>
+
+          {/* Quick Stats */}
+          <div className="grid grid-cols-2 gap-3">
+            <div className="bg-muted/30 rounded-lg p-3 text-center">
+              <div className="text-lg font-bold text-primary">+15</div>
+              <div className="text-xs text-muted-foreground">XP Reward</div>
+            </div>
+            <div className="bg-muted/30 rounded-lg p-3 text-center">
+              <div className="text-lg font-bold text-primary">1</div>
+              <div className="text-xs text-muted-foreground">Qada Completed</div>
             </div>
           </div>
         </div>
 
-        <DialogFooter className="flex-col sm:flex-col gap-2">
+        <DialogFooter className="flex-col gap-2 pt-2">
           <Button 
             onClick={handleRecover} 
-            className="w-full gap-1.5" 
+            className="w-full gap-2 bg-primary hover:bg-primary/90 text-primary-foreground font-medium" 
             disabled={loading}
+            size="lg"
           >
             <CheckCircle className="h-4 w-4" />
-            Make Up This Prayer Now
+            {loading ? 'Completing...' : 'Complete Prayer Now'}
           </Button>
+          
           <Button 
             variant="outline" 
             onClick={handleSetReminder}
-            className="w-full gap-1.5"
+            className="w-full gap-2 border-primary/30 hover:bg-primary/10"
+            size="lg"
           >
             <Clock className="h-4 w-4" />
-            Remind Me Later
+            Remind Me in 30 Minutes
           </Button>
         </DialogFooter>
       </DialogContent>
